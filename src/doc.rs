@@ -1,4 +1,3 @@
-use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader, BufWriter};
 
@@ -8,7 +7,7 @@ const SRC_RUST: &'static str = "SRC_RUST";
 const SRC_OTHER: &'static str = "SRC_OTHER";
 const SRC_DOC: &'static str = "SRC_DOC";
 
-pub fn read(source: &mut File) -> Vec<String> {
+pub fn read<T: Read>(source: &mut T) -> Vec<String> {
     let reader = BufReader::new(source);
 
     let re_code_rust = Regex::new(r"^//! ```(no_run|ignore|should_panic)?$").unwrap();
@@ -53,7 +52,7 @@ pub fn read(source: &mut File) -> Vec<String> {
     .collect()
 }
 
-pub fn write(dest: &mut File, data: &Vec<String>) -> io::Result<()> {
+pub fn write<T: Write>(dest: &mut T, data: &Vec<String>) -> io::Result<()> {
     let mut writer = BufWriter::new(dest);
 
     for line in data {
