@@ -14,9 +14,13 @@ extern crate toml;
 extern crate regex;
 
 mod doc;
-mod process;
 
-use clap::{Arg, App, AppSettings, SubCommand};
+use std::env;
+use std::io::Write;
+use std::fs::File;
+use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
+
+const DEFAULT_TEMPLATE: &'static str = "README.tpl";
 
 fn main() {
     let matches = App::new("cargo-readme")
@@ -59,11 +63,62 @@ fn main() {
         .get_matches();
 
     if let Some(m) = matches.subcommand_matches("readme") {
-        let input = m.value_of("INPUT");
-        let output = m.value_of("OUTPUT");
-        let template = m.value_of("TEMPLATE");
-        let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
+        execute(m);
+    }
+}
 
-        process::execute(input, output, template, indent_headings);
+fn execute(m: &ArgMatches) {
+    let current_dir = env::current_dir().unwrap();
+
+    let input = m.value_of("INPUT");
+    let output = m.value_of("OUTPUT");
+    let template = m.value_of("TEMPLATE");
+    let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
+
+    let mut source = match input {
+        Some(input) => {
+            let input = current_dir.join(input);
+            File::open(&input).ok().expect(
+                &format!("Could not open file '{}'", input.to_string_lossy())
+            )
+        },
+        None => {
+            let lib_rs = current_dir.join("src/lib.rs");
+            let main_rs = current_dir.join("src/main.rs");
+            File::open(lib_rs).or(File::open(main_rs)).ok().expect(
+                "No 'lib.rs' nor 'main.rs' were found"
+            )
+        }
+    };
+
+    let mut dest = output.and_then(|output| {
+        let output = current_dir.join(output);
+        let file = File::create(&output).ok().expect(
+            &format!("Could not create output file '{}'", output.to_string_lossy())
+        );
+
+        Some(file)
+    });
+
+    let mut template = template.or(Some(DEFAULT_TEMPLATE)).and_then(|template| {
+        let template = current_dir.join(template);
+        let file = File::open(&template).ok().expect(
+            &format!("Could not open template file: {}", template.to_string_lossy())
+        );
+
+        Some(file)
+    });
+
+    let doc_data = doc::extract(&mut source);
+    let processed_doc = match doc::process(doc_data, &mut template, indent_headings) {
+        Ok(doc) => doc,
+        Err(e) => panic!(format!("Error: {}", e)),
+    };
+
+    match dest.as_mut() {
+        Some(dest) => dest.write_all(processed_doc.as_bytes()).ok().expect(
+            "Could not write to output file"),
+
+        None => println!("{}", processed_doc),
     }
 }
