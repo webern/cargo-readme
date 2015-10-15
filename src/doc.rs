@@ -1,5 +1,5 @@
 use std::io::prelude::*;
-use std::io::{self, BufReader, BufWriter};
+use std::io::BufReader;
 
 use regex::Regex;
 
@@ -50,14 +50,4 @@ pub fn read<T: Read>(source: &mut T) -> Vec<String> {
         }
     })
     .collect()
-}
-
-pub fn write<T: Write>(dest: &mut T, data: &Vec<String>) -> io::Result<()> {
-    let mut writer = BufWriter::new(dest);
-
-    for line in data {
-        try!(writeln!(writer, "{}", line));
-    }
-
-    Ok(())
 }

@@ -35,29 +35,35 @@ fn main() {
             .arg(Arg::with_name("INPUT")
                 .short("i")
                 .long("input")
-                .help("File to read from. If not provided, will take 'src/lib.rs' or 'src/main.rs'.")
-                .takes_value(true))
+                .takes_value(true)
+                .help("File to read from. If not provided, will take 'src/lib.rs' or 'src/main.rs'."))
             .arg(Arg::with_name("OUTPUT")
                 .short("o")
                 .long("output")
-                .help("File to write to. If not provided, will output to the console.")
-                .takes_value(true))
-            .arg(Arg::with_name("NO_CRATE_NAME")
-                .long("no-crate-name")
-                .help("Do not prepend crate name to the output"))
+                .takes_value(true)
+                .help("File to write to. If not provided, will output to the console."))
+            .arg(Arg::with_name("TEMPLATE")
+                .short("t")
+                .long("template")
+                .takes_value(true)
+                .help("Template used to render the output. Defaults to 'README.tpl'. \
+                       If the default template is not found, \
+                       the processed docstring will be used."))
             .arg(Arg::with_name("NO_INDENT_HEADINGS")
                 .long("no-indent-headings")
                 .help("Do not add an extra level to headings. \
                        By default, '#' headings become '##', \
                        so the first '#' can be your crate name. \
                        Use this option to prevent this behavior.\n"))
-            .after_help("Input and output are relative to the current dir\n"))
+            .after_help("Input and output are relative to the current dir\n\n"))
         .get_matches();
 
     if let Some(m) = matches.subcommand_matches("readme") {
-        match process::execute(m) {
-            Err(e) => println!("{}", e),
-            _ => {}
-        }
+        let input = m.value_of("INPUT");
+        let output = m.value_of("OUTPUT");
+        let template = m.value_of("TEMPLATE");
+        let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
+
+        process::execute(input, output, template, indent_headings);
     }
 }

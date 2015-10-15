@@ -1,0 +1,5 @@
+# {{crate}}
+
+{{docs}}
+
+License: MIT
