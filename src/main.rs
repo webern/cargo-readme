@@ -5,12 +5,13 @@
 //!
 //! # Usage
 //! ```sh
-//! cargo readme
+//! $ cargo readme [options]
 //! ```
 
 #[macro_use]
 extern crate clap;
 extern crate toml;
+extern crate regex;
 
 mod doc;
 
@@ -95,7 +96,7 @@ fn execute(matches: &ArgMatches) -> io::Result<()> {
 
         let table = toml::Parser::new(&buf).parse().unwrap();
         let crate_name = table["package"].lookup("name").unwrap().as_str().unwrap();
-        data.insert(0, format!("# {}", crate_name));
+        data.insert(0, format!("# {}\n", crate_name));
     }
 
     if let Some(output) = matches.value_of("OUTPUT") {

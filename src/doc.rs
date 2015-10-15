@@ -2,24 +2,39 @@ use std::fs::File;
 use std::io::prelude::*;
 use std::io::{self, BufReader, BufWriter};
 
-const RUST_CODE_BLOCK: [&'static str; 4] = [
-    "//! ```",
-    "//! ```ignore",
-    "//! ```no_run",
-    "//! ```should_panic"
-];
+use regex::Regex;
+
+const SRC_RUST: &'static str = "SRC_RUST";
+const SRC_OTHER: &'static str = "SRC_OTHER";
+const SRC_DOC: &'static str = "SRC_DOC";
 
 pub fn read(source: &mut File) -> Vec<String> {
     let reader = BufReader::new(source);
-    let mut in_code = false;
+
+    let re_code_rust = Regex::new(r"^//! ```(no_run|ignore|should_panic)?$").unwrap();
+    let re_code_other = Regex::new(r"//! ```\w+").unwrap();
+
+    let mut section = SRC_DOC;
 
     reader.lines().filter_map(|line| {
         let line = line.unwrap();
         if line.starts_with("//!") {
-            if RUST_CODE_BLOCK.contains(&line.as_ref()) {
-                in_code = !in_code;
+
+            if  section == SRC_DOC && re_code_rust.is_match(&line) {
+                section = SRC_RUST;
+
+                return Some("```rust".to_owned());
             }
-            else if line.starts_with("//! # ") && in_code {
+            else if section == SRC_DOC && re_code_other.is_match(&line) {
+                section = SRC_OTHER;
+            }
+            else if section != SRC_DOC && line == "//! ```" {
+                section = SRC_DOC;
+
+                return Some("```".to_owned());
+            }
+
+            if section == SRC_RUST && line.starts_with("//! # ") {
                 return None;
             }
 
@@ -30,7 +45,8 @@ pub fn read(source: &mut File) -> Vec<String> {
             else {
                 Some(line[4..].to_owned())
             }
-        } else {
+        }
+         else {
             return None
         }
     })
