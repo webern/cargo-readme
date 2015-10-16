@@ -1,2 +1,2 @@
 # cargo-readme
-Generate README.md from docstrings
+Generate README.md from doc comments
