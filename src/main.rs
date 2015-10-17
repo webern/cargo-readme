@@ -1,13 +1,3 @@
-//! Generate README.md from docstrings
-//!
-//! Document your crate using docstrings to ensure your examples are correct and then generate the
-//! `README.md` knowing the examples are still correct.
-//!
-//! # Usage
-//! ```sh
-//! $ cargo readme [options]
-//! ```
-
 #[macro_use]
 extern crate clap;
 extern crate toml;
@@ -35,7 +25,7 @@ fn main() {
         // plugin which will then be interpreted as a subcommand/positional arg by clap
         .subcommand(SubCommand::with_name("readme")
             .author("Livio Ribeiro <livioribeiro@outlook.com>")
-            .about("Generate README.md from doc string")
+            .about("Generate README.md from doc comments")
             .arg(Arg::with_name("INPUT")
                 .short("i")
                 .long("input")
@@ -50,10 +40,17 @@ fn main() {
                 .short("t")
                 .long("template")
                 .takes_value(true)
+                .conflicts_with("NO_TEMPLATE")
                 .help("Template used to render the output. Defaults to 'README.tpl'. \
                        If the default template is not found, \
                        the processed docstring will be used."))
+            .arg(Arg::with_name("NO_TEMPLATE")
+                .short("T")
+                .long("no-template")
+                .help("Ignore template file when generating README. \
+                       Only useful to ignore default template README.tpl"))
             .arg(Arg::with_name("NO_INDENT_HEADINGS")
+                .short("H")
                 .long("no-indent-headings")
                 .help("Do not add an extra level to headings. \
                        By default, '#' headings become '##', \
@@ -73,6 +70,7 @@ fn execute(m: &ArgMatches) {
     let input = m.value_of("INPUT");
     let output = m.value_of("OUTPUT");
     let template = m.value_of("TEMPLATE");
+    let no_template = m.is_present("NO_TEMPLATE");
     let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
 
     let mut source = match input {
@@ -103,22 +101,26 @@ fn execute(m: &ArgMatches) {
     let mut template = template.or(Some(DEFAULT_TEMPLATE)).and_then(|template| {
         let template = current_dir.join(template);
         let file = File::open(&template).ok().expect(
-            &format!("Could not open template file: {}", template.to_string_lossy())
+            &format!("Could not open template file {}", template.to_string_lossy())
         );
 
-        Some(file)
+        if no_template {
+            None
+        }
+        else {
+            Some(file)
+        }
     });
 
-    let doc_data = doc::extract(&mut source);
-    let processed_doc = match doc::process(doc_data, &mut template, indent_headings) {
+    let doc_string = match doc::generate_readme(&mut source, &mut template, indent_headings) {
         Ok(doc) => doc,
         Err(e) => panic!(format!("Error: {}", e)),
     };
 
     match dest.as_mut() {
-        Some(dest) => dest.write_all(processed_doc.as_bytes()).ok().expect(
+        Some(dest) => dest.write_all(doc_string.as_bytes()).ok().expect(
             "Could not write to output file"),
 
-        None => println!("{}", processed_doc),
+        None => println!("{}", doc_string),
     }
 }

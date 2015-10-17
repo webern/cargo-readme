@@ -9,7 +9,16 @@ const SRC_RUST: &'static str = "SRC_RUST";
 const SRC_OTHER: &'static str = "SRC_OTHER";
 const SRC_DOC: &'static str = "SRC_DOC";
 
-pub fn extract<T: Read>(source: &mut T) -> Vec<String> {
+pub fn generate_readme<T: Read>(source: &mut T, template: &mut Option<T>, indent_headings: bool) -> Result<String, String> {
+    let doc_data = extract(source, indent_headings);
+
+    match template.as_mut() {
+        Some(template) => process_template(template, doc_data),
+        None => Ok(fold_data(doc_data)),
+    }
+}
+
+pub fn extract<T: Read>(source: &mut T, indent_headings: bool) -> Vec<String> {
     let reader = BufReader::new(source);
 
     let re_code_rust = Regex::new(r"^//! ```(no_run|ignore|should_panic)?$").unwrap();
@@ -18,7 +27,7 @@ pub fn extract<T: Read>(source: &mut T) -> Vec<String> {
     let mut section = SRC_DOC;
 
     reader.lines().filter_map(|line| {
-        let line = line.unwrap();
+        let mut line = line.unwrap();
         if line.starts_with("//!") {
 
             if  section == SRC_DOC && re_code_rust.is_match(&line) {
@@ -35,17 +44,24 @@ pub fn extract<T: Read>(source: &mut T) -> Vec<String> {
                 return Some("```".to_owned());
             }
 
+            // If line is hidden in documentation, it is also hidden in README
             if section == SRC_RUST && line.starts_with("//! # ") {
                 return None;
             }
 
             // Remove leading '//!' before returning the line
-            if line.len() == 3 {
-                Some("".to_owned())
+            if line.trim() == "//!" {
+                line = String::new();
             }
             else {
-                Some(line[4..].to_owned())
+                line = line[4..].to_owned();
+                // If we should indent headings, only do this outside code blocks
+                if indent_headings && section == SRC_DOC && line.starts_with("#") {
+                    line.insert(0, '#');
+                }
             }
+            
+            Some(line)
         }
          else {
             return None
@@ -54,40 +70,17 @@ pub fn extract<T: Read>(source: &mut T) -> Vec<String> {
     .collect()
 }
 
-pub fn process<T: Read>(mut data: Vec<String>, template: &mut Option<T>, indent_headings: bool) -> Result<String, String> {
-    if indent_headings {
-        data = data.into_iter().map(|mut line| {
-            if line.starts_with("#") {
-                line.insert(0, '#');
-            }
-            line
-        }).collect();
-    }
-
-    let docs = match process_template(template, data) {
-        Ok(docs) => docs,
-        Err(e) => return Err(format!("{}", e)),
-    };
-
-    Ok(docs)
-}
-
-fn process_template<T: Read>(template: &mut Option<T>, data: Vec<String>) -> Result<String, String> {
+pub fn process_template<T: Read>(template: &mut T, data: Vec<String>) -> Result<String, String> {
     let crate_name = try!(get_crate_name());
     let docs = fold_data(data);
 
-    match template.as_mut() {
-        Some(tpl) => {
-            let tpl = try!(get_template(tpl));
+    let template = try!(get_template(template));
 
-            let mut result;
-            result = Regex::new(r"\{\{crate\}\}").unwrap().replace(&tpl, &*crate_name);
-            result = Regex::new(r"\{\{docs\}\}").unwrap().replace(&result, &*docs);
+    let mut result;
+    result = Regex::new(r"\{\{crate\}\}").unwrap().replace(&template, &*crate_name);
+    result = Regex::new(r"\{\{docs\}\}").unwrap().replace(&result, &*docs);
 
-            Ok(result)
-        },
-        None => Ok(docs),
-    }
+    Ok(result)
 }
 
 fn get_crate_name() -> Result<String, String> {
