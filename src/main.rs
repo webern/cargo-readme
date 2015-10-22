@@ -6,7 +6,7 @@ extern crate regex;
 mod doc;
 
 use std::env;
-use std::io::Write;
+use std::io::{Write, ErrorKind};
 use std::fs::File;
 use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
 
@@ -98,21 +98,30 @@ fn execute(m: &ArgMatches) {
         Some(file)
     });
 
-    let mut template = template.or(Some(DEFAULT_TEMPLATE)).and_then(|template| {
-        let template = current_dir.join(template);
-        let file = File::open(&template).ok().expect(
-            &format!("Could not open template file {}", template.to_string_lossy())
-        );
+    let mut template_file: Option<File>;
 
-        if no_template {
-            None
-        }
-        else {
+    if no_template {
+        template_file = None;
+    }
+    else {
+        template_file = template.map(|template| {
+            let template = current_dir.join(template);
+            let file = File::open(&template).ok().expect(
+                &format!("Could not open template file {}", template.to_string_lossy())
+            );
+            file
+        }).or_else(|| { // try read default template
+            let template = current_dir.join(DEFAULT_TEMPLATE);
+            let file = match File::open(&template) {
+                Ok(file) => file,
+                Err(ref e) if e.kind() == ErrorKind::NotFound => return None,
+                Err(e) => panic!("Could not open template file {}: {}", DEFAULT_TEMPLATE, e),
+            };
             Some(file)
-        }
-    });
+        });
+    }
 
-    let doc_string = match doc::generate_readme(&mut source, &mut template, indent_headings) {
+    let doc_string = match doc::generate_readme(&mut source, &mut template_file, indent_headings) {
         Ok(doc) => doc,
         Err(e) => panic!(format!("Error: {}", e)),
     };
