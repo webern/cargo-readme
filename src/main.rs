@@ -130,6 +130,6 @@ fn execute(m: &ArgMatches) {
         Some(dest) => dest.write_all(doc_string.as_bytes()).ok().expect(
             "Could not write to output file"),
 
-        None => println!("{}", doc_string),
+        None => print!("{}", doc_string),
     }
 }
