@@ -145,8 +145,13 @@ fn execute(m: &ArgMatches) {
     };
 
     match dest.as_mut() {
-        Some(dest) => dest.write_all(doc_string.as_bytes()).ok().expect(
-            "Could not write to output file"),
+        Some(dest) => {
+            dest.write_all(doc_string.as_bytes())
+                .ok().expect("Could not write to output file");
+
+            // Append new line at end of file to match behavior of `cargo readme > README.md`
+            dest.write(b"\n").ok();
+        },
 
         None => println!("{}", doc_string),
     }
