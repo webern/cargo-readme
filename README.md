@@ -36,10 +36,12 @@ you can be sure that the examples are correct.
 
 The result would look like:
 
+    # crate-name
+
     This is my awesome crate
-    
+
     Here goes some other description of what it is and what is does
-    
+
     ## Examples
     ```rust
     fn sum2(n1: i32, n2: i32) -> i32 {
@@ -51,34 +53,40 @@ You may have noticed that `# Examples` became `## Examples`. This is intentional
 so in README.md the first heading can be your crate name. This is particularly useful when using a
 template to render the documentation content.
 
-In order to use a template, just create a file called `README.tpl` in the same directory as `Cargo.toml`
-with the following content
+Also, the crate name was automatically added (can be disabled too). It is read
+from `Cargo.toml` so you just need to have them there. License can be read from
+`Cargo.toml`, but it's opt-in.
+
+If you have additional information that does not fit in doc comments, you can use
+a template. To do so, just create a file called `README.tpl` in the same directory
+as `Cargo.toml` with the following content
 
 ```
-# {{crate}}
-
 Your crate's badges here
 
-{{docs}}
+{{readme}}
 
-Some additional info here like license and how to contribute
+Some additional info here
 ```
 
 The output will look like this
 
     # crate-name
-    
+
     Your crate's badges here
-    
+
     This is my awesome crate
-    
+
     Here goes some other description of what it is and what is does
-    
+
     ## Examples
     ```rust
     fn sum2(n1: i32, n2: i32) -> i32 {
       n1 + n2
     }
     ```
-    
-    Some additional info here like license and how to contribute
+
+    Some additional info here
+
+You can override the displaying of your crate's name and license using `{{crate}}`
+and `{{license}}`.

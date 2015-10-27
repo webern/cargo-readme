@@ -9,12 +9,38 @@ const SRC_RUST: &'static str = "SRC_RUST";
 const SRC_OTHER: &'static str = "SRC_OTHER";
 const SRC_DOC: &'static str = "SRC_DOC";
 
-pub fn generate_readme<T: Read>(source: &mut T, template: &mut Option<T>, indent_headings: bool) -> Result<String, String> {
+struct CrateInfo {
+    name: String,
+    license: Option<String>,
+}
+
+pub fn generate_readme<T: Read>(source: &mut T,
+                                template: &mut Option<T>,
+                                add_title: bool,
+                                add_license: bool,
+                                indent_headings: bool) -> Result<String, String> {
+
     let doc_data = extract(source, indent_headings);
+    let mut readme = fold_data(doc_data);
+
+    let crate_info = try!(get_crate_info());
+    if add_license && crate_info.license.is_none() {
+        return Err("There is no license in Cargo.toml".to_owned());
+    }
 
     match template.as_mut() {
-        Some(template) => process_template(template, doc_data),
-        None => Ok(fold_data(doc_data)),
+        Some(template) => process_template(template, readme, crate_info, add_title, add_license),
+        None => {
+            if add_title {
+                readme = prepend_title(readme, &crate_info.name);
+            }
+
+            if add_license {
+                readme = append_license(readme, &crate_info.license.unwrap());
+            }
+
+            Ok(readme)
+        },
     }
 }
 
@@ -60,7 +86,7 @@ pub fn extract<T: Read>(source: &mut T, indent_headings: bool) -> Vec<String> {
                     line.insert(0, '#');
                 }
             }
-            
+
             Some(line)
         }
          else {
@@ -70,25 +96,46 @@ pub fn extract<T: Read>(source: &mut T, indent_headings: bool) -> Vec<String> {
     .collect()
 }
 
-pub fn process_template<T: Read>(template: &mut T, data: Vec<String>) -> Result<String, String> {
-    let crate_name = try!(get_crate_name());
-    let docs = fold_data(data);
+fn process_template<T: Read>(template: &mut T,
+                             mut readme: String,
+                             crate_info: CrateInfo,
+                             add_title: bool,
+                             add_license: bool) -> Result<String, String> {
 
-    let template = try!(get_template(template));
+    let mut template = try!(get_template(template));
+    template = template.trim_right_matches("\n").to_owned();
 
-    let mut result;
-    result = Regex::new(r"\{\{crate\}\}").unwrap().replace(&template, &*crate_name);
-    result = Regex::new(r"\{\{docs\}\}").unwrap().replace(&result, &*docs);
+    if add_title && !template.contains("{{crate}}") {
+        readme = prepend_title(readme, &crate_info.name);
+    }
+    else {
+        template = template.replace("{{crate}}", &crate_info.name);
+    }
 
+    if add_license && !template.contains("{{license}}") {
+        readme = append_license(readme, &crate_info.license.unwrap());
+    }
+    else if template.contains("{{license}}") {
+        if crate_info.license.is_none() {
+            return Err("`{{license}}` found in template but there is no license in Cargo.toml".to_owned());
+        }
+        template = template.replace("{{license}}", &crate_info.license.unwrap())
+    }
+
+    if !template.contains("{{readme}}") {
+        return Err("Missing `{{readme}}` in template".to_owned());
+    }
+
+    let result = template.replace("{{readme}}", &readme);
     Ok(result)
 }
 
-fn get_crate_name() -> Result<String, String> {
+fn get_crate_info() -> Result<CrateInfo, String> {
     let current_dir = env::current_dir().unwrap();
 
     let mut cargo_toml = match File::open(current_dir.join("Cargo.toml")) {
         Ok(file) => file,
-        Err(_) => return Err(format!("'Cargo.toml' not found in '{}'", current_dir.to_string_lossy())),
+        Err(_) => return Err(format!("Cargo.toml not found in '{}'", current_dir.to_string_lossy())),
     };
 
     let mut buf = String::new();
@@ -98,9 +145,15 @@ fn get_crate_name() -> Result<String, String> {
     }
 
     let table = toml::Parser::new(&buf).parse().unwrap();
-    let crate_name = table["package"].lookup("name").unwrap().as_str().unwrap();
 
-    Ok(crate_name.to_owned())
+    // Crate name is required, right?
+    let crate_name = table["package"].lookup("name").unwrap().as_str().unwrap().to_owned();
+    let license = table["package"].lookup("license").map(|v| v.as_str().unwrap().to_owned());
+
+    Ok(CrateInfo {
+        name: crate_name,
+        license: license,
+    })
 }
 
 fn fold_data(data: Vec<String>) -> String {
@@ -125,4 +178,18 @@ fn get_template<T: Read>(template: &mut T) -> Result<String, String> {
     }
 
     Ok(template_string)
+}
+
+fn prepend_title(readme: String, crate_name: &str) -> String {
+    let mut new_readme = format!("# {}\n\n", crate_name);
+    new_readme.push_str(&readme);
+
+    new_readme
+}
+
+fn append_license(readme: String, license: &str) -> String {
+    let mut new_readme = String::new();
+    new_readme.push_str(&format!("{}\n\nLicense: {}", &readme, &license));
+
+    new_readme
 }

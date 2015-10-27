@@ -2,6 +2,6 @@
 
 Your badges here
 
-{{docs}}
+{{readme}}
 
-License: Your License Here
+License: {{license}}

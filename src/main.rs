@@ -43,14 +43,23 @@ fn main() {
                 .conflicts_with("NO_TEMPLATE")
                 .help("Template used to render the output. Defaults to 'README.tpl'. \
                        If the default template is not found, \
-                       the processed docstring will be used."))
+                       the processed docstring will be used.\n"))
+            .arg(Arg::with_name("NO_TITLE")
+                .long("no-title")
+                .help("Do not prepend title line. By default, the title ('# crate-name') \
+                       is prepended to the output. However, if a template is used and \
+                       it contains the tag '{{crate}}', the template takes precedence \
+                       and the title is not output.\n"))
+            .arg(Arg::with_name("APPEND_LICENSE")
+                .long("append-license")
+                .help("Append license line. If a template is used and \
+                       it contains the tag {{license}}, the template takes precedence \
+                       and the license is not output.\n"))
             .arg(Arg::with_name("NO_TEMPLATE")
-                .short("T")
                 .long("no-template")
                 .help("Ignore template file when generating README. \
-                       Only useful to ignore default template README.tpl"))
+                       Only useful to ignore default template README.tpl.\n"))
             .arg(Arg::with_name("NO_INDENT_HEADINGS")
-                .short("H")
                 .long("no-indent-headings")
                 .help("Do not add an extra level to headings. \
                        By default, '#' headings become '##', \
@@ -70,6 +79,8 @@ fn execute(m: &ArgMatches) {
     let input = m.value_of("INPUT");
     let output = m.value_of("OUTPUT");
     let template = m.value_of("TEMPLATE");
+    let add_title = !m.is_present("NO_TITLE");
+    let add_license = m.is_present("APPEND_LICENSE");
     let no_template = m.is_present("NO_TEMPLATE");
     let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
 
@@ -121,15 +132,22 @@ fn execute(m: &ArgMatches) {
         });
     }
 
-    let doc_string = match doc::generate_readme(&mut source, &mut template_file, indent_headings) {
+    let doc_string = match doc::generate_readme(&mut source,
+                                                &mut template_file,
+                                                add_title,
+                                                add_license,
+                                                indent_headings) {
         Ok(doc) => doc,
-        Err(e) => panic!(format!("Error: {}", e)),
+        Err(e) => {
+            println!("Error: {}", e);
+            return;
+        },
     };
 
     match dest.as_mut() {
         Some(dest) => dest.write_all(doc_string.as_bytes()).ok().expect(
             "Could not write to output file"),
 
-        None => print!("{}", doc_string),
+        None => println!("{}", doc_string),
     }
 }
