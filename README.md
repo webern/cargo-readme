@@ -50,8 +50,7 @@ The result would look like:
     ```
 
 You may have noticed that `# Examples` became `## Examples`. This is intentional (and can be disabled)
-so in README.md the first heading can be your crate name. This is particularly useful when using a
-template to render the documentation content.
+so in README.md the first heading can be your crate name.
 
 Also, the crate name was automatically added (can be disabled too). It is read
 from `Cargo.toml` so you just need to have them there. License can be read from
