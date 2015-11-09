@@ -1,5 +1,6 @@
 use std::env;
 use std::fs::File;
+use std::path::PathBuf;
 use std::io::prelude::*;
 use std::io::BufReader;
 use regex::Regex;
@@ -131,7 +132,10 @@ fn process_template<T: Read>(template: &mut T,
 }
 
 fn get_crate_info() -> Result<CrateInfo, String> {
-    let current_dir = env::current_dir().unwrap();
+    let current_dir = match project_root_dir() {
+        Some(v) => v,
+        None => return Err("Not in a rust project".into()),
+    };
 
     let mut cargo_toml = match File::open(current_dir.join("Cargo.toml")) {
         Ok(file) => file,
@@ -192,4 +196,24 @@ fn append_license(readme: String, license: &str) -> String {
     new_readme.push_str(&format!("{}\n\nLicense: {}", &readme, &license));
 
     new_readme
+}
+
+/// Given the current directory, start from there, and go up, and up, until a Cargo.toml file has
+/// been found. If a Cargo.toml folder has been found, then we have found the project dir. If not,
+/// nothing is found, and we return None.
+pub fn project_root_dir() -> Option<PathBuf> {
+    let mut currpath= env::current_dir().unwrap();
+
+    while currpath.parent().is_some() {
+        currpath.push("Cargo.toml");
+        if currpath.is_file() {
+            currpath.pop(); // found, remove toml, return project root
+            println!("return : {:?}", currpath);
+            return Some(currpath);
+        }
+        currpath.pop(); // remove toml filename
+        currpath.pop(); // next dir
+    }
+
+    None
 }

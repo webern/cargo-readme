@@ -89,6 +89,9 @@
 //!
 //! You can override the displaying of your crate's name and license using `{{crate}}`
 //! and `{{license}}`.
+
+#![feature(path_ext)]
+
 #[macro_use]
 extern crate clap;
 extern crate toml;
@@ -96,10 +99,10 @@ extern crate regex;
 
 mod doc;
 
-use std::env;
 use std::io::{Write, ErrorKind};
-use std::fs::File;
+use std::fs::{File};
 use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
+use doc::project_root_dir;
 
 const DEFAULT_TEMPLATE: &'static str = "README.tpl";
 
@@ -165,7 +168,13 @@ fn main() {
 }
 
 fn execute(m: &ArgMatches) {
-    let current_dir = env::current_dir().unwrap();
+    let current_dir = match project_root_dir() {
+        Some(v) => v,
+        None => {
+            println!("This doesn't look like a Rust/Cargo project");
+            return;
+        },
+    };
 
     let input = m.value_of("INPUT");
     let output = m.value_of("OUTPUT");
@@ -235,6 +244,7 @@ fn execute(m: &ArgMatches) {
         },
     };
 
+
     match dest.as_mut() {
         Some(dest) => {
             dest.write_all(doc_string.as_bytes())
@@ -247,3 +257,4 @@ fn execute(m: &ArgMatches) {
         None => println!("{}", doc_string),
     }
 }
+
