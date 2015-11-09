@@ -1,13 +1,11 @@
-//! # cargo-readme
-//!
 //! Generate README.md from doc comments.
 //!
-//! ## Installation
+//! # Installation
 //!
 //! Just clone this repository, run `cargo build --release` and add `target/release/cargo-readme`
 //! somewhere in your path.
 //!
-//! ## About
+//! # About
 //!
 //! This cargo subcommand will extract documentation from your crate's doc comments
 //! that you can use to populate its README.md.
