@@ -202,13 +202,12 @@ fn append_license(readme: String, license: &str) -> String {
 /// been found. If a Cargo.toml folder has been found, then we have found the project dir. If not,
 /// nothing is found, and we return None.
 pub fn project_root_dir() -> Option<PathBuf> {
-    let mut currpath= env::current_dir().unwrap();
+    let mut currpath = env::current_dir().unwrap();
 
     while currpath.parent().is_some() {
         currpath.push("Cargo.toml");
         if currpath.is_file() {
             currpath.pop(); // found, remove toml, return project root
-            println!("return : {:?}", currpath);
             return Some(currpath);
         }
         currpath.pop(); // remove toml filename
