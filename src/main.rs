@@ -161,16 +161,18 @@ fn main() {
         .get_matches();
 
     if let Some(m) = matches.subcommand_matches("readme") {
-        execute(m);
+        match execute(m) {
+            Ok(..) => {},
+            Err(e) => println!("{}", e),
+        }
     }
 }
 
-fn execute(m: &ArgMatches) {
+fn execute(m: &ArgMatches) -> Result<(), String> {
     let current_dir = match project_root_dir() {
         Some(v) => v,
         None => {
-            println!("This doesn't look like a Rust/Cargo project");
-            return;
+            return Err("This doesn't look like a Rust/Cargo project".to_owned());
         },
     };
 
@@ -185,9 +187,10 @@ fn execute(m: &ArgMatches) {
     let mut source = match input {
         Some(input) => {
             let input = current_dir.join(input);
-            File::open(&input).ok().expect(
-                &format!("Could not open file '{}'", input.to_string_lossy())
-            )
+            match File::open(&input) {
+                Ok(v) => v,
+                Err(..) => return Err(format!("Could not open file '{}'", input.to_string_lossy())),
+            }
         },
         None => {
             let lib_rs = current_dir.join("src/lib.rs");
@@ -237,22 +240,24 @@ fn execute(m: &ArgMatches) {
                                                 indent_headings) {
         Ok(doc) => doc,
         Err(e) => {
-            println!("Error: {}", e);
-            return;
+            return Err(format!("Error: {}", e).to_owned());
         },
     };
 
 
     match dest.as_mut() {
         Some(dest) => {
-            dest.write_all(doc_string.as_bytes())
-                .ok().expect("Could not write to output file");
-
-            // Append new line at end of file to match behavior of `cargo readme > README.md`
-            dest.write(b"\n").ok();
+            match dest.write_all(doc_string.as_bytes()) {
+                Err(..) => return Err("Could not write to output file".to_owned()),
+                Ok(..) => {
+                    // Append new line at end of file to match behavior of `cargo readme > README.md`
+                    dest.write(b"\n").ok();
+                    return Ok(())
+                },
+            }
         },
 
-        None => println!("{}", doc_string),
+        None => { println!("{}", doc_string); Ok(()) },
     }
 }
 
