@@ -1,5 +1,6 @@
 use std::env;
-use std::fs::File;
+use std::fs;
+use std::fs::{File, Metadata};
 use std::path::PathBuf;
 use std::io::prelude::*;
 use std::io::BufReader;
@@ -204,9 +205,19 @@ fn append_license(readme: String, license: &str) -> String {
 pub fn project_root_dir() -> Option<PathBuf> {
     let mut currpath = env::current_dir().unwrap();
 
+    #[inline]
+    fn _is_file(p: &PathBuf) -> bool {
+        let metadata: Metadata = match fs::metadata(p) {
+            Ok(v) => v,
+            Err(e) => panic!(e),
+        };
+
+        metadata.file_type().is_file()
+    }
+
     while currpath.parent().is_some() {
         currpath.push("Cargo.toml");
-        if currpath.is_file() {
+        if _is_file(&currpath) {
             currpath.pop(); // found, remove toml, return project root
             return Some(currpath);
         }

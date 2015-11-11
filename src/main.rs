@@ -58,7 +58,7 @@
 //! a template. To do so, just create a file called `README.tpl` in the same directory
 //! as `Cargo.toml` with the following content
 //!
-//! ```
+//! ```markdown
 //! Your crate's badges here
 //!
 //! {{readme}}
@@ -87,8 +87,6 @@
 //!
 //! You can override the displaying of your crate's name and license using `{{crate}}`
 //! and `{{license}}`.
-
-#![feature(path_ext)]
 
 #[macro_use]
 extern crate clap;
@@ -169,8 +167,7 @@ fn execute(m: &ArgMatches) {
     let current_dir = match project_root_dir() {
         Some(v) => v,
         None => {
-            println!("This doesn't look like a Rust/Cargo project");
-            return;
+            panic!("This doesn't look like a Rust/Cargo project");
         },
     };
 
