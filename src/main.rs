@@ -58,13 +58,11 @@
 //! a template. To do so, just create a file called `README.tpl` in the same directory
 //! as `Cargo.toml` with the following content
 //!
-//! ```markdown
-//! Your crate's badges here
+//!     Your crate's badges here
 //!
-//! {{readme}}
+//!     {{readme}}
 //!
-//! Some additional info here
-//! ```
+//!     Some additional info here
 //!
 //! The output will look like this
 //!
@@ -109,8 +107,7 @@ fn main() {
         // subcommand for cargo but we want usage strings to generated properly
         .bin_name("cargo")
         // Global version uses the version we supplied (Cargo.toml) for all subcommands as well
-        .settings(&[AppSettings::GlobalVersion,
-                    AppSettings::SubcommandRequired])
+        .settings(&[AppSettings::GlobalVersion, AppSettings::SubcommandRequired])
         // We use a subcommand because everything parsed after `cargo` is sent to the third party
         // plugin which will then be interpreted as a subcommand/positional arg by clap
         .subcommand(SubCommand::with_name("readme")
@@ -131,31 +128,29 @@ fn main() {
                 .long("template")
                 .takes_value(true)
                 .conflicts_with("NO_TEMPLATE")
-                .help("Template used to render the output. Defaults to 'README.tpl'. \
-                       If the default template is not found, \
-                       the processed docstring will be used.\n"))
+                .help("Template used to render the output. Defaults to 'README.tpl'.{n}\
+                       If the default template is not found, the processed docstring will be used.{n}"))
             .arg(Arg::with_name("NO_TITLE")
                 .long("no-title")
-                .help("Do not prepend title line. By default, the title ('# crate-name') \
-                       is prepended to the output. However, if a template is used and \
-                       it contains the tag '{{crate}}', the template takes precedence \
-                       and the title is not output.\n"))
+                .help("Do not prepend title line. By default, the title ('# crate-name'){n}\
+                       is prepended to the output. However, if a template is used and{n}\
+                       it contains the tag '{{crate}}', the template takes precedence{n}\
+                       and the title is not output.{n}"))
             .arg(Arg::with_name("APPEND_LICENSE")
                 .long("append-license")
-                .help("Append license line. If a template is used and \
-                       it contains the tag {{license}}, the template takes precedence \
-                       and the license is not output.\n"))
+                .help("Append license line. If a template is used and{n}\
+                       it contains the tag '{{license}}', the template takes precedence{n}\
+                       and the license is not output.{n}"))
             .arg(Arg::with_name("NO_TEMPLATE")
                 .long("no-template")
-                .help("Ignore template file when generating README. \
-                       Only useful to ignore default template README.tpl.\n"))
+                .help("Ignore template file when generating README.{n}\
+                       Only useful to ignore default template README.tpl.{n}"))
             .arg(Arg::with_name("NO_INDENT_HEADINGS")
                 .long("no-indent-headings")
-                .help("Do not add an extra level to headings. \
-                       By default, '#' headings become '##', \
-                       so the first '#' can be your crate name. \
-                       Use this option to prevent this behavior.\n"))
-            .after_help("Input and output are relative to the current dir\n\n"))
+                .help("Do not add an extra level to headings.{n}\
+                       By default, '#' headings become '##',{n}\
+                       so the first '#' can be your crate name.{n}\
+                       Use this option to prevent this behavior.{n}")))
         .get_matches();
 
     if let Some(m) = matches.subcommand_matches("readme") {
@@ -182,14 +177,14 @@ fn execute(m: &ArgMatches) {
     let mut source = match input {
         Some(input) => {
             let input = current_dir.join(input);
-            File::open(&input).ok().expect(
+            File::open(&input).expect(
                 &format!("Could not open file '{}'", input.to_string_lossy())
             )
-        },
+        }
         None => {
             let lib_rs = current_dir.join("src/lib.rs");
             let main_rs = current_dir.join("src/main.rs");
-            File::open(lib_rs).or(File::open(main_rs)).ok().expect(
+            File::open(lib_rs).or(File::open(main_rs)).expect(
                 "No 'lib.rs' nor 'main.rs' were found"
             )
         }
@@ -197,7 +192,7 @@ fn execute(m: &ArgMatches) {
 
     let mut dest = output.and_then(|output| {
         let output = current_dir.join(output);
-        let file = File::create(&output).ok().expect(
+        let file = File::create(&output).expect(
             &format!("Could not create output file '{}'", output.to_string_lossy())
         );
 
@@ -208,12 +203,11 @@ fn execute(m: &ArgMatches) {
 
     if no_template {
         template_file = None;
-    }
-    else {
+    } else {
         template_file = template.map(|template| {
             let template = current_dir.join(template);
-            let file = File::open(&template).ok().expect(
-                &format!("Could not open template file {}", template.to_string_lossy())
+            let file = File::open(&template).expect(
+                &format!("Could not open template file '{}'", template.to_string_lossy())
             );
             file
         }).or_else(|| { // try read default template
@@ -221,7 +215,7 @@ fn execute(m: &ArgMatches) {
             let file = match File::open(&template) {
                 Ok(file) => file,
                 Err(ref e) if e.kind() == ErrorKind::NotFound => return None,
-                Err(e) => panic!("Could not open template file {}: {}", DEFAULT_TEMPLATE, e),
+                e => e.expect(&format!("Could not open template file '{}'", DEFAULT_TEMPLATE)),
             };
             Some(file)
         });
@@ -231,7 +225,8 @@ fn execute(m: &ArgMatches) {
                                                 &mut template_file,
                                                 add_title,
                                                 add_license,
-                                                indent_headings) {
+                                                indent_headings)
+    {
         Ok(doc) => doc,
         Err(e) => {
             println!("Error: {}", e);
@@ -242,14 +237,13 @@ fn execute(m: &ArgMatches) {
 
     match dest.as_mut() {
         Some(dest) => {
-            dest.write_all(doc_string.as_bytes())
-                .ok().expect("Could not write to output file");
+            dest.write_all(doc_string.as_bytes()).expect(
+                &format!("Could not write to file '{}'", output.unwrap())
+            );
 
             // Append new line at end of file to match behavior of `cargo readme > README.md`
             dest.write(b"\n").ok();
-        },
-
+        }
         None => println!("{}", doc_string),
     }
 }
-

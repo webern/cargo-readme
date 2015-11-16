@@ -60,13 +60,11 @@ If you have additional information that does not fit in doc comments, you can us
 a template. To do so, just create a file called `README.tpl` in the same directory
 as `Cargo.toml` with the following content
 
-```
-Your crate's badges here
+    Your crate's badges here
 
-{{readme}}
+    {{readme}}
 
-Some additional info here
-```
+    Some additional info here
 
 The output will look like this
 

@@ -1,9 +1,9 @@
 [package]
 name = "cargo-readme"
-version = "0.2.1"
+version = "0.2.2"
 authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
 
 [dependencies]
-clap = "1.4"
+clap = "1.5"
 toml = "0.1"
 regex = "0.1"
