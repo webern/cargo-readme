@@ -13,6 +13,7 @@ enum Code {
     Doc,
 }
 
+#[derive(Clone)]
 struct CrateInfo {
     name: String,
     license: Option<String>,
@@ -153,12 +154,17 @@ fn process_template<T: Read>(template: &mut T,
         template = template.replace("{{crate}}", &crate_info.name);
     }
 
+    if template.contains("{{license}}") && crate_info.license.is_none() {
+        return Err("`{{license}}` found in template but there is no license in Cargo.toml".to_owned());
+    }
+
+    if add_license && crate_info.license.is_none() {
+        return Err("There is no license in Cargo.toml".to_owned());
+    }
+
     if add_license && !template.contains("{{license}}") {
         readme = append_license(readme, &crate_info.license.unwrap());
     } else if template.contains("{{license}}") {
-        if crate_info.license.is_none() {
-            return Err("`{{license}}` found in template but there is no license in Cargo.toml".to_owned());
-        }
         template = template.replace("{{license}}", &crate_info.license.unwrap())
     }
 
@@ -238,42 +244,18 @@ fn append_license(readme: String, license: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use std::cmp;
-    use std::io::{self, Read};
+    use std::io::Cursor;
 
-    struct StringIO {
-        data: String,
-        pos: usize,
-    }
+    const TEMPLATE_NO_CRATE_NO_LICENSE: &'static str = "{{readme}}";
+    const TEMPLATE_CRATE_NO_LICENSE: &'static str = "# {{crate}}\n\n{{readme}}";
+    const TEMPLATE_NO_CRATE_LICENSE: &'static str = "{{readme}}\n\nLicense: {{license}}";
+    const TEMPLATE_CRATE_LICENSE: &'static str = "# {{crate}}\n\n{{readme}}\n\nLicense: {{license}}";
 
-    impl Read for StringIO {
-        fn read(&mut self, buf: &mut [u8]) -> io::Result<usize> {
-            let mut bytes_read = 0;
-
-            let bytes = self.data.as_bytes();
-            let buf_len = cmp::min(buf.len(), bytes.len());
-
-            let mut i = 0;
-            while i < buf_len {
-                println!("{}", i);
-                let byte = bytes[self.pos];
-                buf[i] = byte;
-                bytes_read += 1;
-                self.pos += 1;
-                i += 1;
-            }
-
-            Ok(bytes_read)
-        }
-    }
-
-    #[test]
-    fn extract_indent_headings() {
-        let doc_string = r#"
-//! first line
+    const INPUT: &'static str =
+r#"//! first line
 //! ```
 //! let rust_code = "will show";
-//! # let binding = "won't show"
+//! # let binding = "won't show";
 //! ```
 //! # heading
 //! ```no_run
@@ -281,6 +263,7 @@ mod tests {
 //! ```
 //! ```ignore
 //! let ignore = true;
+//! ```
 //! ```should_panic
 //! let should_panic = true;
 //! ```
@@ -292,30 +275,471 @@ use std::any::Any;
 
 fn main() {}"#;
 
-        let mut string_io = StringIO { data: doc_string.to_owned(), pos: 0 };
-        let doc_data = super::extract(&mut string_io, true);
+    #[test]
+    fn extract_indent_headings() {
+        let expected: Vec<_> =
+r#"first line
+```rust
+let rust_code = "will show";
+```
+## heading
+```rust
+let no_run = true;
+```
+```rust
+let ignore = true;
+```
+```rust
+let should_panic = true;
+```
+## heading
+```C
+int i = 0; // no rust code
+```"#.lines().collect();
 
-        let expected = vec![
-            "first line".to_owned(),
-            "```rust".to_owned(),
-            "let rust_code = \"will show\"".to_owned(),
-            "```".to_owned(),
-            "## heading".to_owned(),
-            "```rust".to_owned(),
-            "let no_run = true;".to_owned(),
-            "```".to_owned(),
-            "```rust".to_owned(),
-            "let ignore = true;".to_owned(),
-            "```".to_owned(),
-            "```rust".to_owned(),
-            "let should_panic = true".to_owned(),
-            "```".to_owned(),
-            "## heading".to_owned(),
-            "```C".to_owned(),
-            "int i = 0; // no rust code".to_owned(),
-            "```".to_owned()
-        ];
+        let mut cursor = Cursor::new(INPUT.as_bytes());
+        let doc_data = super::extract(&mut cursor, true);
 
         assert_eq!(doc_data, expected);
     }
+
+    #[test]
+    fn extract_no_indent_headings() {
+        let expected: Vec<_> =
+r#"first line
+```rust
+let rust_code = "will show";
+```
+# heading
+```rust
+let no_run = true;
+```
+```rust
+let ignore = true;
+```
+```rust
+let should_panic = true;
+```
+# heading
+```C
+int i = 0; // no rust code
+```"#.lines().collect();
+
+        let mut cursor = Cursor::new(INPUT.as_bytes());
+        let doc_data = super::extract(&mut cursor, false);
+
+        assert_eq!(doc_data, expected);
+    }
+
+    #[test]
+    fn fold_data_empty_input() {
+        let input: Vec<String> = vec![];
+
+        let result = super::fold_data(input);
+
+        assert!(result.is_empty());
+    }
+
+    #[test]
+    fn fold_data_single_line() {
+        let line = "# single line";
+        let input: Vec<String> = vec![line.to_owned()];
+
+        let result = super::fold_data(input);
+
+        assert_eq!(line, result);
+    }
+
+    #[test]
+    fn fold_data_multiple_lines() {
+        let input: Vec<String> = vec![
+            "# first line".to_owned(),
+            "second line".to_owned(),
+            "third line".to_owned(),
+        ];
+
+        let result = super::fold_data(input);
+
+        assert_eq!("# first line\nsecond line\nthird line", result);
+    }
+
+    macro_rules! test_process_template {
+        ( $name:ident,
+          $template:ident,
+          input => $input:expr,
+          license => $license:expr,
+          add_crate_name => $with_crate:expr,
+          add_license => $with_license:expr,
+          expected => $expected:expr) =>
+        {
+            #[test]
+            fn $name() {
+                let input = $input;
+                let mut template = Cursor::new($template.as_bytes());
+
+                let crate_info = super::CrateInfo {
+                    name: "my_crate".into(),
+                    license: $license,
+                };
+
+                let result = super::process_template(&mut template,
+                                            input.into(),
+                                            crate_info.clone(),
+                                            $with_crate,
+                                            $with_license).unwrap();
+                assert_eq!($expected, result);
+            }
+        };
+
+        ( $name:ident,
+          $template:ident,
+          input => $input:expr,
+          license => $license:expr,
+          add_crate_name => $with_crate:expr,
+          add_license => $with_license:expr,
+          panic => $panic:expr) =>
+        {
+            #[test]
+            #[should_panic(expected = $panic)]
+            fn $name() {
+                let input = $input;
+                let mut template = Cursor::new($template.as_bytes());
+
+                let crate_info = super::CrateInfo {
+                    name: "my_crate".into(),
+                    license: $license,
+                };
+
+                super::process_template(&mut template,
+                                        input.into(),
+                                        crate_info.clone(),
+                                        $with_crate,
+                                        $with_license).unwrap();
+            }
+        }
+    }
+
+    // TEMPLATE_NO_CRATE_NO_LICENSE
+    test_process_template!(
+        process_template_no_crate_no_license_with_license_prepend_crate_append_license,
+        TEMPLATE_NO_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => true,
+        add_license => true,
+        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_no_crate_no_license_without_license_prepend_crate_append_license,
+        TEMPLATE_NO_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => true,
+        add_license => true,
+        panic => "There is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_no_crate_no_license_with_license_prepend_crate,
+        TEMPLATE_NO_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => true,
+        add_license => false,
+        expected => "# my_crate\n\n# documentation"
+    );
+
+    test_process_template!(
+        process_template_no_crate_no_license_without_license_prepend_crate,
+        TEMPLATE_NO_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => true,
+        add_license => false,
+        expected => "# my_crate\n\n# documentation"
+    );
+
+    test_process_template!(
+        process_template_no_crate_no_license_with_license_append_license,
+        TEMPLATE_NO_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => false,
+        add_license => true,
+        expected => "# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_no_crate_no_license_without_license_append_license,
+        TEMPLATE_NO_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => false,
+        add_license => true,
+        panic => "There is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_no_crate_no_license_with_license,
+        TEMPLATE_NO_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => false,
+        add_license => false,
+        expected => "# documentation"
+    );
+
+    test_process_template!(
+        process_template_no_crate_no_license_without_license,
+        TEMPLATE_NO_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => false,
+        add_license => false,
+        expected => "# documentation"
+    );
+
+    // TEMPLATE_CRATE_NO_LICENSE
+    test_process_template!(
+        process_template_crate_no_license_with_license_prepend_crate_append_license,
+        TEMPLATE_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => true,
+        add_license => true,
+        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_crate_no_license_without_license_prepend_crate_append_license,
+        TEMPLATE_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => true,
+        add_license => true,
+        panic => "There is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_crate_no_license_with_license_prepend_crate,
+        TEMPLATE_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => true,
+        add_license => false,
+        expected => "# my_crate\n\n# documentation"
+    );
+
+    test_process_template!(
+        process_template_crate_no_license_without_license_prepend_crate,
+        TEMPLATE_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => true,
+        add_license => false,
+        expected => "# my_crate\n\n# documentation"
+    );
+
+    test_process_template!(
+        process_template_crate_no_license_with_license_append_license,
+        TEMPLATE_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => false,
+        add_license => true,
+        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_crate_no_license_without_license_append_license,
+        TEMPLATE_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => false,
+        add_license => true,
+        panic => "There is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_crate_no_license_with_license,
+        TEMPLATE_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => false,
+        add_license => false,
+        expected => "# my_crate\n\n# documentation"
+    );
+
+    test_process_template!(
+        process_template_crate_no_license_without_license,
+        TEMPLATE_CRATE_NO_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => false,
+        add_license => false,
+        expected => "# my_crate\n\n# documentation"
+    );
+
+    // TEMPLATE_NO_CRATE_LICENSE
+    test_process_template!(
+        process_template_no_crate_license_with_license_prepend_crate_append_license,
+        TEMPLATE_NO_CRATE_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => true,
+        add_license => true,
+        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_no_crate_license_without_license_prepend_crate_append_license,
+        TEMPLATE_NO_CRATE_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => true,
+        add_license => true,
+        panic => "`{{license}}` found in template but there is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_no_crate_license_with_license_prepend_crate,
+        TEMPLATE_NO_CRATE_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => true,
+        add_license => false,
+        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_no_crate_license_without_license_prepend_crate,
+        TEMPLATE_NO_CRATE_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => true,
+        add_license => false,
+        panic => "`{{license}}` found in template but there is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_no_crate_license_with_license_append_license,
+        TEMPLATE_NO_CRATE_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => false,
+        add_license => true,
+        expected => "# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_no_crate_license_without_license_append_license,
+        TEMPLATE_NO_CRATE_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => true,
+        add_license => false,
+        panic => "`{{license}}` found in template but there is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_no_crate_license_with_license,
+        TEMPLATE_NO_CRATE_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => false,
+        add_license => false,
+        expected => "# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_no_crate_license_without_license,
+        TEMPLATE_NO_CRATE_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => false,
+        add_license => false,
+        panic => "`{{license}}` found in template but there is no license in Cargo.toml"
+    );
+
+    // TEMPLATE_CRATE_LICENSE
+    test_process_template!(
+        process_template_crate_license_with_license_prepend_crate_append_license,
+        TEMPLATE_CRATE_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => true,
+        add_license => true,
+        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_crate_license_without_license_prepend_crate_append_license,
+        TEMPLATE_CRATE_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => true,
+        add_license => true,
+        panic => "`{{license}}` found in template but there is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_crate_license_with_license_prepend_crate,
+        TEMPLATE_CRATE_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => true,
+        add_license => false,
+        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_crate_license_without_license_prepend_crate,
+        TEMPLATE_CRATE_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => true,
+        add_license => false,
+        panic => "`{{license}}` found in template but there is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_crate_license_with_license_append_license,
+        TEMPLATE_CRATE_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => false,
+        add_license => true,
+        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_crate_license_without_license_append_license,
+        TEMPLATE_CRATE_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => false,
+        add_license => true,
+        panic => "`{{license}}` found in template but there is no license in Cargo.toml"
+    );
+
+    test_process_template!(
+        process_template_crate_license_with_license,
+        TEMPLATE_CRATE_LICENSE,
+        input => "# documentation",
+        license => Some("MIT".to_owned()),
+        add_crate_name => false,
+        add_license => false,
+        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+    );
+
+    test_process_template!(
+        process_template_crate_license_without_license,
+        TEMPLATE_CRATE_LICENSE,
+        input => "# documentation",
+        license => None,
+        add_crate_name => false,
+        add_license => false,
+        panic => "`{{license}}` found in template but there is no license in Cargo.toml"
+    );
 }

@@ -2,6 +2,7 @@
 name = "cargo-readme"
 version = "0.2.2"
 authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
+license = "MIT"
 
 [dependencies]
 clap = "1.5"
