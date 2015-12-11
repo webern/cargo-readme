@@ -2,6 +2,10 @@
 name = "cargo-readme"
 version = "0.2.2"
 authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
+description = "A cargo subcommand to generate README.md content from doc comments"
+repository = "https://github.com/livioribeiro/cargo-readme"
+readme = "README.md"
+keywords = ["readme", "documentation", "cargo", "subcommand"]
 license = "MIT"
 
 [dependencies]
