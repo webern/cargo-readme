@@ -184,9 +184,12 @@ fn execute(m: &ArgMatches) {
         None => {
             let lib_rs = current_dir.join("src/lib.rs");
             let main_rs = current_dir.join("src/main.rs");
-            File::open(lib_rs).or(File::open(main_rs)).expect(
-                "No 'lib.rs' nor 'main.rs' were found"
-            )
+            File::open(lib_rs).or(File::open(main_rs))
+                .or_else(|_| {
+                    let info = doc::get_crate_info().unwrap();
+                    File::open(info.lib.or(info.bin).unwrap_or(String::new()))
+                })
+                .expect("No entrypoint found")
         }
     };
 
@@ -233,7 +236,6 @@ fn execute(m: &ArgMatches) {
             return;
         },
     };
-
 
     match dest.as_mut() {
         Some(dest) => {

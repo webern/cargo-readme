@@ -1,0 +1,14 @@
+[package]
+name = "no-lib-no-main"
+version = "0.1.0"
+authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
+license = "APACHE-2"
+
+[dependencies]
+
+[lib]
+path = "src/entry.rs"
+
+[[bin]]
+name = "entry"
+path = "src/entry.rs"

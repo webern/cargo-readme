@@ -14,9 +14,11 @@ enum Code {
 }
 
 #[derive(Clone)]
-struct CrateInfo {
-    name: String,
-    license: Option<String>,
+pub struct CrateInfo {
+    pub name: String,
+    pub license: Option<String>,
+    pub bin: Option<String>,
+    pub lib: Option<String>,
 }
 
 /// Given the current directory, start from there, and go up, and up, until a Cargo.toml file has
@@ -177,7 +179,7 @@ fn process_template<T: Read>(template: &mut T,
 }
 
 /// Try to get crate name and license from Cargo.toml
-fn get_crate_info() -> Result<CrateInfo, String> {
+pub fn get_crate_info() -> Result<CrateInfo, String> {
     let current_dir = match project_root_dir() {
         Some(v) => v,
         None => return Err("Not in a rust project".into()),
@@ -195,15 +197,30 @@ fn get_crate_info() -> Result<CrateInfo, String> {
         Ok(_) => {}
     }
 
-    let table = toml::Parser::new(&buf).parse().unwrap();
+    let table = toml::Value::Table(toml::Parser::new(&buf).parse().unwrap());
 
     // Crate name is required, right?
-    let crate_name = table["package"].lookup("name").unwrap().as_str().unwrap().to_owned();
-    let license = table["package"].lookup("license").map(|v| v.as_str().unwrap().to_owned());
+    let crate_name = table.lookup("package.name").unwrap().as_str().unwrap().to_owned();
+    let license = table.lookup("package.license").map(|v| v.as_str().unwrap().to_owned());
+    let lib = table.lookup("lib.path").map(|v| v.as_str().unwrap().to_owned());
+
+    let mut bin: Option<String> = None;
+    match table.lookup("bin").map(|v| v.as_slice().unwrap()) {
+        Some(v) => {
+            for i in  0..(v.len()) {
+                if let Some(p) = table.lookup(&format!("bin.{}.path", i)) {
+                    bin = Some(p.as_str().unwrap().to_owned());
+                }
+            }
+        },
+        _ => {}
+    };
 
     Ok(CrateInfo {
         name: crate_name,
         license: license,
+        lib: lib,
+        bin: bin,
     })
 }
 
@@ -380,6 +397,8 @@ int i = 0; // no rust code
                 let crate_info = super::CrateInfo {
                     name: "my_crate".into(),
                     license: $license,
+                    lib: None,
+                    bin: None,
                 };
 
                 let result = super::process_template(&mut template,
@@ -408,6 +427,8 @@ int i = 0; // no rust code
                 let crate_info = super::CrateInfo {
                     name: "my_crate".into(),
                     license: $license,
+                    lib: None,
+                    bin: None
                 };
 
                 super::process_template(&mut template,
