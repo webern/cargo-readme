@@ -17,8 +17,8 @@ enum Code {
 pub struct CrateInfo {
     pub name: String,
     pub license: Option<String>,
-    pub bin: Option<String>,
     pub lib: Option<String>,
+    pub bin: Option<String>,
 }
 
 /// Given the current directory, start from there, and go up, and up, until a Cargo.toml file has

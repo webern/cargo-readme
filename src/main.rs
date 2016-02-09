@@ -93,10 +93,10 @@ extern crate regex;
 
 mod doc;
 
-use std::io::{Write, ErrorKind};
+use std::io::{self, Write, ErrorKind};
 use std::fs::{File};
+use std::path::PathBuf;
 use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
-use doc::project_root_dir;
 
 const DEFAULT_TEMPLATE: &'static str = "README.tpl";
 
@@ -159,10 +159,11 @@ fn main() {
 }
 
 fn execute(m: &ArgMatches) {
-    let current_dir = match project_root_dir() {
+    let current_dir = match doc::project_root_dir() {
         Some(v) => v,
         None => {
-            panic!("This doesn't look like a Rust/Cargo project");
+            println!("Error: This doesn't look like a Rust/Cargo project");
+            return
         },
     };
 
@@ -177,58 +178,71 @@ fn execute(m: &ArgMatches) {
     let mut source = match input {
         Some(input) => {
             let input = current_dir.join(input);
-            File::open(&input).expect(
-                &format!("Could not open file '{}'", input.to_string_lossy())
-            )
+            match File::open(&input) {
+                Ok(file) => file,
+                Err(e) => {
+                    println!("Error: Could not open file '{}': {}", input.to_string_lossy(), e);
+                    return
+                }
+            }
         }
         None => {
-            let lib_rs = current_dir.join("src/lib.rs");
-            let main_rs = current_dir.join("src/main.rs");
-            File::open(lib_rs).or(File::open(main_rs))
-                .or_else(|_| {
-                    let info = doc::get_crate_info().unwrap();
-                    File::open(info.lib.or(info.bin).unwrap_or(String::new()))
-                })
-                .expect("No entrypoint found")
+            match find_entrypoint(&current_dir) {
+                Ok(file) => file,
+                Err(e) => {
+                    println!("Error: {}", e);
+                    return
+                }
+            }
         }
     };
 
-    let mut dest = output.and_then(|output| {
-        let output = current_dir.join(output);
-        let file = File::create(&output).expect(
-            &format!("Could not create output file '{}'", output.to_string_lossy())
-        );
-
-        Some(file)
-    });
+    let mut dest = match output {
+        Some(filename) => {
+            let output = current_dir.join(filename);
+            match File::create(&output) {
+                Ok(file) => Some(file),
+                Err(e) => {
+                    println!("Error: Could not create output file '{}': {}", output.to_string_lossy(), e);
+                    return
+                }
+            }
+        }
+        _ => None
+    };
 
     let mut template_file: Option<File>;
 
     if no_template {
         template_file = None;
     } else {
-        template_file = template.map(|template| {
-            let template = current_dir.join(template);
-            let file = File::open(&template).expect(
-                &format!("Could not open template file '{}'", template.to_string_lossy())
-            );
-            file
-        }).or_else(|| { // try read default template
-            let template = current_dir.join(DEFAULT_TEMPLATE);
-            let file = match File::open(&template) {
-                Ok(file) => file,
-                Err(ref e) if e.kind() == ErrorKind::NotFound => return None,
-                e => e.expect(&format!("Could not open template file '{}'", DEFAULT_TEMPLATE)),
-            };
-            Some(file)
-        });
+        template_file = match template {
+            Some(template) => {
+                let template = current_dir.join(template);
+                match File::open(&template) {
+                    Ok(file) => Some(file),
+                    Err(e) => {
+                        println!("Error: Could not open template file '{}': {}", template.to_string_lossy(), e);
+                        return
+                    }
+                }
+            }
+            None => { // try read default template
+                let template = current_dir.join(DEFAULT_TEMPLATE);
+                match File::open(&template) {
+                    Ok(file) => Some(file),
+                    Err(ref e) if e.kind() != ErrorKind::NotFound => {
+                        println!("Error: Could not open template file '{}': {}", DEFAULT_TEMPLATE, e);
+                        return
+                    }
+                    _ => None
+                }
+            }
+        }
     }
 
-    let doc_string = match doc::generate_readme(&mut source,
-                                                &mut template_file,
-                                                add_title,
-                                                add_license,
-                                                indent_headings)
+    let doc_string = match doc::generate_readme(
+        &mut source, &mut template_file, add_title, add_license, indent_headings)
     {
         Ok(doc) => doc,
         Err(e) => {
@@ -239,13 +253,60 @@ fn execute(m: &ArgMatches) {
 
     match dest.as_mut() {
         Some(dest) => {
-            dest.write_all(doc_string.as_bytes()).expect(
-                &format!("Could not write to file '{}'", output.unwrap())
-            );
-
+            let mut bytes = doc_string.into_bytes();
             // Append new line at end of file to match behavior of `cargo readme > README.md`
-            dest.write(b"\n").ok();
+            bytes.push(b'\n');
+
+            match dest.write_all(&mut bytes) {
+                Ok(_) => {},
+                Err(e) => {
+                    println!("Error: Could not write to file '{}': {}", output.unwrap(), e)
+                }
+            }
         }
         None => println!("{}", doc_string),
     }
+}
+
+fn find_entrypoint(current_dir: &PathBuf) -> Result<File, String> {
+    let lib_rs = current_dir.join("src/lib.rs");
+    let main_rs = current_dir.join("src/main.rs");
+
+    let crate_info = try!(doc::get_crate_info());
+
+    match File::open(&lib_rs) {
+        Ok(file) => return Ok(file),
+        Err(ref e) if e.kind() != io::ErrorKind::NotFound =>
+            return Err(format!("Could not open file '{}': {}", lib_rs.to_string_lossy(), e)),
+        _ => {}
+    }
+
+    match File::open(&main_rs) {
+        Ok(file) => return Ok(file),
+        Err(ref e) if e.kind() != io::ErrorKind::NotFound =>
+            return Err(format!("Could not open file '{}': {}", main_rs.to_string_lossy(), e)),
+        _ => {}
+    }
+
+    match crate_info.lib {
+        Some(filename) => match File::open(current_dir.join(&filename)) {
+            Ok(file) => return Ok(file),
+            Err(ref e) if e.kind() != io::ErrorKind::NotFound =>
+                return Err(format!("Could not open file '{}': {}", current_dir.join(filename).to_string_lossy(), e)),
+            _ => {}
+        },
+        _ => {}
+    }
+
+    match crate_info.bin {
+        Some(filename) => match File::open(current_dir.join(&filename)) {
+            Ok(file) => return Ok(file),
+            Err(ref e) if e.kind() != io::ErrorKind::NotFound =>
+                return Err(format!("Could not open file '{}': {}", current_dir.join(filename).to_string_lossy(), e)),
+            _ => {}
+        },
+        _ => {}
+    }
+
+    Err(format!("No entrypoint found at '{}'", current_dir.to_string_lossy()))
 }
