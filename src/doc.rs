@@ -204,16 +204,15 @@ pub fn get_crate_info() -> Result<CrateInfo, String> {
     let license = table.lookup("package.license").map(|v| v.as_str().unwrap().to_owned());
     let lib = table.lookup("lib.path").map(|v| v.as_str().unwrap().to_owned());
 
-    let mut bin: Option<String> = None;
-    match table.lookup("bin").map(|v| v.as_slice().unwrap()) {
-        Some(v) => {
-            for i in  0..(v.len()) {
-                if let Some(p) = table.lookup(&format!("bin.{}.path", i)) {
-                    bin = Some(p.as_str().unwrap().to_owned());
-                }
+    let bin = match table.lookup("bin").map(|v| v.as_slice().unwrap()) {
+        Some(bin_list) => {
+            if bin_list.len() == 1 {
+                bin_list[0].lookup("path").map(|v| v.as_str().unwrap().to_owned())
+            } else {
+                None
             }
         },
-        _ => {}
+        _ => None
     };
 
     Ok(CrateInfo {
