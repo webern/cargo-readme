@@ -7,8 +7,10 @@ repository = "https://github.com/livioribeiro/cargo-readme"
 readme = "README.md"
 keywords = ["readme", "documentation", "cargo", "subcommand"]
 license = "MIT OR Apache-2.0"
+exclude = ["test-projects"]
 
 [dependencies]
-clap = "1.5"
+clap = "2.0"
 toml = "0.1"
 regex = "0.1"
+rustc-serialize = "0.3"

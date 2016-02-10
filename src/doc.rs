@@ -14,11 +14,27 @@ enum Code {
 }
 
 #[derive(Clone)]
-pub struct CrateInfo {
+struct CrateInfo {
     pub name: String,
     pub license: Option<String>,
-    pub lib: Option<String>,
-    pub bin: Option<String>,
+}
+
+#[derive(RustcDecodable)]
+pub struct Cargo {
+    pub package: CargoPackage,
+    pub lib: Option<CargoLib>,
+    pub bin: Option<Vec<CargoLib>>,
+}
+
+#[derive(RustcDecodable)]
+pub struct CargoPackage {
+    pub name: String,
+    pub license: Option<String>,
+}
+
+#[derive(RustcDecodable)]
+pub struct CargoLib {
+    pub path: String,
 }
 
 /// Given the current directory, start from there, and go up, and up, until a Cargo.toml file has
@@ -61,20 +77,20 @@ pub fn generate_readme<T: Read>(source: &mut T,
     let doc_data = extract(source, indent_headings);
     let mut readme = fold_data(doc_data);
 
-    let crate_info = try!(get_crate_info());
-    if add_license && crate_info.license.is_none() {
+    let cargo = try!(cargo_data());
+    if add_license && cargo.package.license.is_none() {
         return Err("There is no license in Cargo.toml".to_owned());
     }
 
     match template.as_mut() {
-        Some(template) => process_template(template, readme, crate_info, add_title, add_license),
+        Some(template) => process_template(template, readme, cargo, add_title, add_license),
         None => {
             if add_title {
-                readme = prepend_title(readme, &crate_info.name);
+                readme = prepend_title(readme, &cargo.package.name);
             }
 
             if add_license {
-                readme = append_license(readme, &crate_info.license.unwrap());
+                readme = append_license(readme, &cargo.package.license.unwrap());
             }
 
             Ok(readme)
@@ -142,7 +158,7 @@ fn extract<T: Read>(source: &mut T, indent_headings: bool) -> Vec<String> {
 /// This is not a real template engine, it just processes a few substitutions.
 fn process_template<T: Read>(template: &mut T,
                              mut readme: String,
-                             crate_info: CrateInfo,
+                             crate_info: Cargo,
                              add_title: bool,
                              add_license: bool)
                              -> Result<String, String> {
@@ -151,23 +167,23 @@ fn process_template<T: Read>(template: &mut T,
     template = template.trim_right_matches("\n").to_owned();
 
     if add_title && !template.contains("{{crate}}") {
-        readme = prepend_title(readme, &crate_info.name);
+        readme = prepend_title(readme, &crate_info.package.name);
     } else {
-        template = template.replace("{{crate}}", &crate_info.name);
+        template = template.replace("{{crate}}", &crate_info.package.name);
     }
 
-    if template.contains("{{license}}") && crate_info.license.is_none() {
+    if template.contains("{{license}}") && crate_info.package.license.is_none() {
         return Err("`{{license}}` found in template but there is no license in Cargo.toml".to_owned());
     }
 
-    if add_license && crate_info.license.is_none() {
+    if add_license && crate_info.package.license.is_none() {
         return Err("There is no license in Cargo.toml".to_owned());
     }
 
     if add_license && !template.contains("{{license}}") {
-        readme = append_license(readme, &crate_info.license.unwrap());
+        readme = append_license(readme, &crate_info.package.license.unwrap());
     } else if template.contains("{{license}}") {
-        template = template.replace("{{license}}", &crate_info.license.unwrap())
+        template = template.replace("{{license}}", &crate_info.package.license.unwrap())
     }
 
     if !template.contains("{{readme}}") {
@@ -179,7 +195,7 @@ fn process_template<T: Read>(template: &mut T,
 }
 
 /// Try to get crate name and license from Cargo.toml
-pub fn get_crate_info() -> Result<CrateInfo, String> {
+pub fn cargo_data() -> Result<Cargo, String> {
     let current_dir = match project_root_dir() {
         Some(v) => v,
         None => return Err("Not in a rust project".into()),
@@ -197,30 +213,12 @@ pub fn get_crate_info() -> Result<CrateInfo, String> {
         Ok(_) => {}
     }
 
-    let table = toml::Value::Table(toml::Parser::new(&buf).parse().unwrap());
-
-    // Crate name is required, right?
-    let crate_name = table.lookup("package.name").unwrap().as_str().unwrap().to_owned();
-    let license = table.lookup("package.license").map(|v| v.as_str().unwrap().to_owned());
-    let lib = table.lookup("lib.path").map(|v| v.as_str().unwrap().to_owned());
-
-    let bin = match table.lookup("bin").map(|v| v.as_slice().unwrap()) {
-        Some(bin_list) => {
-            if bin_list.len() == 1 {
-                bin_list[0].lookup("path").map(|v| v.as_str().unwrap().to_owned())
-            } else {
-                None
-            }
-        },
-        _ => None
+    let cargo = match toml::decode_str::<Cargo>(&buf) {
+        Some(info) => info,
+        None => return Err("Could not read Cargo.toml".to_owned()),
     };
 
-    Ok(CrateInfo {
-        name: crate_name,
-        license: license,
-        lib: lib,
-        bin: bin,
-    })
+    Ok(cargo)
 }
 
 /// Transforms the Vec of lines into a single String
