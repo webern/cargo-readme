@@ -9,6 +9,10 @@ license = "APACHE-2"
 [lib]
 path = "src/entry.rs"
 
-[[bin]]
-name = "entry"
-path = "src/entry.rs"
+# [[bin]]
+# name = "entry"
+# path = "src/entry.rs"
+#
+# [[bin]]
+# name = "entry2"
+# path = "src/entry.rs"
