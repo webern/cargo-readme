@@ -6,33 +6,20 @@ use std::io::BufReader;
 use regex::Regex;
 use toml;
 
-#[derive(PartialEq)]
-enum Code {
-    Rust,
-    Other,
-    Doc,
-}
-
-#[derive(Clone)]
-struct CrateInfo {
-    pub name: String,
-    pub license: Option<String>,
-}
-
-#[derive(RustcDecodable)]
+#[derive(Clone, RustcDecodable)]
 pub struct Cargo {
     pub package: CargoPackage,
     pub lib: Option<CargoLib>,
     pub bin: Option<Vec<CargoLib>>,
 }
 
-#[derive(RustcDecodable)]
+#[derive(Clone, RustcDecodable)]
 pub struct CargoPackage {
     pub name: String,
     pub license: Option<String>,
 }
 
-#[derive(RustcDecodable)]
+#[derive(Clone, RustcDecodable)]
 pub struct CargoLib {
     pub path: String,
 }
@@ -96,6 +83,13 @@ pub fn generate_readme<T: Read>(source: &mut T,
             Ok(readme)
         }
     }
+}
+
+#[derive(PartialEq)]
+enum Code {
+    Rust,
+    Other,
+    Doc,
 }
 
 /// Extracts the doc comments as a Vec of lines
@@ -391,9 +385,11 @@ int i = 0; // no rust code
                 let input = $input;
                 let mut template = Cursor::new($template.as_bytes());
 
-                let crate_info = super::CrateInfo {
-                    name: "my_crate".into(),
-                    license: $license,
+                let crate_info = super::Cargo {
+                    package: super::CargoPackage {
+                        name: "my_crate".into(),
+                        license: $license,
+                    },
                     lib: None,
                     bin: None,
                 };
@@ -421,9 +417,11 @@ int i = 0; // no rust code
                 let input = $input;
                 let mut template = Cursor::new($template.as_bytes());
 
-                let crate_info = super::CrateInfo {
-                    name: "my_crate".into(),
-                    license: $license,
+                let crate_info = super::Cargo {
+                    package: super::CargoPackage {
+                        name: "my_crate".into(),
+                        license: $license,
+                    },
                     lib: None,
                     bin: None
                 };
