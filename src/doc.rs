@@ -1,6 +1,5 @@
-use std::env;
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::Path;
 use std::io::prelude::*;
 use std::io::BufReader;
 use regex::Regex;
@@ -24,47 +23,19 @@ pub struct CargoLib {
     pub path: String,
 }
 
-/// Given the current directory, start from there, and go up, and up, until a Cargo.toml file has
-/// been found. If a Cargo.toml folder has been found, then we have found the project dir. If not,
-/// nothing is found, and we return None.
-pub fn project_root_dir() -> Option<PathBuf> {
-    let mut currpath = env::current_dir().unwrap();
-
-    fn _is_file(p: &PathBuf) -> bool {
-        use std::fs;
-
-        match fs::metadata(p) {
-            Ok(v) => v.file_type().is_file(),
-            // Errs only if not enough fs permissions, or no fs entry
-            Err(..) => return false,
-        }
-    }
-
-    while currpath.parent().is_some() {
-        currpath.push("Cargo.toml");
-        if _is_file(&currpath) {
-            currpath.pop(); // found, remove toml, return project root
-            return Some(currpath);
-        }
-        currpath.pop(); // remove toml filename
-        currpath.pop(); // next dir
-    }
-
-    None
-}
-
 /// Generates readme data from `source` file
-pub fn generate_readme<T: Read>(source: &mut T,
+pub fn generate_readme<T: Read>(project_root: &Path,
+                                source: &mut T,
                                 template: &mut Option<T>,
                                 add_title: bool,
                                 add_license: bool,
                                 indent_headings: bool)
-                                -> Result<String, String>
-{
+    -> Result<String, String> {
+
     let doc_data = extract(source, indent_headings);
     let mut readme = fold_data(doc_data);
 
-    let cargo = try!(cargo_data());
+    let cargo = try!(cargo_data(project_root));
     if add_license && cargo.package.license.is_none() {
         return Err("There is no license in Cargo.toml".to_owned());
     }
@@ -189,16 +160,10 @@ fn process_template<T: Read>(template: &mut T,
 }
 
 /// Try to get crate name and license from Cargo.toml
-pub fn cargo_data() -> Result<Cargo, String> {
-    let current_dir = match project_root_dir() {
-        Some(v) => v,
-        None => return Err("Not in a rust project".into()),
-    };
-
-    let mut cargo_toml = match File::open(current_dir.join("Cargo.toml")) {
+pub fn cargo_data(project_root: &Path) -> Result<Cargo, String> {
+    let mut cargo_toml = match File::open(project_root.join("Cargo.toml")) {
         Ok(file) => file,
-        Err(_) => return Err(format!("Cargo.toml not found in '{}'",
-                                     current_dir.to_string_lossy())),
+        Err(e) => return Err(format!("Could not read Cargo.toml: {}", e)),
     };
 
     let mut buf = String::new();
@@ -209,7 +174,7 @@ pub fn cargo_data() -> Result<Cargo, String> {
 
     let cargo = match toml::decode_str::<Cargo>(&buf) {
         Some(info) => info,
-        None => return Err("Could not read Cargo.toml".to_owned()),
+        None => return Err("Could not decode Cargo.toml".to_owned()),
     };
 
     Ok(cargo)

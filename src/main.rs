@@ -92,12 +92,13 @@ extern crate toml;
 extern crate regex;
 extern crate rustc_serialize;
 
-mod doc;
-
+use std::env;
 use std::io::{self, Write, ErrorKind};
 use std::fs::{File};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
+
+mod doc;
 
 const DEFAULT_TEMPLATE: &'static str = "README.tpl";
 
@@ -156,17 +157,17 @@ fn main() {
 
     if let Some(m) = matches.subcommand_matches("readme") {
         match execute(m) {
-            Ok(_) => {},
             Err(e) => {
                 println!("Error: {}", e);
                 std::process::exit(1);
             }
+            _ => {},
         }
     }
 }
 
 fn execute(m: &ArgMatches) -> Result<(), String> {
-    let current_dir = match doc::project_root_dir() {
+    let current_dir = match project_root_dir() {
         Some(v) => v,
         None => return Err("This doesn't look like a Rust/Cargo project".to_owned()),
     };
@@ -226,8 +227,9 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
         }
     }
 
-    let doc_string = try!(doc::generate_readme(
-        &mut source, &mut template_file, add_title, add_license, indent_headings
+    let doc_string = try!(doc::generate_readme(&current_dir,
+        &mut source, &mut template_file,
+        add_title, add_license, indent_headings
     ));
 
     match dest.as_mut() {
@@ -247,11 +249,30 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
     Ok(())
 }
 
-fn find_entrypoint(current_dir: &PathBuf) -> Result<File, String> {
+/// Given the current directory, start from there, and go up, and up, until a Cargo.toml file has
+/// been found. If a Cargo.toml folder has been found, then we have found the project dir. If not,
+/// nothing is found, and we return None.
+pub fn project_root_dir() -> Option<PathBuf> {
+    let mut currpath = env::current_dir().unwrap();
+
+    while currpath.parent().is_some() {
+        currpath.push("Cargo.toml");
+        if currpath.is_file() {
+            currpath.pop(); // found, remove toml, return project root
+            return Some(currpath);
+        }
+        currpath.pop(); // remove toml filename
+        currpath.pop(); // next dir
+    }
+
+    None
+}
+
+fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
     let lib_rs = current_dir.join("src/lib.rs");
     let main_rs = current_dir.join("src/main.rs");
 
-    let cargo = try!(doc::cargo_data());
+    let cargo = try!(doc::cargo_data(current_dir));
 
     match File::open(&lib_rs) {
         Ok(file) => return Ok(file),
