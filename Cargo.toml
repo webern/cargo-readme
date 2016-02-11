@@ -7,7 +7,6 @@ repository = "https://github.com/livioribeiro/cargo-readme"
 readme = "README.md"
 keywords = ["readme", "documentation", "cargo", "subcommand"]
 license = "MIT OR Apache-2.0"
-exclude = ["test-projects"]
 
 [dependencies]
 clap = "2.0"
