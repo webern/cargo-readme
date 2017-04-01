@@ -88,9 +88,10 @@
 
 #[macro_use]
 extern crate clap;
-extern crate toml;
 extern crate regex;
-extern crate rustc_serialize;
+#[macro_use]
+extern crate serde_derive;
+extern crate toml;
 
 use std::env;
 use std::io::{self, Write, ErrorKind};
