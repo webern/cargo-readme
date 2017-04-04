@@ -5,20 +5,20 @@ use std::io::BufReader;
 use regex::Regex;
 use toml;
 
-#[derive(Clone, RustcDecodable)]
+#[derive(Clone, Deserialize)]
 pub struct Cargo {
     pub package: CargoPackage,
     pub lib: Option<CargoLib>,
     pub bin: Option<Vec<CargoLib>>,
 }
 
-#[derive(Clone, RustcDecodable)]
+#[derive(Clone, Deserialize)]
 pub struct CargoPackage {
     pub name: String,
     pub license: Option<String>,
 }
 
-#[derive(Clone, RustcDecodable)]
+#[derive(Clone, Deserialize)]
 pub struct CargoLib {
     pub path: String,
 }
@@ -172,12 +172,10 @@ pub fn cargo_data(project_root: &Path) -> Result<Cargo, String> {
         Ok(_) => {}
     }
 
-    let cargo = match toml::decode_str::<Cargo>(&buf) {
-        Some(info) => info,
-        None => return Err("Could not decode Cargo.toml".to_owned()),
-    };
-
-    Ok(cargo)
+    match toml::from_str(&buf) {
+        Err(e) => return Err(format!("{}", e)),
+        Ok(cargo) => Ok(cargo)
+    }
 }
 
 /// Transforms the Vec of lines into a single String
