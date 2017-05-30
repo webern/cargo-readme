@@ -71,7 +71,7 @@ fn extract<T: Read>(source: &mut T, indent_headings: bool) -> Vec<String> {
     let reader = BufReader::new(source);
 
     // Is this code block rust?
-    let re_code_rust = Regex::new(r"^//! ```(no_run|ignore|should_panic)?$").unwrap();
+    let re_code_rust = Regex::new(r"^//! ```(rust,?)?(no_run|ignore|should_panic)?(,rust)?$").unwrap();
     // Is this code block a language other than rust?
     let re_code_other = Regex::new(r"//! ```\w+").unwrap();
 
