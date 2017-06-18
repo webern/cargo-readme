@@ -3,6 +3,14 @@ use std::io;
 
 use regex::Regex;
 
+pub trait DocModify<I: Iterator> {
+    fn modify_doc(self, indent_headings: bool) -> DocModifier<Self>
+        where Self: Sized + Iterator<Item=io::Result<String>>
+    {
+        DocModifier::new(self, indent_headings)
+    }
+}
+
 #[derive(PartialEq)]
 enum Code {
     Rust,

@@ -190,7 +190,7 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
                 Err(e) => return Err(format!("Could not open file '{}': {}", input.to_string_lossy(), e)),
             }
         }
-        None => try!(find_entrypoint(&current_dir))
+        None => find_entrypoint(&current_dir)?
     };
 
     let mut dest = match output {
@@ -229,10 +229,10 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
         }
     }
 
-    let doc_string = try!(doc::generate_readme(&current_dir,
-        &mut source, &mut template_file,
+    let doc_string = doc::generate_readme(&current_dir,
+        &mut source, template_file.as_mut(),
         add_title, add_license, indent_headings
-    ));
+    )?;
 
     match dest.as_mut() {
         Some(dest) => {
