@@ -274,7 +274,7 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
     let lib_rs = current_dir.join("src/lib.rs");
     let main_rs = current_dir.join("src/main.rs");
 
-    let cargo = try!(doc::cargo_data(current_dir));
+    let cargo = try!(doc::get_cargo_info(current_dir));
 
     match File::open(&lib_rs) {
         Ok(file) => return Ok(file),
