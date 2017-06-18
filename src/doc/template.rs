@@ -1,11 +1,12 @@
 /// Renders the template
 ///
 /// This is not a real template engine, it just processes a few substitutions.
-pub fn process_template(mut template: String,
-                        mut readme: String,
-                        title: Option<&str>,
-                        license: Option<&str>)
-                        -> Result<String, String> {
+pub fn process_template(
+    mut template: String,
+    mut readme: String,
+    title: Option<&str>,
+    license: Option<&str>,
+) -> Result<String, String> {
 
     template = template.trim_right_matches("\n").to_owned();
 
@@ -14,11 +15,15 @@ pub fn process_template(mut template: String,
     }
 
     if template.contains("{{license}}") && license.is_none() {
-        return Err("`{{license}}` was found in template but no license was provided".to_owned());
+        return Err(
+            "`{{license}}` was found in template but no license was provided".to_owned(),
+        );
     }
 
     if template.contains("{{crate}}") && title.is_none() {
-        return Err("`{{crate}}` was found in template but no crate name was provided".to_owned());
+        return Err(
+            "`{{crate}}` was found in template but no crate name was provided".to_owned(),
+        );
     }
 
     if let Some(title) = title {

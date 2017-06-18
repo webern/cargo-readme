@@ -11,24 +11,24 @@ use self::modifier::DocModify;
 pub use self::cargo_info::{Cargo, get_cargo_info};
 
 /// Generates readme data from `source` file
-pub fn generate_readme<T: Read>(project_root: &Path,
-                                source: &mut T,
-                                template: Option<&mut T>,
-                                add_title: bool,
-                                add_license: bool,
-                                indent_headings: bool)
-    -> Result<String, String> {
+pub fn generate_readme<T: Read>(
+    project_root: &Path,
+    source: &mut T,
+    template: Option<&mut T>,
+    add_title: bool,
+    add_license: bool,
+    indent_headings: bool,
+) -> Result<String, String> {
 
     // ceate doc extractor
-    let doc_iter = DocExtractor::new(source)
-        .modify_doc(indent_headings);
+    let doc_iter = DocExtractor::new(source).modify_doc(indent_headings);
 
     let mut doc_data = Vec::new();
     for line in doc_iter {
         let line = line.map_err(|e| format!("{}", e))?;
         doc_data.push(line);
     }
-    
+
     // fold doc_data (Vec<String>) into single String
     let readme = fold_doc_data(doc_data);
 
@@ -55,7 +55,12 @@ fn fold_doc_data(data: Vec<String>) -> String {
     } else if data.len() < 2 {
         data[0].to_owned()
     } else {
-        data[1..].into_iter().fold(data[0].to_owned(), |acc, line| format!("{}\n{}", acc, line))
+        data[1..].into_iter().fold(
+            data[0].to_owned(),
+            |acc, line| {
+                format!("{}\n{}", acc, line)
+            },
+        )
     }
 }
 
@@ -70,22 +75,36 @@ fn get_template<T: Read>(template: &mut T) -> Result<String, String> {
     Ok(template_string)
 }
 
-fn render(template: Option<String>, mut readme: String, cargo: Cargo, add_title: bool, add_license: bool) -> Result<String, String> {
+fn render(
+    template: Option<String>,
+    mut readme: String,
+    cargo: Cargo,
+    add_title: bool,
+    add_license: bool,
+) -> Result<String, String> {
     let title = cargo.package.name.as_ref();
     let license = cargo.package.license.as_ref();
 
     match template {
         Some(template) => {
             if template.contains("{{license}}") && !add_license {
-                return Err("`{{license}}` was found in template but should not be rendered".to_owned());
+                return Err(
+                    "`{{license}}` was found in template but should not be rendered".to_owned(),
+                );
             }
 
             if template.contains("{{crate}}") && !add_title {
-                return Err("`{{crate}}` was found in template but title should not be rendered".to_owned());
+                return Err(
+                    "`{{crate}}` was found in template but title should not be rendered".to_owned(),
+                );
             }
 
             let title = if add_title { Some(title) } else { None };
-            let license = if add_license { Some(license.unwrap().as_ref()) } else { None };
+            let license = if add_license {
+                Some(license.unwrap().as_ref())
+            } else {
+                None
+            };
             template::process_template(template, readme, title, license)
         }
         None => {

@@ -39,12 +39,12 @@ impl<R: Read> DocExtractor<R> {
     fn extract_style_none(&mut self, line: String) -> Option<String> {
         if line.starts_with("//!") {
             self.style = DocStyle::SingleLine;
-            return Some(self.normalize_line(line))
+            return Some(self.normalize_line(line));
         } else if line.starts_with("/*!") {
             self.style = DocStyle::MultiLine;
             let line = self.normalize_line(line);
             if line.len() > 0 {
-                return Some(line)
+                return Some(line);
             }
         }
         None
@@ -52,12 +52,12 @@ impl<R: Read> DocExtractor<R> {
 
     fn extract_style_single_line(&mut self, line: String) -> Option<String> {
         if line.starts_with("//!") {
-            return Some(self.normalize_line(line))
+            return Some(self.normalize_line(line));
         } else if line.starts_with("/*!") {
             self.style = DocStyle::MultiLine;
             let line = self.normalize_line(line);
             if line.len() > 0 {
-                return Some(line)
+                return Some(line);
             }
         }
         None
@@ -68,9 +68,9 @@ impl<R: Read> DocExtractor<R> {
             self.style = DocStyle::NoDoc;
             let ref_line = line.split_at(line.rfind("*/").unwrap()).0.trim_right();
             if ref_line.len() == 0 {
-                return None
+                return None;
             }
-            return Some(ref_line.to_owned())
+            return Some(ref_line.to_owned());
         }
         Some(line.trim_right().to_owned())
     }
@@ -92,7 +92,7 @@ impl<R: Read> Iterator for DocExtractor<R> {
             };
 
             if bytes_read == 0 {
-                return None
+                return None;
             }
 
             result = match self.style {
@@ -112,8 +112,7 @@ mod tests {
     use super::DocExtractor;
     use super::DocModify;
 
-    const INPUT: &'static str =
-r#"//! first line
+    const INPUT: &'static str = r#"//! first line
 //! ```
 //! let rust_code = "will show";
 //! # let binding = "won't show";
@@ -136,8 +135,7 @@ use std::any::Any;
 
 fn main() {}"#;
 
-    const INPUT_MULTILINE: &'static str =
-r#"/*!
+    const INPUT_MULTILINE: &'static str = r#"/*!
 first line
 ```
 let rust_code = "will show";
@@ -162,8 +160,7 @@ use std::any::Any;
 
 fn main() {}"#;
 
-    const EXPECT_INDENT_HEADING: &str =
-r#"first line
+    const EXPECT_INDENT_HEADING: &str = r#"first line
 ```rust
 let rust_code = "will show";
 ```
@@ -182,8 +179,7 @@ let should_panic = true;
 int i = 0; // no rust code
 ```"#;
 
-    const EXPECT_NO_INDENT_HEADING: &str =
-r#"first line
+    const EXPECT_NO_INDENT_HEADING: &str = r#"first line
 ```rust
 let rust_code = "will show";
 ```

@@ -4,11 +4,7 @@ mod common;
 
 #[test]
 fn empty_docs() {
-    let args = [
-        "--no-template",
-        "--input",
-        "src/no_docs.rs",
-    ];
+    let args = ["--no-template", "--input", "src/no_docs.rs"];
 
     let (stdout, stderr, _status) = common::cargo_readme(&args);
 
@@ -17,14 +13,9 @@ fn empty_docs() {
 
 #[test]
 fn single_line() {
-    let args = [
-        "--no-template",
-        "--input",
-        "src/single_line.rs",
-    ];
+    let args = ["--no-template", "--input", "src/single_line.rs"];
 
-    let expected =
-r#"
+    let expected = r#"
 # readme-test
 
 Test crate for cargo-readme
@@ -36,14 +27,9 @@ Test crate for cargo-readme
 
 #[test]
 fn a_little_bit_longer() {
-    let args = [
-        "--no-template",
-        "--input",
-        "src/other.rs",
-    ];
+    let args = ["--no-template", "--input", "src/other.rs"];
 
-    let expected =
-r#"
+    let expected = r#"
 # readme-test
 
 Test crate for cargo-readme

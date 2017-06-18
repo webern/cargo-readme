@@ -6,7 +6,8 @@ use std::path::PathBuf;
 use std::process::{Command, Output};
 
 pub fn cargo_readme(args: &[&str]) -> (String, String, i32) {
-    let root = env::current_dir().expect("no current dir"); // I hope you're running "cargo test" from the project root
+    // I hope you're running "cargo test" from the project root
+    let root = env::current_dir().expect("no current dir");
 
     let test_project = root.join("tests/test-project");
     let cargo_readme = root.join("target/debug/cargo-readme");
@@ -24,7 +25,8 @@ pub fn cargo_readme(args: &[&str]) -> (String, String, i32) {
 pub fn custom_manifest_cargo_readme(manifest: &str, args: &[&str]) -> (String, String, i32) {
     let path = create_cargo_toml(manifest);
 
-    let root = env::current_dir().expect("no current dir"); // I hope you're running "cargo test" from the project root
+    // I hope you're running "cargo test" from the project root
+    let root = env::current_dir().expect("no current dir");
 
     let test_project = path.parent().unwrap();
     let cargo_readme = root.join("target/debug/cargo-readme");
@@ -41,7 +43,9 @@ pub fn custom_manifest_cargo_readme(manifest: &str, args: &[&str]) -> (String, S
 
 fn create_cargo_toml(manifest: &str) -> PathBuf {
     let now = SystemTime::now();
-    let t = now.duration_since(time::UNIX_EPOCH).expect("SystemTime failed");
+    let t = now.duration_since(time::UNIX_EPOCH).expect(
+        "SystemTime failed",
+    );
     let secs = t.as_secs();
     let nanos = t.subsec_nanos();
 
@@ -52,7 +56,9 @@ fn create_cargo_toml(manifest: &str) -> PathBuf {
     let mut path = dir;
     path.push("Cargo.toml");
     let mut cargo_toml = File::create(&path).expect("cannot create Cargo.toml");
-    cargo_toml.write_all(manifest.as_bytes()).expect("cannot write to Cargo.toml");
+    cargo_toml.write_all(manifest.as_bytes()).expect(
+        "cannot write to Cargo.toml",
+    );
 
     path
 }
@@ -62,12 +68,12 @@ pub fn parse_result(result: Output) -> (String, String, i32) {
         .expect("invalid utf-8 stdout")
         .trim()
         .to_owned();
-    
+
     let stderr = String::from_utf8(result.stderr)
         .expect("invalid utf-8 stderr")
         .trim()
         .to_owned();
-    
+
     let status = result.status.code().expect("test process interrupted");
 
     (stdout, stderr, status)

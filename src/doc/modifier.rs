@@ -5,7 +5,8 @@ use regex::Regex;
 
 pub trait DocModify<I: Iterator> {
     fn modify_doc(self, indent_headings: bool) -> DocModifier<Self>
-        where Self: Sized + Iterator<Item=io::Result<String>>
+    where
+        Self: Sized + Iterator<Item = io::Result<String>>,
     {
         DocModifier::new(self, indent_headings)
     }
@@ -26,7 +27,10 @@ pub struct DocModifier<I: Iterator> {
     re_code_other: Regex,
 }
 
-impl<I> DocModifier<I> where I: Iterator<Item=io::Result<String>> {
+impl<I> DocModifier<I>
+where
+    I: Iterator<Item = io::Result<String>>,
+{
     pub fn new(iter: I, indent_headings: bool) -> Self {
         // Is this code block rust?
         let re_code_rust = Regex::new(r"^```(no_run|ignore|should_panic)?$").unwrap();
@@ -43,7 +47,10 @@ impl<I> DocModifier<I> where I: Iterator<Item=io::Result<String>> {
     }
 }
 
-impl<I> Iterator for DocModifier<I> where I: Iterator<Item=io::Result<String>> {
+impl<I> Iterator for DocModifier<I>
+where
+    I: Iterator<Item = io::Result<String>>,
+{
     type Item = io::Result<String>;
 
     fn next(&mut self) -> Option<Self::Item> {

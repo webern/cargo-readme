@@ -37,6 +37,6 @@ pub fn get_cargo_info(project_root: &Path) -> Result<Cargo, String> {
 
     match toml::from_str(&buf) {
         Err(e) => return Err(format!("{}", e)),
-        Ok(cargo) => Ok(cargo)
+        Ok(cargo) => Ok(cargo),
     }
 }

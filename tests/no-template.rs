@@ -2,8 +2,7 @@
 
 mod common;
 
-const EXPECTED: &str =
-r#"
+const EXPECTED: &str = r#"
 # readme-test
 
 Test crate for cargo-readme

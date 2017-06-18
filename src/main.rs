@@ -95,7 +95,7 @@ extern crate toml;
 
 use std::env;
 use std::io::{self, Write, ErrorKind};
-use std::fs::{File};
+use std::fs::File;
 use std::path::{Path, PathBuf};
 use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
 
@@ -159,11 +159,12 @@ fn main() {
     if let Some(m) = matches.subcommand_matches("readme") {
         match execute(m) {
             Err(e) => {
-                io::stderr().write_fmt(format_args!("Error: {}\n", e))
+                io::stderr()
+                    .write_fmt(format_args!("Error: {}\n", e))
                     .expect("An error occurred while trying to show an error message");
                 std::process::exit(1);
             }
-            _ => {},
+            _ => {}
         }
     }
 }
@@ -187,10 +188,16 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
             let input = current_dir.join(input);
             match File::open(&input) {
                 Ok(file) => file,
-                Err(e) => return Err(format!("Could not open file '{}': {}", input.to_string_lossy(), e)),
+                Err(e) => {
+                    return Err(format!(
+                        "Could not open file '{}': {}",
+                        input.to_string_lossy(),
+                        e
+                    ))
+                }
             }
         }
-        None => find_entrypoint(&current_dir)?
+        None => find_entrypoint(&current_dir)?,
     };
 
     let mut dest = match output {
@@ -198,10 +205,16 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
             let output = current_dir.join(filename);
             match File::create(&output) {
                 Ok(file) => Some(file),
-                Err(e) => return Err(format!("Could not create output file '{}': {}", output.to_string_lossy(), e)),
+                Err(e) => {
+                    return Err(format!(
+                        "Could not create output file '{}': {}",
+                        output.to_string_lossy(),
+                        e
+                    ))
+                }
             }
         }
-        _ => None
+        _ => None,
     };
 
     let mut template_file: Option<File>;
@@ -214,24 +227,40 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
                 let template = current_dir.join(template);
                 match File::open(&template) {
                     Ok(file) => Some(file),
-                    Err(e) => return Err(format!("Could not open template file '{}': {}", template.to_string_lossy(), e)),
+                    Err(e) => {
+                        return Err(format!(
+                            "Could not open template file '{}': {}",
+                            template.to_string_lossy(),
+                            e
+                        ))
+                    }
                 }
             }
-            None => { // try read default template
+            None => {
+                // try read default template
                 let template = current_dir.join(DEFAULT_TEMPLATE);
                 match File::open(&template) {
                     Ok(file) => Some(file),
-                    Err(ref e) if e.kind() != ErrorKind::NotFound =>
-                        return Err(format!("Could not open template file '{}': {}", DEFAULT_TEMPLATE, e)),
-                    _ => None
+                    Err(ref e) if e.kind() != ErrorKind::NotFound => {
+                        return Err(format!(
+                            "Could not open template file '{}': {}",
+                            DEFAULT_TEMPLATE,
+                            e
+                        ))
+                    }
+                    _ => None,
                 }
             }
         }
     }
 
-    let doc_string = doc::generate_readme(&current_dir,
-        &mut source, template_file.as_mut(),
-        add_title, add_license, indent_headings
+    let doc_string = doc::generate_readme(
+        &current_dir,
+        &mut source,
+        template_file.as_mut(),
+        add_title,
+        add_license,
+        indent_headings,
     )?;
 
     match dest.as_mut() {
@@ -241,8 +270,14 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
             bytes.push(b'\n');
 
             match dest.write_all(&mut bytes) {
-                Ok(_) => {},
-                Err(e) => return Err(format!("Could not write to file '{}': {}", output.unwrap(), e))
+                Ok(_) => {}
+                Err(e) => {
+                    return Err(format!(
+                        "Could not write to file '{}': {}",
+                        output.unwrap(),
+                        e
+                    ))
+                }
             }
         }
         None => println!("{}", doc_string),
@@ -278,25 +313,42 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
 
     match File::open(&lib_rs) {
         Ok(file) => return Ok(file),
-        Err(ref e) if e.kind() != io::ErrorKind::NotFound =>
-            return Err(format!("Could not open file '{}': {}", lib_rs.to_string_lossy(), e)),
+        Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
+            return Err(format!(
+                "Could not open file '{}': {}",
+                lib_rs.to_string_lossy(),
+                e
+            ))
+        }
         _ => {}
     }
 
     match File::open(&main_rs) {
         Ok(file) => return Ok(file),
-        Err(ref e) if e.kind() != io::ErrorKind::NotFound =>
-            return Err(format!("Could not open file '{}': {}", main_rs.to_string_lossy(), e)),
+        Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
+            return Err(format!(
+                "Could not open file '{}': {}",
+                main_rs.to_string_lossy(),
+                e
+            ))
+        }
         _ => {}
     }
 
     match cargo.lib {
-        Some(lib) => match File::open(current_dir.join(&lib.path)) {
-            Ok(file) => return Ok(file),
-            Err(ref e) if e.kind() != io::ErrorKind::NotFound =>
-                return Err(format!("Could not open file '{}': {}", current_dir.join(&lib.path).to_string_lossy(), e)),
-            _ => {}
-        },
+        Some(lib) => {
+            match File::open(current_dir.join(&lib.path)) {
+                Ok(file) => return Ok(file),
+                Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
+                    return Err(format!(
+                        "Could not open file '{}': {}",
+                        current_dir.join(&lib.path).to_string_lossy(),
+                        e
+                    ))
+                }
+                _ => {}
+            }
+        }
         _ => {}
     }
 
@@ -304,19 +356,24 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
         Some(ref bin_list) if bin_list.len() == 1 => {
             match File::open(current_dir.join(&bin_list[0].path)) {
                 Ok(file) => return Ok(file),
-                Err(ref e) if e.kind() != io::ErrorKind::NotFound =>
-                    return Err(format!("Could not open file '{}': {}", current_dir.join(&bin_list[0].path).to_string_lossy(), e)),
+                Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
+                    return Err(format!(
+                        "Could not open file '{}': {}",
+                        current_dir.join(&bin_list[0].path).to_string_lossy(),
+                        e
+                    ))
+                }
                 _ => {}
             }
         }
         Some(ref bin_list) if bin_list.len() > 1 => {
             let first = bin_list[0].path.clone();
-            let paths = bin_list.iter().skip(1)
+            let paths = bin_list
+                .iter()
+                .skip(1)
                 .map(|ref bin| bin.path.clone())
-                .fold(first, |acc, path| {
-                    format!("{}, {}", acc, path)
-                });
-            return Err(format!("Multiple binaries found, choose one: [{}]", paths))
+                .fold(first, |acc, path| format!("{}, {}", acc, path));
+            return Err(format!("Multiple binaries found, choose one: [{}]", paths));
         }
         _ => {}
     }

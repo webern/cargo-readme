@@ -2,8 +2,7 @@
 
 mod common;
 
-const EXPECTED: &str =
-r#"
+const EXPECTED: &str = r#"
 # readme-test
 
 Your badges here

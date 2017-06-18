@@ -2,8 +2,7 @@
 
 mod common;
 
-const EXPECTED: &str =
-r#"
+const EXPECTED: &str = r#"
 # readme-test
 
 Other readme template.
@@ -49,10 +48,7 @@ if condition {
 
 #[test]
 fn test() {
-    let args = [
-        "--template",
-        "NOTITLE.tpl",
-    ];
+    let args = ["--template", "NOTITLE.tpl"];
 
     let (stdout, stderr, _status) = common::cargo_readme(&args);
     assert_eq!(stdout, EXPECTED.trim(), "\nError: {}", stderr);
