@@ -27,7 +27,10 @@ pub struct DocTransformer<I: Iterator> {
 }
 
 impl<I: Iterator<Item = String>> DocTransformer<I> {
-    pub fn new<J: IntoIterator<IntoIter=I, Item=String>>(iter: J, indent_headings: bool) -> Self {
+    pub fn new<J: IntoIterator<IntoIter = I, Item = String>>(
+        iter: J,
+        indent_headings: bool,
+    ) -> Self {
         // Is this code block rust?
         let re_code_rust = Regex::new(r"^```(no_run|ignore|should_panic)?$").unwrap();
         // Is this code block a language other than rust?

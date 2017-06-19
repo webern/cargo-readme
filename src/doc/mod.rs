@@ -7,8 +7,8 @@ mod transform;
 
 use self::extract::DocExtract;
 use self::transform::DocTransform;
-use ::cargo_info;
-use ::template;
+use cargo_info;
+use template;
 
 #[derive(PartialEq)]
 enum DocStyle {

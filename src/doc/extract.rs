@@ -3,7 +3,7 @@ use std::iter::{Iterator, IntoIterator};
 use super::DocStyle;
 use super::transform::DocTransform;
 
-pub trait DocExtract<I: Iterator<Item=String>> {
+pub trait DocExtract<I: Iterator<Item = String>> {
     fn extract_doc(self) -> DocExtractor<I>
     where
         Self: Sized + IntoIterator<IntoIter = I, Item = String>,
@@ -15,15 +15,15 @@ pub trait DocExtract<I: Iterator<Item=String>> {
 // allow calling `extract_doc` from a `Vec<String>`
 impl<I: Iterator<Item = String>> DocExtract<I> for Vec<String> {}
 
-impl<I: Iterator<Item=String>> DocTransform for DocExtractor<I> {}
+impl<I: Iterator<Item = String>> DocTransform for DocExtractor<I> {}
 
 pub struct DocExtractor<I: Iterator> {
     iter: I,
     style: DocStyle,
 }
 
-impl<I: Iterator<Item=String>> DocExtractor<I> {
-    pub fn new<J: IntoIterator<IntoIter=I, Item=String>>(iter: J) -> Self {
+impl<I: Iterator<Item = String>> DocExtractor<I> {
+    pub fn new<J: IntoIterator<IntoIter = I, Item = String>>(iter: J) -> Self {
         DocExtractor {
             iter: iter.into_iter(),
             style: DocStyle::NoDoc,
@@ -82,7 +82,7 @@ impl<I: Iterator<Item=String>> DocExtractor<I> {
     }
 }
 
-impl<I: Iterator<Item=String>> Iterator for DocExtractor<I> {
+impl<I: Iterator<Item = String>> Iterator for DocExtractor<I> {
     type Item = String;
 
     fn next(&mut self) -> Option<Self::Item> {

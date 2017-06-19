@@ -26,7 +26,8 @@ pub fn load_docs<R: Read>(reader: R) -> Result<Vec<String>, String> {
                 result.push(line);
             } else if line.starts_with("/*!") {
                 return Err(ERR_MIX_STYLES.to_owned());
-            } else if line.trim().len() > 0  { // doc ends, code starts
+            } else if line.trim().len() > 0 {
+                // doc ends, code starts
                 break;
             }
         } else if style == DocStyle::MultiLine {

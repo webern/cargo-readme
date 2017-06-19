@@ -1,4 +1,4 @@
-use ::cargo_info::Cargo;
+use cargo_info::Cargo;
 
 /// Renders the template
 ///
@@ -23,7 +23,8 @@ pub fn render(
 
             if template.contains("{{crate}}") && !add_title {
                 return Err(
-                    "`{{crate}}` was found in template but title should not be rendered".to_owned(),
+                    "`{{crate}}` was found in template but title should not be rendered"
+                        .to_owned(),
                 );
             }
 
