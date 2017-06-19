@@ -100,6 +100,8 @@ use std::path::{Path, PathBuf};
 use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
 
 mod doc;
+mod cargo_info;
+mod template;
 
 const DEFAULT_TEMPLATE: &'static str = "README.tpl";
 
@@ -309,7 +311,7 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
     let lib_rs = current_dir.join("src/lib.rs");
     let main_rs = current_dir.join("src/main.rs");
 
-    let cargo = try!(doc::get_cargo_info(current_dir));
+    let cargo = try!(cargo_info::get_cargo_info(current_dir));
 
     match File::open(&lib_rs) {
         Ok(file) => return Ok(file),

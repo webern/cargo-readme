@@ -1,7 +1,54 @@
+use ::cargo_info::Cargo;
+
 /// Renders the template
 ///
 /// This is not a real template engine, it just processes a few substitutions.
-pub fn process_template(
+pub fn render(
+    template: Option<String>,
+    mut readme: String,
+    cargo: Cargo,
+    add_title: bool,
+    add_license: bool,
+) -> Result<String, String> {
+    let title = cargo.package.name.as_ref();
+    let license = cargo.package.license.as_ref();
+
+    match template {
+        Some(template) => {
+            if template.contains("{{license}}") && !add_license {
+                return Err(
+                    "`{{license}}` was found in template but should not be rendered".to_owned(),
+                );
+            }
+
+            if template.contains("{{crate}}") && !add_title {
+                return Err(
+                    "`{{crate}}` was found in template but title should not be rendered".to_owned(),
+                );
+            }
+
+            let title = if add_title { Some(title) } else { None };
+            let license = if add_license {
+                Some(license.unwrap().as_ref())
+            } else {
+                None
+            };
+            process_template(template, readme, title, license)
+        }
+        None => {
+            if add_title {
+                readme = prepend_title(readme, &title);
+            }
+            if add_license {
+                readme = append_license(readme, &license.unwrap());
+            }
+
+            Ok(readme)
+        }
+    }
+}
+
+fn process_template(
     mut template: String,
     mut readme: String,
     title: Option<&str>,
@@ -46,11 +93,11 @@ pub fn process_template(
     Ok(result)
 }
 
-pub fn prepend_title(readme: String, crate_name: &str) -> String {
+fn prepend_title(readme: String, crate_name: &str) -> String {
     format!("# {}\n\n", crate_name) + readme.as_ref()
 }
 
-pub fn append_license(readme: String, license: &str) -> String {
+fn append_license(readme: String, license: &str) -> String {
     readme + &format!("\n\nLicense: {}", &license)
 }
 
