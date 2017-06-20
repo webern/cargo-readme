@@ -1,0 +1,9 @@
+[package]
+name = "multiple-bin"
+version = "0.1.0"
+[[bin]]
+name = "entry1"
+path = "src/entry1.rs"
+[[bin]]
+name = "entry2"
+path = "src/entry2.rs"
