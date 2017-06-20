@@ -51,7 +51,7 @@ pub fn render(
 
 fn process_template(
     mut template: String,
-    mut readme: String,
+    readme: String,
     title: Option<&str>,
     license: Option<&str>,
 ) -> Result<String, String> {
@@ -77,16 +77,12 @@ fn process_template(
     if let Some(title) = title {
         if template.contains("{{crate}}") {
             template = template.replace("{{crate}}", &title);
-        } else {
-            readme = prepend_title(readme, &title);
         }
     }
 
     if let Some(license) = license {
         if template.contains("{{license}}") {
             template = template.replace("{{license}}", &license);
-        } else {
-            readme = append_license(readme, &license);
         }
     }
 
@@ -95,11 +91,21 @@ fn process_template(
 }
 
 fn prepend_title(readme: String, crate_name: &str) -> String {
-    format!("# {}\n\n", crate_name) + readme.as_ref()
+    let title = format!("# {}", crate_name);
+    if !readme.trim().is_empty() {
+        format!("{}\n\n{}", title, readme)
+    } else {
+        title
+    }
 }
 
 fn append_license(readme: String, license: &str) -> String {
-    readme + &format!("\n\nLicense: {}", &license)
+    let license = format!("License: {}", license);
+    if !readme.trim().is_empty() {
+        format!("{}\n\n{}", readme, license)
+    } else {
+        license
+    }
 }
 
 #[cfg(test)]
@@ -164,7 +170,7 @@ mod tests {
         input => "# documentation",
         with_title => true,
         with_license => true,
-        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+        expected => "# documentation"
     );
 
     // with title without license
@@ -174,7 +180,7 @@ mod tests {
         input => "# documentation",
         with_title => true,
         with_license => false,
-        expected => "# my_crate\n\n# documentation"
+        expected => "# documentation"
     );
 
     // without title with license
@@ -184,7 +190,7 @@ mod tests {
         input => "# documentation",
         with_title => false,
         with_license => true,
-        expected => "# documentation\n\nLicense: MIT"
+        expected => "# documentation"
     );
 
     // without title without license
@@ -206,7 +212,7 @@ mod tests {
         input => "# documentation",
         with_title => true,
         with_license => true,
-        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+        expected => "# my_crate\n\n# documentation"
     );
 
     // with title without license
@@ -248,7 +254,7 @@ mod tests {
         input => "# documentation",
         with_title => true,
         with_license => true,
-        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+        expected => "# documentation\n\nLicense: MIT"
     );
 
     // with title without license

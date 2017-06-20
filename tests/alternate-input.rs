@@ -8,7 +8,7 @@ fn empty_docs() {
 
     let (stdout, stderr, _status) = common::cargo_readme(&args);
 
-    assert_eq!(stdout, "# readme-test", "\nError: {}", stderr);
+    assert_eq!(stdout, "# readme-test\n\nLicense: MIT", "\nError: {}", stderr);
 }
 
 #[test]
@@ -19,6 +19,8 @@ fn single_line() {
 # readme-test
 
 Test crate for cargo-readme
+
+License: MIT
 "#;
 
     let (stdout, stderr, _status) = common::cargo_readme(&args);
@@ -35,6 +37,8 @@ fn a_little_bit_longer() {
 Test crate for cargo-readme
 
 ## Level 1 heading should become level 2
+
+License: MIT
 "#;
 
     let (stdout, stderr, _status) = common::cargo_readme(&args);

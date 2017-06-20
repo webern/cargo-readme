@@ -5,8 +5,6 @@ mod common;
 const EXPECTED: &str = r#"
 # readme-test
 
-Your badges here
-
 Test crate for cargo-readme
 
 ## Level 1 heading should become level 2
@@ -44,13 +42,20 @@ if condition {
 ```python
 # This should be on the output
 ```
-
-License: MIT
 "#;
 
 #[test]
-fn test() {
-    let args = ["--append-license"];
+fn append_license() {
+    let args = ["--no-template"];
+    let expected = format!("{}\n\n{}", EXPECTED.trim(), "License: MIT");
+
+    let (stdout, stderr, _status) = common::cargo_readme(&args);
+    assert_eq!(stdout, expected, "\nError: {}", stderr);
+}
+
+#[test]
+fn no_append_license() {
+    let args = ["--no-template", "--no-license"];
 
     let (stdout, stderr, _status) = common::cargo_readme(&args);
     assert_eq!(stdout, EXPECTED.trim(), "\nError: {}", stderr);

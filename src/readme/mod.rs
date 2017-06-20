@@ -4,11 +4,11 @@ use std::path::Path;
 mod load;
 mod extract;
 mod transform;
+mod template;
 
 use self::extract::DocExtract;
 use self::transform::DocTransform;
 use cargo_info;
-use template;
 
 #[derive(PartialEq)]
 enum DocStyle {

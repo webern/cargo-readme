@@ -42,6 +42,8 @@ if condition {
 ```python
 # This should be on the output
 ```
+
+License: MIT
 "#;
 
 #[test]

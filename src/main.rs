@@ -88,10 +88,8 @@
 
 #[macro_use]
 extern crate clap;
-extern crate regex;
-#[macro_use]
-extern crate serde_derive;
-extern crate toml;
+
+extern crate cargo_readme;
 
 use std::env;
 use std::io::{self, Write, ErrorKind};
@@ -99,9 +97,7 @@ use std::fs::File;
 use std::path::{Path, PathBuf};
 use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
 
-mod doc;
-mod cargo_info;
-mod template;
+use cargo_readme::cargo_info;
 
 const DEFAULT_TEMPLATE: &'static str = "README.tpl";
 
@@ -134,18 +130,19 @@ fn main() {
                 .takes_value(true)
                 .conflicts_with("NO_TEMPLATE")
                 .help("Template used to render the output. Defaults to 'README.tpl'.{n}\
-                       If the default template is not found, the processed docstring will be used.{n}"))
+                       If the default template is not found, the processed docstring\
+                       will be used.{n}"))
             .arg(Arg::with_name("NO_TITLE")
                 .long("no-title")
-                .help("Do not prepend title line. By default, the title ('# crate-name'){n}\
-                       is prepended to the output. However, if a template is used and{n}\
-                       it contains the tag '{{crate}}', the template takes precedence{n}\
-                       and the title is not output.{n}"))
-            .arg(Arg::with_name("APPEND_LICENSE")
-                .long("append-license")
-                .help("Append license line. If a template is used and{n}\
-                       it contains the tag '{{license}}', the template takes precedence{n}\
-                       and the license is not output.{n}"))
+                .help("Do not prepend title line. By default, the title ('# crate-name') is{n}\
+                       prepended to the output. If a template is used and it contains the tag{n}\
+                       '{{crate}}', the template takes precedence and this option is ignored.{n}"))
+            .arg(Arg::with_name("NO_LICENSE")
+                .long("no-license")
+                .help("Do not append license line. By default, the license, if defined in{n}\
+                       `Cargo.toml`, will be prepended to the output. If a template is used{n}\
+                       and it contains the tag '{{license}}', the template takes precedence and{n}\
+                       this option is ignored.{n}"))
             .arg(Arg::with_name("NO_TEMPLATE")
                 .long("no-template")
                 .help("Ignore template file when generating README.{n}\
@@ -181,7 +178,7 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
     let output = m.value_of("OUTPUT");
     let template = m.value_of("TEMPLATE");
     let add_title = !m.is_present("NO_TITLE");
-    let add_license = m.is_present("APPEND_LICENSE");
+    let add_license = !m.is_present("NO_LICENSE");
     let no_template = m.is_present("NO_TEMPLATE");
     let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
 
@@ -256,7 +253,7 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
         }
     }
 
-    let doc_string = doc::generate_readme(
+    let doc_string = cargo_readme::generate_readme(
         &current_dir,
         &mut source,
         template_file.as_mut(),
