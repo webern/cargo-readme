@@ -123,7 +123,13 @@ fn main() {
                 .short("o")
                 .long("output")
                 .takes_value(true)
-                .help("File to write to. If not provided, will output to the console."))
+                .help("File to write to. If not provided, will output to stdout."))
+            .arg(Arg::with_name("ROOT")
+                .short("r")
+                .long("project-root")
+                .takes_value(true)
+                .help("Directory to be set as project root (where `Cargo.toml` is){n}\
+                       Defaults to the current directory"))
             .arg(Arg::with_name("TEMPLATE")
                 .short("t")
                 .long("template")
@@ -150,9 +156,8 @@ fn main() {
             .arg(Arg::with_name("NO_INDENT_HEADINGS")
                 .long("no-indent-headings")
                 .help("Do not add an extra level to headings.{n}\
-                       By default, '#' headings become '##',{n}\
-                       so the first '#' can be your crate name.{n}\
-                       Use this option to prevent this behavior.{n}")))
+                       By default, '#' headings become '##', so the first '#' can be your crate{n}\
+                       name. Use this option to prevent this behavior.{n}")))
         .get_matches();
 
     if let Some(m) = matches.subcommand_matches("readme") {
@@ -169,10 +174,7 @@ fn main() {
 }
 
 fn execute(m: &ArgMatches) -> Result<(), String> {
-    let current_dir = match project_root_dir() {
-        Some(v) => v,
-        None => return Err("This doesn't look like a Rust/Cargo project".to_owned()),
-    };
+    let project_root = get_project_root(m.value_of("ROOT"))?;
 
     let input = m.value_of("INPUT");
     let output = m.value_of("OUTPUT");
@@ -182,79 +184,18 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
     let no_template = m.is_present("NO_TEMPLATE");
     let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
 
-    let mut source = match input {
-        Some(input) => {
-            let input = current_dir.join(input);
-            match File::open(&input) {
-                Ok(file) => file,
-                Err(e) => {
-                    return Err(format!(
-                        "Could not open file '{}': {}",
-                        input.to_string_lossy(),
-                        e
-                    ))
-                }
-            }
-        }
-        None => find_entrypoint(&current_dir)?,
-    };
+    let mut source = get_source(&project_root, input)?;
 
-    let mut dest = match output {
-        Some(filename) => {
-            let output = current_dir.join(filename);
-            match File::create(&output) {
-                Ok(file) => Some(file),
-                Err(e) => {
-                    return Err(format!(
-                        "Could not create output file '{}': {}",
-                        output.to_string_lossy(),
-                        e
-                    ))
-                }
-            }
-        }
-        _ => None,
-    };
+    let mut dest = get_dest(&project_root, output)?;
 
-    let mut template_file: Option<File>;
-
-    if no_template {
-        template_file = None;
+    let mut template_file = if no_template {
+        None
     } else {
-        template_file = match template {
-            Some(template) => {
-                let template = current_dir.join(template);
-                match File::open(&template) {
-                    Ok(file) => Some(file),
-                    Err(e) => {
-                        return Err(format!(
-                            "Could not open template file '{}': {}",
-                            template.to_string_lossy(),
-                            e
-                        ))
-                    }
-                }
-            }
-            None => {
-                // try read default template
-                let template = current_dir.join(DEFAULT_TEMPLATE);
-                match File::open(&template) {
-                    Ok(file) => Some(file),
-                    Err(ref e) if e.kind() != ErrorKind::NotFound => {
-                        return Err(format!(
-                            "Could not open template file '{}': {}",
-                            DEFAULT_TEMPLATE,
-                            e
-                        ))
-                    }
-                    _ => None,
-                }
-            }
-        }
-    }
+        get_template_file(&project_root, template)?
+    };
 
-    let doc_string = cargo_readme::generate_readme(
-        &current_dir,
+    let readme = cargo_readme::generate_readme(
+        &project_root,
         &mut source,
         template_file.as_mut(),
         add_title,
@@ -262,46 +203,106 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
         indent_headings,
     )?;
 
-    match dest.as_mut() {
-        Some(dest) => {
-            let mut bytes = doc_string.into_bytes();
-            // Append new line at end of file to match behavior of `cargo readme > README.md`
-            bytes.push(b'\n');
+    write_output(&mut dest, readme)
+}
 
-            match dest.write_all(&mut bytes) {
-                Ok(_) => {}
-                Err(e) => {
+fn get_project_root(given_root: Option<&str>) -> Result<PathBuf, String> {
+    let current_dir = env::current_dir().map_err(|e| format!("{}", e))?;
+    let root = match given_root {
+        Some(root) => {
+            let root = Path::new(root);
+            if root.is_absolute() {
+                root.to_path_buf()
+            } else {
+                current_dir.join(root)
+            }
+        },
+        None => current_dir,
+    };
+
+    if !root.join("Cargo.toml").is_file() {
+        return Err(format!("`{:?}` does not look like a Rust/Cargo project", root));
+    }
+
+    Ok(root)
+}
+
+fn get_source(project_root: &Path, input: Option<&str>) -> Result<File, String> {
+    match input {
+        Some(input) => {
+            let input = project_root.join(input);
+            File::open(&input).map_err(|e| format!(
+                "Could not open file '{}': {}",
+                input.to_string_lossy(),
+                e
+            ))
+        }
+        None => find_entrypoint(&project_root),
+    }
+}
+
+fn get_dest(project_root: &Path, output: Option<&str>) -> Result<Option<File>, String> {
+    match output {
+        Some(filename) => {
+            let output = project_root.join(filename);
+            File::create(&output)
+                .map(|f| Some(f))
+                .map_err(|e| format!(
+                    "Could not create output file '{}': {}",
+                    output.to_string_lossy(),
+                    e
+                ))
+        }
+        None => Ok(None),
+    }
+}
+
+fn get_template_file(project_root: &Path, template: Option<&str>) -> Result<Option<File>, String> {
+    match template {
+        Some(template) => {
+            let template = project_root.join(template);
+            File::open(&template)
+                .map(|f| Some(f))
+                .map_err(|e| format!(
+                    "Could not open template file '{}': {}",
+                    template.to_string_lossy(),
+                    e
+                ))
+        },
+        None => {
+            // try read default template
+            let template = project_root.join(DEFAULT_TEMPLATE);
+            match File::open(&template) {
+                Ok(file) => Ok(Some(file)),
+                Err(ref e) if e.kind() != ErrorKind::NotFound => {
                     return Err(format!(
-                        "Could not write to file '{}': {}",
-                        output.unwrap(),
+                        "Could not open template file '{}': {}",
+                        DEFAULT_TEMPLATE,
                         e
                     ))
                 }
+                // default template not found, return `None`
+                _ => Ok(None),
             }
         }
-        None => println!("{}", doc_string),
+    }
+}
+
+fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), String> {
+    match dest.as_mut() {
+        Some(dest) => {
+            let mut bytes = readme.into_bytes();
+            // Append new line at end of file to match behavior of `cargo readme > README.md`
+            bytes.push(b'\n');
+
+            dest.write_all(&mut bytes)
+                .map(|_| ())
+                .map_err(|e| format!("Could not write to output file: {}", e))?;
+        }
+        None => println!("{}", readme),
     }
 
     Ok(())
-}
-
-/// Given the current directory, start from there, and go up, and up, until a Cargo.toml file has
-/// been found. If a Cargo.toml folder has been found, then we have found the project dir. If not,
-/// nothing is found, and we return None.
-pub fn project_root_dir() -> Option<PathBuf> {
-    let mut currpath = env::current_dir().unwrap();
-
-    while currpath.parent().is_some() {
-        currpath.push("Cargo.toml");
-        if currpath.is_file() {
-            currpath.pop(); // found, remove toml, return project root
-            return Some(currpath);
-        }
-        currpath.pop(); // remove toml filename
-        currpath.pop(); // next dir
-    }
-
-    None
 }
 
 fn find_entrypoint(current_dir: &Path) -> Result<File, String> {

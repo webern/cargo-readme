@@ -1,6 +1,6 @@
-#![allow(unused)]
+extern crate assert_cli;
 
-mod common;
+use assert_cli::Assert;
 
 const EXPECTED: &str = r#"
 # readme-test
@@ -46,17 +46,33 @@ if condition {
 
 #[test]
 fn append_license() {
-    let args = ["--no-template"];
+    let args = [
+        "readme",
+        "--project-root", "tests/test-project",
+        "--no-template"
+    ];
+
     let expected = format!("{}\n\n{}", EXPECTED.trim(), "License: MIT");
 
-    let (stdout, stderr, _status) = common::cargo_readme(&args);
-    assert_eq!(stdout, expected, "\nError: {}", stderr);
+    Assert::main_binary()
+        .with_args(&args)
+        .succeeds()
+        .prints_exactly(expected)
+        .unwrap();
 }
 
 #[test]
 fn no_append_license() {
-    let args = ["--no-template", "--no-license"];
+    let args = [
+        "readme",
+        "--project-root", "tests/test-project",
+        "--no-template",
+        "--no-license"
+    ];
 
-    let (stdout, stderr, _status) = common::cargo_readme(&args);
-    assert_eq!(stdout, EXPECTED.trim(), "\nError: {}", stderr);
+    Assert::main_binary()
+        .with_args(&args)
+        .succeeds()
+        .prints_exactly(EXPECTED)
+        .unwrap();
 }

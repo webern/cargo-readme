@@ -1,6 +1,6 @@
-#![allow(unused)]
+extern crate assert_cli;
 
-mod common;
+use assert_cli::Assert;
 
 const EXPECTED: &str = r#"
 # readme-test
@@ -48,8 +48,14 @@ if condition {
 
 #[test]
 fn test() {
-    let args = [];
+    let args = [
+        "readme",
+        "--project-root", "tests/test-project",
+    ];
 
-    let (stdout, stderr, _status) = common::cargo_readme(&args);
-    assert_eq!(stdout, EXPECTED.trim(), "\nError: {}", stderr);
+    Assert::main_binary()
+        .with_args(&args)
+        .succeeds()
+        .prints_exactly(EXPECTED)
+        .unwrap();
 }

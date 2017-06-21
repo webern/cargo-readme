@@ -1,21 +1,34 @@
-#![allow(unused)]
+extern crate assert_cli;
 
-mod common;
+use assert_cli::Assert;
 
 #[test]
 fn empty_docs() {
-    let args = ["--no-template", "--input", "src/no_docs.rs"];
+    let args = [
+        "readme",
+        "--project-root", "tests/test-project",
+        "--no-template",
+        "--input", "src/no_docs.rs"
+    ];
 
-    let (stdout, stderr, _status) = common::cargo_readme(&args);
-
-    assert_eq!(stdout, "# readme-test\n\nLicense: MIT", "\nError: {}", stderr);
+    Assert::main_binary()
+        .with_args(&args)
+        .succeeds()
+        .prints_exactly("# readme-test\n\nLicense: MIT")
+        .unwrap();
 }
 
 #[test]
 fn single_line() {
-    let args = ["--no-template", "--input", "src/single_line.rs"];
+    let args = [
+        "readme",
+        "--project-root", "tests/test-project",
+        "--no-template",
+        "--input", "src/single_line.rs"
+    ];
 
-    let expected = r#"
+    let expected =
+r#"
 # readme-test
 
 Test crate for cargo-readme
@@ -23,15 +36,24 @@ Test crate for cargo-readme
 License: MIT
 "#;
 
-    let (stdout, stderr, _status) = common::cargo_readme(&args);
-    assert_eq!(stdout, expected.trim(), "\nError: {}", stderr);
+    Assert::main_binary()
+        .with_args(&args)
+        .succeeds()
+        .prints_exactly(expected)
+        .unwrap();
 }
 
 #[test]
 fn a_little_bit_longer() {
-    let args = ["--no-template", "--input", "src/other.rs"];
+    let args = [
+        "readme",
+        "--project-root", "tests/test-project",
+        "--no-template",
+        "--input", "src/other.rs"
+    ];
 
-    let expected = r#"
+    let expected =
+r#"
 # readme-test
 
 Test crate for cargo-readme
@@ -41,6 +63,9 @@ Test crate for cargo-readme
 License: MIT
 "#;
 
-    let (stdout, stderr, _status) = common::cargo_readme(&args);
-    assert_eq!(stdout, expected.trim(), "\nError: {}", stderr);
+    Assert::main_binary()
+        .with_args(&args)
+        .succeeds()
+        .prints_exactly(expected)
+        .unwrap();
 }
