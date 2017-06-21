@@ -6,10 +6,7 @@ const EXPECTED: &str = "Error: No entrypoint found";
 
 #[test]
 fn test() {
-    let args = [
-        "readme",
-        "--project-root", "tests/no-entrypoint-fail",
-    ];
+    let args = ["readme", "--project-root", "tests/no-entrypoint-fail"];
 
     Assert::main_binary()
         .with_args(&args)

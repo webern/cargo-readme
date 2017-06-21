@@ -6,9 +6,11 @@ use assert_cli::Assert;
 fn empty_docs() {
     let args = [
         "readme",
-        "--project-root", "tests/test-project",
+        "--project-root",
+        "tests/test-project",
         "--no-template",
-        "--input", "src/no_docs.rs"
+        "--input",
+        "src/no_docs.rs",
     ];
 
     Assert::main_binary()
@@ -22,13 +24,14 @@ fn empty_docs() {
 fn single_line() {
     let args = [
         "readme",
-        "--project-root", "tests/test-project",
+        "--project-root",
+        "tests/test-project",
         "--no-template",
-        "--input", "src/single_line.rs"
+        "--input",
+        "src/single_line.rs",
     ];
 
-    let expected =
-r#"
+    let expected = r#"
 # readme-test
 
 Test crate for cargo-readme
@@ -47,13 +50,14 @@ License: MIT
 fn a_little_bit_longer() {
     let args = [
         "readme",
-        "--project-root", "tests/test-project",
+        "--project-root",
+        "tests/test-project",
         "--no-template",
-        "--input", "src/other.rs"
+        "--input",
+        "src/other.rs",
     ];
 
-    let expected =
-r#"
+    let expected = r#"
 # readme-test
 
 Test crate for cargo-readme

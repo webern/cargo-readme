@@ -50,8 +50,10 @@ if condition {
 fn test() {
     let args = [
         "readme",
-        "--project-root", "tests/test-project",
-        "--input", "src/multiline.rs"
+        "--project-root",
+        "tests/test-project",
+        "--input",
+        "src/multiline.rs",
     ];
 
     Assert::main_binary()

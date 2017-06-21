@@ -50,7 +50,8 @@ License: MIT
 fn test() {
     let args = [
         "readme",
-        "--project-root", "tests/test-project",
+        "--project-root",
+        "tests/test-project",
         "--no-template",
     ];
 

@@ -50,8 +50,10 @@ if condition {
 fn test() {
     let args = [
         "readme",
-        "--project-root", "tests/test-project",
-        "--template", "NOTITLE.tpl"
+        "--project-root",
+        "tests/test-project",
+        "--template",
+        "NOTITLE.tpl",
     ];
 
     Assert::main_binary()

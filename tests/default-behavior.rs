@@ -48,10 +48,7 @@ if condition {
 
 #[test]
 fn test() {
-    let args = [
-        "readme",
-        "--project-root", "tests/test-project",
-    ];
+    let args = ["readme", "--project-root", "tests/test-project"];
 
     Assert::main_binary()
         .with_args(&args)

@@ -48,8 +48,9 @@ if condition {
 fn append_license() {
     let args = [
         "readme",
-        "--project-root", "tests/test-project",
-        "--no-template"
+        "--project-root",
+        "tests/test-project",
+        "--no-template",
     ];
 
     let expected = format!("{}\n\n{}", EXPECTED.trim(), "License: MIT");
@@ -65,9 +66,10 @@ fn append_license() {
 fn no_append_license() {
     let args = [
         "readme",
-        "--project-root", "tests/test-project",
+        "--project-root",
+        "tests/test-project",
         "--no-template",
-        "--no-license"
+        "--no-license",
     ];
 
     Assert::main_binary()

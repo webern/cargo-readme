@@ -6,10 +6,7 @@ const EXPECTED: &str = "Error: Multiple binaries found, choose one: [src/entry1.
 
 #[test]
 fn test() {
-    let args = [
-        "readme",
-        "--project-root", "tests/multiple-bin-fail",
-    ];
+    let args = ["readme", "--project-root", "tests/multiple-bin-fail"];
 
     Assert::main_binary()
         .with_args(&args)

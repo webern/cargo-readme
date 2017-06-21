@@ -216,12 +216,15 @@ fn get_project_root(given_root: Option<&str>) -> Result<PathBuf, String> {
             } else {
                 current_dir.join(root)
             }
-        },
+        }
         None => current_dir,
     };
 
     if !root.join("Cargo.toml").is_file() {
-        return Err(format!("`{:?}` does not look like a Rust/Cargo project", root));
+        return Err(format!(
+            "`{:?}` does not look like a Rust/Cargo project",
+            root
+        ));
     }
 
     Ok(root)
@@ -231,11 +234,9 @@ fn get_source(project_root: &Path, input: Option<&str>) -> Result<File, String> 
     match input {
         Some(input) => {
             let input = project_root.join(input);
-            File::open(&input).map_err(|e| format!(
-                "Could not open file '{}': {}",
-                input.to_string_lossy(),
-                e
-            ))
+            File::open(&input).map_err(|e| {
+                format!("Could not open file '{}': {}", input.to_string_lossy(), e)
+            })
         }
         None => find_entrypoint(&project_root),
     }
@@ -245,13 +246,13 @@ fn get_dest(project_root: &Path, output: Option<&str>) -> Result<Option<File>, S
     match output {
         Some(filename) => {
             let output = project_root.join(filename);
-            File::create(&output)
-                .map(|f| Some(f))
-                .map_err(|e| format!(
+            File::create(&output).map(|f| Some(f)).map_err(|e| {
+                format!(
                     "Could not create output file '{}': {}",
                     output.to_string_lossy(),
                     e
-                ))
+                )
+            })
         }
         None => Ok(None),
     }
@@ -261,14 +262,14 @@ fn get_template_file(project_root: &Path, template: Option<&str>) -> Result<Opti
     match template {
         Some(template) => {
             let template = project_root.join(template);
-            File::open(&template)
-                .map(|f| Some(f))
-                .map_err(|e| format!(
+            File::open(&template).map(|f| Some(f)).map_err(|e| {
+                format!(
                     "Could not open template file '{}': {}",
                     template.to_string_lossy(),
                     e
-                ))
-        },
+                )
+            })
+        }
         None => {
             // try read default template
             let template = project_root.join(DEFAULT_TEMPLATE);
@@ -295,9 +296,9 @@ fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), String> {
             // Append new line at end of file to match behavior of `cargo readme > README.md`
             bytes.push(b'\n');
 
-            dest.write_all(&mut bytes)
-                .map(|_| ())
-                .map_err(|e| format!("Could not write to output file: {}", e))?;
+            dest.write_all(&mut bytes).map(|_| ()).map_err(|e| {
+                format!("Could not write to output file: {}", e)
+            })?;
         }
         None => println!("{}", readme),
     }
