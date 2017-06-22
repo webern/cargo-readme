@@ -1,3 +1,7 @@
+//! Extract documentation from raw doc commment string
+//!
+//! Strip `//!` and `/*!` and remove hidden lines (the ones starting with `#`) in a rust code block
+
 use std::iter::{Iterator, IntoIterator};
 
 use super::DocStyle;
@@ -15,6 +19,7 @@ pub trait DocExtract<I: Iterator<Item = String>> {
 // allow calling `extract_doc` from a `Vec<String>`
 impl<I: Iterator<Item = String>> DocExtract<I> for Vec<String> {}
 
+// allow calling `transform_doc` from a `DocExtractor`
 impl<I: Iterator<Item = String>> DocTransform for DocExtractor<I> {}
 
 pub struct DocExtractor<I: Iterator> {
@@ -30,7 +35,7 @@ impl<I: Iterator<Item = String>> DocExtractor<I> {
         }
     }
 
-    // normalizes a line by stripping the "//!" or "/*!" from it and a single whitespace
+    /// normalizes a line by stripping the "//!" or "/*!" from it and a single whitespace
     fn normalize_line(&self, mut line: String) -> String {
         if line.trim().len() <= 3 {
             line.clear();
@@ -42,6 +47,7 @@ impl<I: Iterator<Item = String>> DocExtractor<I> {
         }
     }
 
+    /// extract line that is neither singleline nor multiline doc comment
     fn extract_style_none(&mut self, line: String) -> Option<String> {
         if line.starts_with("//!") {
             self.style = DocStyle::SingleLine;
@@ -56,6 +62,7 @@ impl<I: Iterator<Item = String>> DocExtractor<I> {
         None
     }
 
+    /// extract line from singleline doc comment
     fn extract_style_single_line(&mut self, line: String) -> Option<String> {
         if line.starts_with("//!") {
             return Some(self.normalize_line(line));
@@ -69,6 +76,7 @@ impl<I: Iterator<Item = String>> DocExtractor<I> {
         None
     }
 
+    /// extract line from multiline doc comment
     fn extract_style_multi_line(&mut self, line: String) -> Option<String> {
         if line.contains("*/") {
             self.style = DocStyle::NoDoc;

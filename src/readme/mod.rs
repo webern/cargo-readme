@@ -18,6 +18,8 @@ enum DocStyle {
 }
 
 /// Generates readme data from `source` file
+///
+/// Optionally, a template can be used to render the output
 pub fn generate_readme<T: Read>(
     project_root: &Path,
     source: &mut T,

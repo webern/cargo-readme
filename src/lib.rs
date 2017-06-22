@@ -1,3 +1,5 @@
+//! Create README.md content from rust doc comments
+
 extern crate regex;
 #[macro_use]
 extern crate serde_derive;

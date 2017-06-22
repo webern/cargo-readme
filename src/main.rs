@@ -173,9 +173,12 @@ fn main() {
     }
 }
 
+/// Takes the arguments matches from clap and outputs the result, either to stdout of a file
 fn execute(m: &ArgMatches) -> Result<(), String> {
+    // get project root
     let project_root = get_project_root(m.value_of("ROOT"))?;
 
+    // get inputs
     let input = m.value_of("INPUT");
     let output = m.value_of("OUTPUT");
     let template = m.value_of("TEMPLATE");
@@ -184,16 +187,20 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
     let no_template = m.is_present("NO_TEMPLATE");
     let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
 
+    // get source file
     let mut source = get_source(&project_root, input)?;
 
+    // get destination file
     let mut dest = get_dest(&project_root, output)?;
 
+    // get template file
     let mut template_file = if no_template {
         None
     } else {
         get_template_file(&project_root, template)?
     };
 
+    // generate output
     let readme = cargo_readme::generate_readme(
         &project_root,
         &mut source,
@@ -206,6 +213,11 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
     write_output(&mut dest, readme)
 }
 
+/// Get the project root from given path or defaults to current directory
+///
+/// The given path is appended to the current directory if is a relative path, otherwise it is used
+/// as is. If no path is given, the current directory is used.
+/// A `Cargo.toml` file must be present is the root directory.
 fn get_project_root(given_root: Option<&str>) -> Result<PathBuf, String> {
     let current_dir = env::current_dir().map_err(|e| format!("{}", e))?;
     let root = match given_root {
@@ -230,6 +242,7 @@ fn get_project_root(given_root: Option<&str>) -> Result<PathBuf, String> {
     Ok(root)
 }
 
+/// Get the source file from which the doc comments will be extracted
 fn get_source(project_root: &Path, input: Option<&str>) -> Result<File, String> {
     match input {
         Some(input) => {
@@ -242,6 +255,7 @@ fn get_source(project_root: &Path, input: Option<&str>) -> Result<File, String> 
     }
 }
 
+/// Get the destination file where the result will be output to
 fn get_dest(project_root: &Path, output: Option<&str>) -> Result<Option<File>, String> {
     match output {
         Some(filename) => {
@@ -258,8 +272,10 @@ fn get_dest(project_root: &Path, output: Option<&str>) -> Result<Option<File>, S
     }
 }
 
+/// Get the template file that will be used to render the output
 fn get_template_file(project_root: &Path, template: Option<&str>) -> Result<Option<File>, String> {
     match template {
+        // template path was given, try to read it
         Some(template) => {
             let template = project_root.join(template);
             File::open(&template).map(|f| Some(f)).map_err(|e| {
@@ -270,11 +286,12 @@ fn get_template_file(project_root: &Path, template: Option<&str>) -> Result<Opti
                 )
             })
         }
+        // try to read the defautl template file
         None => {
-            // try read default template
             let template = project_root.join(DEFAULT_TEMPLATE);
             match File::open(&template) {
                 Ok(file) => Ok(Some(file)),
+                // do not generate an error on file not found
                 Err(ref e) if e.kind() != ErrorKind::NotFound => {
                     return Err(format!(
                         "Could not open template file '{}': {}",
@@ -289,6 +306,7 @@ fn get_template_file(project_root: &Path, template: Option<&str>) -> Result<Opti
     }
 }
 
+/// Write result to output, either stdout or destination file
 fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), String> {
     match dest.as_mut() {
         Some(dest) => {
@@ -306,12 +324,23 @@ fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), String> {
     Ok(())
 }
 
+/// Find the default entrypoiny to read the doc comments from
+///
+/// Try to read entrypoint in the following order:
+/// - src/lib.rs
+/// - src/main.rs
+/// - file defined in the `[lib]` section of Cargo.toml
+/// - file defined in the `[[bin]]` section of Cargo.toml, if there is only one
+///   - if there is more than one `[[bin]]`, an error is returned
+///
+/// An error is returned if no entrypoint is found
 fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
     let lib_rs = current_dir.join("src/lib.rs");
     let main_rs = current_dir.join("src/main.rs");
 
     let cargo = try!(cargo_info::get_cargo_info(current_dir));
 
+    // try src/lib.rs
     match File::open(&lib_rs) {
         Ok(file) => return Ok(file),
         Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
@@ -324,6 +353,7 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
         _ => {}
     }
 
+    // try src/main.rs
     match File::open(&main_rs) {
         Ok(file) => return Ok(file),
         Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
@@ -336,6 +366,7 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
         _ => {}
     }
 
+    // try lib defined in `Cargo.toml`
     match cargo.lib {
         Some(lib) => {
             match File::open(current_dir.join(&lib.path)) {
@@ -353,7 +384,9 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
         _ => {}
     }
 
+    // try bin defined in `Cargo.toml`
     match cargo.bin {
+        // if there is only one, use it
         Some(ref bin_list) if bin_list.len() == 1 => {
             match File::open(current_dir.join(&bin_list[0].path)) {
                 Ok(file) => return Ok(file),
@@ -367,6 +400,7 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
                 _ => {}
             }
         }
+        // if there is more than one, return an error
         Some(ref bin_list) if bin_list.len() > 1 => {
             let first = bin_list[0].path.clone();
             let paths = bin_list
@@ -379,5 +413,6 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
         _ => {}
     }
 
+    // if no entrypoint is found, return an error
     Err("No entrypoint found".to_owned())
 }

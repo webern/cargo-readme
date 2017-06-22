@@ -1,3 +1,5 @@
+//! Load raw doc comments
+
 use std::io::{Read, BufRead, BufReader};
 
 use super::DocStyle;

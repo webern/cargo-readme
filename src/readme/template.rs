@@ -49,6 +49,12 @@ pub fn render(
     }
 }
 
+/// Process the substitutions of the template
+///
+/// Available variable:
+/// - `{{readme}}` documentation extracted from the rust docs
+/// - `{{crate}}` crate name defined in `Cargo.toml`
+/// - `{{license}}` license defined in `Cargo.toml`
 fn process_template(
     mut template: String,
     readme: String,
@@ -90,6 +96,7 @@ fn process_template(
     Ok(result)
 }
 
+/// Prepend title (crate name) to output string
 fn prepend_title(readme: String, crate_name: &str) -> String {
     let title = format!("# {}", crate_name);
     if !readme.trim().is_empty() {
@@ -99,6 +106,7 @@ fn prepend_title(readme: String, crate_name: &str) -> String {
     }
 }
 
+/// Append license to output string
 fn append_license(readme: String, license: &str) -> String {
     let license = format!("License: {}", license);
     if !readme.trim().is_empty() {

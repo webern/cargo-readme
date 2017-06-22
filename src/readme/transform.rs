@@ -1,3 +1,9 @@
+//! Transform code blocks from rustdoc into markdown
+//!
+//! Rewrite code block start tags, changing rustdoc into equivalent in markdown:
+//! - "```", "```no_run", "```ignore" and "```should_panic" are converted to "```rust"
+//! - markdown heading are indentend to be one level lower, so the crate name is at the top level
+
 use std::iter::{Iterator, IntoIterator};
 
 use regex::Regex;

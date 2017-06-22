@@ -1,3 +1,5 @@
+//! Read crate information from `Cargo.toml`
+
 use std::fs::File;
 use std::io::Read;
 use std::path::Path;
