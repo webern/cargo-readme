@@ -1,21 +1,12 @@
 use std::io::Read;
 use std::path::Path;
 
-mod load;
 mod extract;
 mod transform;
 mod template;
 
-use self::extract::DocExtract;
 use self::transform::DocTransform;
 use cargo_info;
-
-#[derive(PartialEq)]
-enum DocStyle {
-    NoDoc,
-    SingleLine,
-    MultiLine,
-}
 
 /// Generates readme data from `source` file
 ///
@@ -29,9 +20,9 @@ pub fn generate_readme<T: Read>(
     indent_headings: bool,
 ) -> Result<String, String> {
 
-    let readme = load::load_docs(source)
+    let readme = extract::extract_docs(source)
         .map_err(|e| format!("{}", e))?
-        .extract_doc()
+        .into_iter()
         .transform_doc(indent_headings)
         .fold(String::new(), |mut acc, x| {
             if !acc.is_empty() {

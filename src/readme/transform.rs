@@ -17,6 +17,8 @@ pub trait DocTransform {
     }
 }
 
+impl<I: Iterator<Item = String>> DocTransform for I {}
+
 #[derive(PartialEq)]
 enum Code {
     Rust,

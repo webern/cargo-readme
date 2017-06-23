@@ -1,171 +1,164 @@
-//! Extract documentation from raw doc commment string
-//!
-//! Strip `//!` and `/*!` and remove hidden lines (the ones starting with `#`) in a rust code block
+//! Extract the raw doc comments from rust source code
 
-use std::iter::{Iterator, IntoIterator};
+use std::io::{Read, BufRead, BufReader};
 
-use super::DocStyle;
-use super::transform::DocTransform;
+const ERR_MIX_STYLES: &str = "Cannot mix singleline and multiline doc comments";
 
-pub trait DocExtract<I: Iterator<Item = String>> {
-    fn extract_doc(self) -> DocExtractor<I>
-    where
-        Self: Sized + IntoIterator<IntoIter = I, Item = String>,
-    {
-        DocExtractor::new(self)
-    }
-}
+pub fn extract_docs<R: Read>(reader: R) -> Result<Vec<String>, String> {
+    let mut reader = BufReader::new(reader);
 
-// allow calling `extract_doc` from a `Vec<String>`
-impl<I: Iterator<Item = String>> DocExtract<I> for Vec<String> {}
+    let mut line = String::new();
+    let mut bytes_read = reader.read_line(&mut line).map_err(|e| format!("{}", e))?;
 
-// allow calling `transform_doc` from a `DocExtractor`
-impl<I: Iterator<Item = String>> DocTransform for DocExtractor<I> {}
-
-pub struct DocExtractor<I: Iterator> {
-    iter: I,
-    style: DocStyle,
-}
-
-impl<I: Iterator<Item = String>> DocExtractor<I> {
-    pub fn new<J: IntoIterator<IntoIter = I, Item = String>>(iter: J) -> Self {
-        DocExtractor {
-            iter: iter.into_iter(),
-            style: DocStyle::NoDoc,
-        }
-    }
-
-    /// normalizes a line by stripping the "//!" or "/*!" from it and a single whitespace
-    fn normalize_line(&self, mut line: String) -> String {
-        if line.trim().len() <= 3 {
-            line.clear();
-            line
-        } else {
-            // if the first character after the comment is " ", remove it
-            let split_at = if line.find(" ") == Some(3) { 4 } else { 3 };
-            line.split_at(split_at).1.trim_right().to_owned()
-        }
-    }
-
-    /// extract line that is neither singleline nor multiline doc comment
-    fn extract_style_none(&mut self, line: String) -> Option<String> {
+    while bytes_read > 0 {
         if line.starts_with("//!") {
-            self.style = DocStyle::SingleLine;
-            return Some(self.normalize_line(line));
-        } else if line.starts_with("/*!") {
-            self.style = DocStyle::MultiLine;
-            let line = self.normalize_line(line);
-            if line.len() > 0 {
-                return Some(line);
-            }
+            return extract_docs_singleline_style(line, reader);
         }
-        None
+        if line.starts_with("/*!") {
+            return extract_docs_multiline_style(line, reader);
+        }
+
+        line.clear();
+        bytes_read = reader.read_line(&mut line).map_err(|e| format!("{}", e))?;
     }
 
-    /// extract line from singleline doc comment
-    fn extract_style_single_line(&mut self, line: String) -> Option<String> {
-        if line.starts_with("//!") {
-            return Some(self.normalize_line(line));
-        } else if line.starts_with("/*!") {
-            self.style = DocStyle::MultiLine;
-            let line = self.normalize_line(line);
-            if line.len() > 0 {
-                return Some(line);
-            }
-        }
-        None
-    }
-
-    /// extract line from multiline doc comment
-    fn extract_style_multi_line(&mut self, line: String) -> Option<String> {
-        if line.contains("*/") {
-            self.style = DocStyle::NoDoc;
-            let ref_line = line.split_at(line.rfind("*/").unwrap()).0.trim_right();
-            if ref_line.len() == 0 {
-                return None;
-            }
-            return Some(ref_line.to_owned());
-        }
-        Some(line.trim_right().to_owned())
-    }
+    Ok(Vec::new())
 }
 
-impl<I: Iterator<Item = String>> Iterator for DocExtractor<I> {
-    type Item = String;
+fn extract_docs_singleline_style<R: Read>(first_line: String, reader: BufReader<R>) -> Result<Vec<String>, String> {
+    let mut result = vec![normalize_line(first_line)];
 
-    fn next(&mut self) -> Option<Self::Item> {
-        let mut result = None;
+    for line in reader.lines() {
+        let line = line.map_err(|e| format!("{}", e))?;
 
-        while result.is_none() {
-            let line = match self.iter.next() {
-                Some(line) => line,
-                None => break,
-            };
+        if line.starts_with("//!") {
+            result.push(normalize_line(line));
+        } else if line.starts_with("/*!") {
+            return Err(ERR_MIX_STYLES.to_owned());
+        } else if line.trim().len() > 0 {
+            // doc ends, code starts
+            break;
+        }
+    }
 
-            result = match self.style {
-                DocStyle::NoDoc => self.extract_style_none(line),
-                DocStyle::SingleLine => self.extract_style_single_line(line),
-                DocStyle::MultiLine => self.extract_style_multi_line(line),
-            };
+    Ok(result)
+}
+
+fn extract_docs_multiline_style<R: Read>(first_line: String, reader: BufReader<R>) -> Result<Vec<String>, String> {
+    let mut result = Vec::new();
+    if first_line.starts_with("/*!") && first_line.trim().len() > "/*!".len() {
+        result.push(normalize_line(first_line));
+    }
+
+    for line in reader.lines() {
+        let line = line.map_err(|e| format!("{}", e))?;
+
+        if let Some(pos) = line.rfind("*/") {
+            let mut line = line;
+            line.split_off(pos);
+            if !line.trim().is_empty() {
+                result.push(line);
+            }
+            break
         }
 
-        result
+        result.push(line.trim_right().to_owned());
+    }
+
+    Ok(result)
+}
+
+/// Strip the "//!" or "/*!" from it and a single whitespace
+fn normalize_line(mut line: String) -> String {
+    if line.trim() == "//!" || line.trim() == "/*!" {
+        line.clear();
+        line
+    } else {
+        // if the first character after the comment mark is " ", remove it
+        let split_at = if line.find(" ") == Some(3) { 4 } else { 3 };
+        line.split_at(split_at).1.trim_right().to_owned()
     }
 }
 
 #[cfg(test)]
 mod tests {
+    use std::io::Cursor;
     use super::*;
 
-    const INPUT_SINGLELINE: &str = r#"//! first line
+    const EXPECTED: &[&str] = &[
+        "first line",
+        "",
+        "```",
+        "let rust_code = \"safe\";",
+        "```",
+        "",
+        "```C",
+        "int i = 0; // no rust code",
+        "```",
+    ];
+
+    const INPUT_SINGLELINE: &str = "\
+//! first line
 //!
 //! ```
-//! let rust_code = "safe";
+//! let rust_code = \"safe\";
 //! ```
 //!
 //! ```C
 //! int i = 0; // no rust code
-//! ```"#;
+//! ```
+use std::any::Any;
 
-    const INPUT_MULTILINE: &str = r#"/*!
+fn main() {
+
+}
+";
+
+    #[test]
+    fn extract_docs_singleline_style() {
+        let reader = Cursor::new(INPUT_SINGLELINE.as_bytes());
+        let result = extract_docs(reader).unwrap();
+        assert_eq!(result, EXPECTED);
+    }
+
+    const INPUT_MULTILINE: &str = "\
+/*!
 first line
 
 ```
-let rust_code = "safe";
+let rust_code = \"safe\";
 ```
 
 ```C
 int i = 0; // no rust code
 ```
-*/"#;
+*/
+use std::any::Any;
 
-    const EXPECTED: &str = r#"first line
+fn main() {
 
-```
-let rust_code = "safe";
-```
-
-```C
-int i = 0; // no rust code
-```"#;
+}
+";
 
     #[test]
-    fn single_line() {
-        let input: Vec<_> = INPUT_SINGLELINE.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECTED.lines().collect();
-
-        let result: Vec<_> = DocExtractor::new(input).collect();
-
-        assert_eq!(result, expected);
+    fn extract_docs_multiline_style() {
+        let reader = Cursor::new(INPUT_MULTILINE.as_bytes());
+        let result = extract_docs(reader).unwrap();
+        assert_eq!(result, EXPECTED);
     }
 
+    const INPUT_MIXED: &str = "\
+//! single line
+/*!
+start multiline
+end multiline
+*/";
+
     #[test]
-    fn multi_line() {
-        let input: Vec<_> = INPUT_MULTILINE.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECTED.lines().collect();
-
-        let result: Vec<_> = DocExtractor::new(input).collect();
-
-        assert_eq!(result, expected);
+    fn extract_docs_mix_styles_should_fail() {
+        let reader = Cursor::new(INPUT_MIXED.as_bytes());
+        let result = extract_docs(reader);
+        assert!(result.is_err());
+        assert_eq!(result.unwrap_err(), "Cannot mix singleline and multiline doc comments");
     }
 }
