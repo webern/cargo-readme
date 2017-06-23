@@ -65,7 +65,7 @@ where
         };
 
         // Skip lines that should be hidden in docs
-        while self.section == Code::Rust && line.starts_with("#") {
+        while self.section == Code::Rust && line.starts_with("# ") {
             line = match self.iter.next() {
                 Some(line) => line,
                 None => return None,
@@ -93,68 +93,130 @@ where
 mod tests {
     use super::DocTransformer;
 
-    const INPUT: &'static str = r#"first line
+    const INPUT_HIDDEN_LINE: &str = r#"
 ```
-let rust_code = "will show";
-# let binding = "won't show";
+#[visible]
+let visible = "visible";
+# let hidden = "hidden";
+```"#;
+
+    const EXPECTED_HIDDEN_LINE: &str = r#"
+```rust
+#[visible]
+let visible = "visible";
+```"#;
+
+    #[test]
+    fn hide_line_in_rust_code_block() {
+        let input: Vec<_> = INPUT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
+        let expected: Vec<_> = EXPECTED_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
+
+        let result: Vec<_> = DocTransformer::new(input, true).collect();
+
+        assert_eq!(result, expected);
+    }
+
+    const INPUT_NOT_HIDDEN_LINE: &str = r#"
 ```
-# heading
+let visible = "visible";
+# let hidden = "hidden";
+```
+
+```python
+# this line is visible
+visible = True
+```"#;
+
+    const EXPECTED_NOT_HIDDEN_LINE: &str = r#"
+```rust
+let visible = "visible";
+```
+
+```python
+# this line is visible
+visible = True
+```"#;
+
+    #[test]
+    fn do_not_hide_line_in_code_block() {
+        let input: Vec<_> = INPUT_NOT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
+        let expected: Vec<_> = EXPECTED_NOT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
+
+        let result: Vec<_> = DocTransformer::new(input, true).collect();
+
+        assert_eq!(result, expected);
+    }
+
+const INPUT_RUST_CODE_BLOCK: &'static str = r#"
+```
+let block = "simple code block";
+```
+
 ```no_run
-let no_run = true;
+let run = false;
 ```
+
 ```ignore
 let ignore = true;
 ```
+
 ```should_panic
-let should_panic = true;
+panic!("at the disco");
 ```
-# heading
+
 ```C
 int i = 0; // no rust code
 ```"#;
 
-    const EXPECT_INDENT_HEADINGS: &str = r#"first line
+    const EXPECTED_RUST_CODE_BLOCK: &str = r#"
 ```rust
-let rust_code = "will show";
+let block = "simple code block";
 ```
-## heading
-```rust
-let no_run = true;
-```
-```rust
-let ignore = true;
-```
-```rust
-let should_panic = true;
-```
-## heading
-```C
-int i = 0; // no rust code
-```"#;
 
-    const EXPECT_NO_INDENT_HEADINGS: &str = r#"first line
 ```rust
-let rust_code = "will show";
+let run = false;
 ```
-# heading
-```rust
-let no_run = true;
-```
+
 ```rust
 let ignore = true;
 ```
+
 ```rust
-let should_panic = true;
+panic!("at the disco");
 ```
-# heading
+
 ```C
 int i = 0; // no rust code
 ```"#;
 
     #[test]
-    fn indent_headings() {
-        let input: Vec<_> = INPUT.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECT_INDENT_HEADINGS.lines().collect();
+    fn transform_rust_code_block() {
+        let input: Vec<_> = INPUT_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
+        let expected: Vec<_> = EXPECTED_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
+
+        let result: Vec<_> = DocTransformer::new(input, true).collect();
+
+        assert_eq!(result, expected);
+    }
+
+    const INPUT_INDENT_HEADINGS: &'static str = r#"
+# heading 1
+some text
+## heading 2
+some other text
+"#;
+
+    const EXPECTED_INDENT_HEADINGS: &str = r#"
+## heading 1
+some text
+### heading 2
+some other text
+"#;
+
+    #[test]
+    fn indent_markdown_headings() {
+        let input: Vec<_> = INPUT_INDENT_HEADINGS.lines().map(|x| x.to_owned()).collect();
+        let expected: Vec<_> = EXPECTED_INDENT_HEADINGS.lines().collect();
 
         let result: Vec<_> = DocTransformer::new(input, true).collect();
 
@@ -162,9 +224,9 @@ int i = 0; // no rust code
     }
 
     #[test]
-    fn no_indent_headings() {
-        let input: Vec<_> = INPUT.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECT_NO_INDENT_HEADINGS.lines().collect();
+    fn do_not_indent_markdown_headings() {
+        let input: Vec<_> = INPUT_INDENT_HEADINGS.lines().map(|x| x.to_owned()).collect();
+        let expected: Vec<_> = INPUT_INDENT_HEADINGS.lines().collect();
 
         let result: Vec<_> = DocTransformer::new(input, false).collect();
 
