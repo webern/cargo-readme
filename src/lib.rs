@@ -5,6 +5,10 @@ extern crate regex;
 extern crate serde_derive;
 extern crate toml;
 
+#[cfg(test)]
+#[macro_use]
+mod test_macros;
+
 mod readme;
 pub mod cargo_info;
 
