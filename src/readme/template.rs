@@ -119,7 +119,7 @@ fn append_license(readme: String, license: &str) -> String {
 #[cfg(test)]
 mod tests {
     const CRATE_NAME: &str = "my_crate";
-    const LICENSE: &str = "MIT";
+    const LICENSE: &str = "MPL";
 
     const TEMPLATE_NO_CRATE_NO_LICENSE: &str = "{{readme}}";
     const TEMPLATE_CRATE_NO_LICENSE: &str = "# {{crate}}\n\n{{readme}}";
@@ -262,7 +262,7 @@ mod tests {
         input => "# documentation",
         with_title => true,
         with_license => true,
-        expected => "# documentation\n\nLicense: MIT"
+        expected => "# documentation\n\nLicense: MPL"
     );
 
     // with title without license
@@ -282,7 +282,7 @@ mod tests {
         input => "# documentation",
         with_title => false,
         with_license => true,
-        expected => "# documentation\n\nLicense: MIT"
+        expected => "# documentation\n\nLicense: MPL"
     );
 
     // without title without license
@@ -304,7 +304,7 @@ mod tests {
         input => "# documentation",
         with_title => true,
         with_license => true,
-        expected => "# my_crate\n\n# documentation\n\nLicense: MIT"
+        expected => "# my_crate\n\n# documentation\n\nLicense: MPL"
     );
 
     // with title without license

@@ -95,18 +95,20 @@ where
 mod tests {
     use super::DocTransformer;
 
-    const INPUT_HIDDEN_LINE: &str = r#"
-```
-#[visible]
-let visible = "visible";
-# let hidden = "hidden";
-```"#;
+    const INPUT_HIDDEN_LINE: &str = concat_lines!(
+        "```",
+        "#[visible]",
+        "let visible = \"visible\";",
+        "# let hidden = \"hidden\";",
+        "```",
+    );
 
-    const EXPECTED_HIDDEN_LINE: &str = r#"
-```rust
-#[visible]
-let visible = "visible";
-```"#;
+    const EXPECTED_HIDDEN_LINE: &str = concat_lines!(
+        "```rust",
+        "#[visible]",
+        "let visible = \"visible\";",
+        "```",
+    );
 
     #[test]
     fn hide_line_in_rust_code_block() {
@@ -118,26 +120,28 @@ let visible = "visible";
         assert_eq!(result, expected);
     }
 
-    const INPUT_NOT_HIDDEN_LINE: &str = r#"
-```
-let visible = "visible";
-# let hidden = "hidden";
-```
+    const INPUT_NOT_HIDDEN_LINE: &str = concat_lines!(
+        "```",
+        "let visible = \"visible\";",
+        "# let hidden = \"hidden\";",
+        "```",
+        "",
+        "```python",
+        "# this line is visible",
+        "visible = True",
+        "```",
+    );
 
-```python
-# this line is visible
-visible = True
-```"#;
-
-    const EXPECTED_NOT_HIDDEN_LINE: &str = r#"
-```rust
-let visible = "visible";
-```
-
-```python
-# this line is visible
-visible = True
-```"#;
+    const EXPECTED_NOT_HIDDEN_LINE: &str = concat_lines!(
+        "```rust",
+        "let visible = \"visible\";",
+        "```",
+        "",
+        "```python",
+        "# this line is visible",
+        "visible = True",
+        "```",
+    );
 
     #[test]
     fn do_not_hide_line_in_code_block() {
@@ -149,47 +153,49 @@ visible = True
         assert_eq!(result, expected);
     }
 
-const INPUT_RUST_CODE_BLOCK: &'static str = r#"
-```
-let block = "simple code block";
-```
+    const INPUT_RUST_CODE_BLOCK: &'static str = concat_lines!(
+        "```",
+        "let block = \"simple code block\";",
+        "```",
+        "",
+        "```no_run",
+        "let run = false;",
+        "```",
+        "",
+        "```ignore",
+        "let ignore = true;",
+        "```",
+        "",
+        "```should_panic",
+        "panic!(\"at the disco\");",
+        "```",
+        "",
+        "```C",
+        "int i = 0; // no rust code",
+        "```",
+    );
 
-```no_run
-let run = false;
-```
-
-```ignore
-let ignore = true;
-```
-
-```should_panic
-panic!("at the disco");
-```
-
-```C
-int i = 0; // no rust code
-```"#;
-
-    const EXPECTED_RUST_CODE_BLOCK: &str = r#"
-```rust
-let block = "simple code block";
-```
-
-```rust
-let run = false;
-```
-
-```rust
-let ignore = true;
-```
-
-```rust
-panic!("at the disco");
-```
-
-```C
-int i = 0; // no rust code
-```"#;
+    const EXPECTED_RUST_CODE_BLOCK: &str = concat_lines!(
+        "```rust",
+        "let block = \"simple code block\";",
+        "```",
+        "",
+        "```rust",
+        "let run = false;",
+        "```",
+        "",
+        "```rust",
+        "let ignore = true;",
+        "```",
+        "",
+        "```rust",
+        "panic!(\"at the disco\");",
+        "```",
+        "",
+        "```C",
+        "int i = 0; // no rust code",
+        "```",
+    );
 
     #[test]
     fn transform_rust_code_block() {
@@ -201,19 +207,19 @@ int i = 0; // no rust code
         assert_eq!(result, expected);
     }
 
-    const INPUT_INDENT_HEADINGS: &'static str = r#"
-# heading 1
-some text
-## heading 2
-some other text
-"#;
+    const INPUT_INDENT_HEADINGS: &'static str = concat_lines!(
+        "# heading 1",
+        "some text",
+        "## heading 2",
+        "some other text",
+    );
 
-    const EXPECTED_INDENT_HEADINGS: &str = r#"
-## heading 1
-some text
-### heading 2
-some other text
-"#;
+    const EXPECTED_INDENT_HEADINGS: &str = concat_lines!(
+        "## heading 1",
+        "some text",
+        "### heading 2",
+        "some other text",
+    );
 
     #[test]
     fn indent_markdown_headings() {
