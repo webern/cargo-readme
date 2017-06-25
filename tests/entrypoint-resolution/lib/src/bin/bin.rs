@@ -1,0 +1,3 @@
+//! cargo bin
+
+fn main() {}

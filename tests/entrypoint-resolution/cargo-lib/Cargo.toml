@@ -1,0 +1,12 @@
+[package]
+name = "readme-test"
+version = "0.1.0"
+authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
+license = "MIT"
+
+[lib]
+path = "src/alt.rs"
+
+[[bin]]
+name = "bin"
+path = "src/bin/bin.rs"

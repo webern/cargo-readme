@@ -118,7 +118,11 @@ fn main() {
                 .short("i")
                 .long("input")
                 .takes_value(true)
-                .help("File to read from. If not provided, will take 'src/lib.rs' or 'src/main.rs'."))
+                .help("File to read from.{n}\
+                       If not provided, will try to use `src/main.rs`, then `src/lib.rs`. If \
+                       neither file could be found, will look into `Cargo.toml` for a `[lib]`, \
+                       then for a single `[[bin]]`. If multiple binaries are found, you will be \
+                       asked to choose one."))
             .arg(Arg::with_name("OUTPUT")
                 .short("o")
                 .long("output")
@@ -129,34 +133,34 @@ fn main() {
                 .long("project-root")
                 .takes_value(true)
                 .help("Directory to be set as project root (where `Cargo.toml` is){n}\
-                       Defaults to the current directory"))
+                       Defaults to the current directory."))
             .arg(Arg::with_name("TEMPLATE")
                 .short("t")
                 .long("template")
                 .takes_value(true)
                 .conflicts_with("NO_TEMPLATE")
-                .help("Template used to render the output. Defaults to 'README.tpl'.{n}\
-                       If the default template is not found, the processed docstring\
-                       will be used.{n}"))
+                .help("Template used to render the output.{n}\
+                       Default behavior is to use `README.tpl` if it exists."))
             .arg(Arg::with_name("NO_TITLE")
                 .long("no-title")
-                .help("Do not prepend title line. By default, the title ('# crate-name') is{n}\
-                       prepended to the output. If a template is used and it contains the tag{n}\
-                       '{{crate}}', the template takes precedence and this option is ignored.{n}"))
+                .help("Do not prepend title line.{n}\
+                       By default, the title ('# crate-name') is prepended to the output. If a \
+                       template is used and it contains the tag '{{crate}}', the template takes \
+                       precedence and this option is ignored."))
             .arg(Arg::with_name("NO_LICENSE")
                 .long("no-license")
-                .help("Do not append license line. By default, the license, if defined in{n}\
-                       `Cargo.toml`, will be prepended to the output. If a template is used{n}\
-                       and it contains the tag '{{license}}', the template takes precedence and{n}\
-                       this option is ignored.{n}"))
+                .help("Do not append license line. By default, the license, if defined in \
+                       `Cargo.toml`, will be prepended to the output. If a template is used \
+                       and it contains the tag '{{license}}', the template takes precedence and \
+                       this option is ignored."))
             .arg(Arg::with_name("NO_TEMPLATE")
                 .long("no-template")
                 .help("Ignore template file when generating README.{n}\
-                       Only useful to ignore default template README.tpl.{n}"))
+                       Only useful to ignore default template `README.tpl`."))
             .arg(Arg::with_name("NO_INDENT_HEADINGS")
                 .long("no-indent-headings")
                 .help("Do not add an extra level to headings.{n}\
-                       By default, '#' headings become '##', so the first '#' can be your crate{n}\
+                       By default, '#' headings become '##', so the first '#' can be the crate \
                        name. Use this option to prevent this behavior.{n}")))
         .get_matches();
 
@@ -327,31 +331,16 @@ fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), String> {
 /// Find the default entrypoiny to read the doc comments from
 ///
 /// Try to read entrypoint in the following order:
-/// - src/lib.rs
 /// - src/main.rs
+/// - src/lib.rs
 /// - file defined in the `[lib]` section of Cargo.toml
 /// - file defined in the `[[bin]]` section of Cargo.toml, if there is only one
 ///   - if there is more than one `[[bin]]`, an error is returned
-///
-/// An error is returned if no entrypoint is found
 fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
     let lib_rs = current_dir.join("src/lib.rs");
     let main_rs = current_dir.join("src/main.rs");
 
     let cargo = try!(cargo_info::get_cargo_info(current_dir));
-
-    // try src/lib.rs
-    match File::open(&lib_rs) {
-        Ok(file) => return Ok(file),
-        Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
-            return Err(format!(
-                "Could not open file '{}': {}",
-                lib_rs.to_string_lossy(),
-                e
-            ))
-        }
-        _ => {}
-    }
 
     // try src/main.rs
     match File::open(&main_rs) {
@@ -360,6 +349,19 @@ fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
             return Err(format!(
                 "Could not open file '{}': {}",
                 main_rs.to_string_lossy(),
+                e
+            ))
+        }
+        _ => {}
+    }
+
+    // try src/lib.rs
+    match File::open(&lib_rs) {
+        Ok(file) => return Ok(file),
+        Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
+            return Err(format!(
+                "Could not open file '{}': {}",
+                lib_rs.to_string_lossy(),
                 e
             ))
         }
