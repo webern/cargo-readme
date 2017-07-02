@@ -1,40 +1,45 @@
 //! Generate README.md from doc comments.
 //!
+//! Cargo subcommand that extract documentation from your crate's doc comments that you can use to
+//! populate your README.md.
+//!
 //! # Installation
 //!
-//! Just clone this repository, run `cargo build --release` and add `target/release/cargo-readme`
-//! somewhere in your path.
+//!     cargo install cargo-readme
 //!
-//! # About
+//! # Motivation
 //!
-//! This cargo subcommand will extract documentation from your crate's doc comments
-//! that you can use to populate its README.md.
+//! As you write documentation, you often have to show examples of how to use your software. But
+//! how do you make sure your examples are all working properly? That we didn't forget to update
+//! them after a braking change and left our (possibly new) users with errors they will have to
+//! figure out by themselves?
 //!
-//! For example, if your crate has the following doc comments at `lib.rs`
+//! With `cargo-readme`, you just write the rustdoc, run the tests, and then run:
 //!
-//! ```rust
-//! //! This is my awesome crate
-//! //!
-//! //! Here goes some other description of what it is and what is does
-//! //!
-//! //! # Examples
-//! //! ```
-//! //! fn sum2(n1: i32, n2: i32) -> i32 {
-//! //!   n1 + n2
-//! //! }
-//! //! # assert_eq!(4, sum2(2, 2));
-//! //! ```
-//! ```
+//!     cargo readme > README.md
 //!
-//! you may want to use it as your `README.md` content (without rust's doc comments specific stuff, obviously)
-//! so you don't have to maintain the same documentation in the different places.
+//! And that's it! Your `README.md` is populated with the contents of the doc comments from your
+//! `lib.rs` (or `main.rs`).
 //!
-//! Using `cargo-readme`, you write the documentation as doc comments, fill README.md with it and
-//! you can be sure that the examples are correct.
+//! # Usage
 //!
-//! The result would look like:
+//! Let's take the following rust doc:
 //!
-//!     # crate-name
+//!     //! This is my awesome crate
+//!     //!
+//!     //! Here goes some other description of what it is and what is does
+//!     //!
+//!     //! # Examples
+//!     //! ```
+//!     //! fn sum2(n1: i32, n2: i32) -> i32 {
+//!     //!   n1 + n2
+//!     //! }
+//!     //! # assert_eq!(4, sum2(2, 2));
+//!     //! ```
+//!
+//! Running `cargo readme` will output the following:
+//!
+//!     # my_crate
 //!
 //!     This is my awesome crate
 //!
@@ -47,28 +52,49 @@
 //!     }
 //!     ```
 //!
-//! You may have noticed that `# Examples` became `## Examples`. This is intentional (and can be disabled)
-//! so in README.md the first heading can be your crate name.
+//!     License: MY_LICENSE
 //!
-//! Also, the crate name was automatically added (can be disabled too). It is read
-//! from `Cargo.toml` so you just need to have them there. License can be read from
-//! `Cargo.toml`, but it's opt-in.
+//! Let's see what's happened:
+//! - the crate name ("my-crate") was added at the top
+//! - "# Examples" heading became "## Examples"
+//! - code block became "```rust"
+//! - hidden line `# assert_eq!(4, sum2(2, 2));` was removed
 //!
-//! If you have additional information that does not fit in doc comments, you can use
-//! a template. To do so, just create a file called `README.tpl` in the same directory
-//! as `Cargo.toml` with the following content
+//! `cargo-readme` also supports multiline doc comments `/*! */` (but you cannot mix styles):
 //!
-//!     Your crate's badges here
+//!     /*!
+//!     This is my awesome crate
+//!
+//!     Here goes some other description of what it is and what is does
+//!
+//!     # Examples
+//!     ```
+//!     fn sum2(n1: i32, n2: i32) -> i32 {
+//!       n1 + n2
+//!     }
+//!     # assert_eq!(4, sum2(2, 2));
+//!     ```
+//!     */
+//!
+//! If you have additional information that does not fit in doc comments, you can use a template.
+//! Just create a file called `README.tpl` in the same directory as `Cargo.toml` with the following
+//! content:
+//!
+//!     Badges here
+//!
+//!     # {{crate}}
 //!
 //!     {{readme}}
 //!
 //!     Some additional info here
 //!
+//!     License: {{license}}
+//!
 //! The output will look like this
 //!
-//!     # crate-name
+//!     Badges here
 //!
-//!     Your crate's badges here
+//!     # my_crate
 //!
 //!     This is my awesome crate
 //!
@@ -83,8 +109,10 @@
 //!
 //!     Some additional info here
 //!
-//! You can override the displaying of your crate's name and license using `{{crate}}`
-//! and `{{license}}`.
+//!     License: MY_LICENSE
+//!
+//! By default, `README.tpl` will be used as the template, but you can override it using the
+//! `--template` to choose a different template or `--no-template` to disable it.
 
 #[macro_use] extern crate clap;
 
