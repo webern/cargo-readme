@@ -1,13 +1,12 @@
 //! Create README.md content from rust doc comments
 
+#[macro_use] extern crate serde_derive;
+
 extern crate regex;
-#[macro_use]
-extern crate serde_derive;
 extern crate toml;
 
 #[cfg(test)]
-#[macro_use]
-mod test_macros;
+#[macro_use] mod test_macros;
 
 mod readme;
 pub mod cargo_info;

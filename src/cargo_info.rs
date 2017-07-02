@@ -6,6 +6,7 @@ use std::path::Path;
 
 use toml;
 
+/// Cargo.toml crate information
 #[derive(Clone, Deserialize)]
 pub struct Cargo {
     pub package: CargoPackage,
@@ -13,12 +14,14 @@ pub struct Cargo {
     pub bin: Option<Vec<CargoLib>>,
 }
 
+/// Cargo.toml crate package information
 #[derive(Clone, Deserialize)]
 pub struct CargoPackage {
     pub name: String,
     pub license: Option<String>,
 }
 
+/// Cargo.toml crate lib information
 #[derive(Clone, Deserialize)]
 pub struct CargoLib {
     pub path: String,
