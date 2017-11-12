@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use cargo_info;
 
 const DEFAULT_TEMPLATE: &'static str = "README.tpl";
+use cargo_info::DEFAULT_LIB;
 
 /// Get the project root from given path or defaults to current directory
 ///
@@ -161,12 +162,12 @@ pub fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
     // try lib defined in `Cargo.toml`
     match cargo.lib {
         Some(lib) => {
-            match File::open(current_dir.join(&lib.path)) {
+            match File::open(current_dir.join(lib.path_or_default())) {
                 Ok(file) => return Ok(file),
                 Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
                     return Err(format!(
                         "Could not open file '{}': {}",
-                        current_dir.join(&lib.path).to_string_lossy(),
+                        current_dir.join(lib.path_or_default()).to_string_lossy(),
                         e
                     ))
                 }
@@ -180,12 +181,12 @@ pub fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
     match cargo.bin {
         // if there is only one, use it
         Some(ref bin_list) if bin_list.len() == 1 => {
-            match File::open(current_dir.join(&bin_list[0].path)) {
+            match File::open(current_dir.join(&bin_list[0].path_or_default())) {
                 Ok(file) => return Ok(file),
                 Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
                     return Err(format!(
                         "Could not open file '{}': {}",
-                        current_dir.join(&bin_list[0].path).to_string_lossy(),
+                        current_dir.join(&bin_list[0].path_or_default()).to_string_lossy(),
                         e
                     ))
                 }
@@ -194,12 +195,14 @@ pub fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
         }
         // if there is more than one, return an error
         Some(ref bin_list) if bin_list.len() > 1 => {
-            let first = bin_list[0].path.clone();
+            let first = bin_list[0].path_or_default().to_string();
             let paths = bin_list
                 .iter()
                 .skip(1)
                 .map(|ref bin| bin.path.clone())
-                .fold(first, |acc, path| format!("{}, {}", acc, path));
+                .fold(first, |acc, path| {
+                    format!("{}, {}", acc, path.unwrap_or(DEFAULT_LIB.to_string()))
+                });
             return Err(format!("Multiple binaries found, choose one: [{}]", paths));
         }
         _ => {}

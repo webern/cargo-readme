@@ -6,6 +6,8 @@ use std::path::Path;
 
 use toml;
 
+pub const DEFAULT_LIB: &'static str = "src/lib.rs";
+
 /// Cargo.toml crate information
 #[derive(Clone, Deserialize)]
 pub struct Cargo {
@@ -24,7 +26,16 @@ pub struct CargoPackage {
 /// Cargo.toml crate lib information
 #[derive(Clone, Deserialize)]
 pub struct CargoLib {
-    pub path: String,
+    pub path: Option<String>,
+}
+
+impl CargoLib {
+    pub fn path_or_default(&self) -> &str {
+        self.path
+            .as_ref()
+            .map(|p| p.as_ref())
+            .unwrap_or(DEFAULT_LIB)
+    }
 }
 
 /// Try to get crate name and license from Cargo.toml
