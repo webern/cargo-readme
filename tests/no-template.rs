@@ -58,6 +58,6 @@ fn test() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(EXPECTED)
+        .stdout().is(EXPECTED)
         .unwrap();
 }

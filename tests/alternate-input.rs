@@ -16,7 +16,7 @@ fn empty_docs() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("# readme-test\n\nLicense: MIT")
+        .stdout().is("# readme-test\n\nLicense: MIT")
         .unwrap();
 }
 
@@ -42,7 +42,7 @@ License: MIT
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(expected)
+        .stdout().is(expected)
         .unwrap();
 }
 
@@ -70,6 +70,6 @@ License: MIT
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(expected)
+        .stdout().is(expected)
         .unwrap();
 }

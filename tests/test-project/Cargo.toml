@@ -3,3 +3,7 @@ name = "readme-test"
 version = "0.1.0"
 authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
 license = "MIT"
+
+# make sure we can handle all missing keys in [lib]/[bin]
+[lib]
+[[bin]]

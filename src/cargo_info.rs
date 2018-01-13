@@ -24,7 +24,7 @@ pub struct CargoPackage {
 /// Cargo.toml crate lib information
 #[derive(Clone, Deserialize)]
 pub struct CargoLib {
-    pub path: String,
+    pub path: Option<String>,
 }
 
 /// Try to get crate name and license from Cargo.toml
