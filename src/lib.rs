@@ -9,6 +9,6 @@ extern crate toml;
 #[macro_use] mod test_macros;
 
 mod readme;
-pub mod cargo_info;
+pub mod manifest;
 
 pub use readme::generate_readme;

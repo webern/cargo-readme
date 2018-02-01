@@ -1,0 +1,82 @@
+@startuml
+
+actor User
+User -> Main: generate_docs(entrypoint)
+activate Main
+
+Main -> ManifestHelper: crate_info(manifest)
+activate ManifestHelper
+
+note over ManifestHelper
+    Transform badges
+    into markdown
+end note
+ManifestHelper -> ManifestHelper: process badges
+
+Main <-- ManifestHelper: crate info
+deactivate ManifestHelper
+
+alt no entrypoint given
+    Main -> EntrypointFinder: find_entrypoint()
+    activate EntrypointFinder
+    Main <-- EntrypointFinder: entrypoint: File
+    deactivate EntrypointFinder
+end
+
+Main -> Extractor: extract_docs(file: File)
+activate Extractor
+Main <-- Extractor: docs: String
+
+Main -> Processor: process_docs(docs: String)
+activate Processor
+note right
+    - change fence blocks to
+      remove rustdoc specifics;
+    - optionally indent heading;
+end note
+
+Main <-- Processor: processed_docs: String
+|||
+note over Main
+    Pass crate info
+    as parameter
+end note
+Main -> Renderer: render(docs, crate_info)
+activate Renderer
+
+alt without template
+    Renderer -> Renderer: add crate info
+    note left
+        Add title
+        Add badges
+        Add license
+    end note
+else using template
+    Renderer -> Renderer: process\nsubstitutions
+
+    loop included files
+        note left of Renderer
+            Include doc string
+            from other files
+        end note
+        Renderer -> Extractor: extract_docs(file)
+        Renderer <-- Extractor:
+        Renderer -> Processor: process_docs(docs)
+        Renderer <-- Processor:
+        Renderer -> Renderer: include docs
+    end
+end
+
+deactivate Extractor
+
+deactivate Processor
+
+Main <-- Renderer: rendered readme
+
+deactivate Renderer
+
+User <-- Main: result
+
+deactivate Main
+
+@enduml
