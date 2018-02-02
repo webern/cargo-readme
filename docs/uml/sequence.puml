@@ -1,47 +1,78 @@
-@startuml
+@startuml flow
 
 actor User
-User -> Main: generate_docs(entrypoint)
+boundary Main
+participant ConfigHelper
+participant ManifestHelper
+participant EntrypointFinder
+participant Renderer
+participant Extractor
+participant Processor
+
+User -> Main
 activate Main
+
+Main -> ConfigHelper: find_configuration()
+activate ConfigHelper
+note right: Search for configuration
+
+ConfigHelper -> ConfigHelper: try environment
+ConfigHelper -> ConfigHelper: try file
+ConfigHelper -> ConfigHelper: try command line
+
+Main <-- ConfigHelper: configuration
+deactivate ConfigHelper
 
 Main -> ManifestHelper: crate_info(manifest)
 activate ManifestHelper
+note right: Transform badges into markdown
 
-note over ManifestHelper
-    Transform badges
-    into markdown
-end note
 ManifestHelper -> ManifestHelper: process badges
 
 Main <-- ManifestHelper: crate info
 deactivate ManifestHelper
 
-alt no entrypoint given
+opt no entrypoint given
     Main -> EntrypointFinder: find_entrypoint()
     activate EntrypointFinder
     Main <-- EntrypointFinder: entrypoint: File
     deactivate EntrypointFinder
 end
 
-Main -> Extractor: extract_docs(file: File)
+Main -> Extractor: extract_docs(File)
 activate Extractor
-Main <-- Extractor: docs: String
 
-Main -> Processor: process_docs(docs: String)
-activate Processor
-note right
+Extractor -> Processor: process_docs(String[])
+note over Processor
     - change fence blocks to
-      remove rustdoc specifics;
-    - optionally indent heading;
+      remove rustdoc specifics
+    - optionally indent heading
 end note
+activate Processor
 
-Main <-- Processor: processed_docs: String
-|||
-note over Main
-    Pass crate info
-    as parameter
-end note
+Extractor <-- Processor: processed docs
+deactivate Processor
+
+Main <-- Extractor: processed docs
+deactivate Extractor
+
 Main -> Renderer: render(docs, crate_info)
+ref over Renderer, Extractor, Processor: render template
+Main <-- Renderer: readme
+
+User <-- Main: result
+
+deactivate Main
+
+@enduml
+
+@startuml render
+
+participant Renderer
+participant Extractor
+participant Processor
+
+[-> Renderer: render(docs, crate_info)
 activate Renderer
 
 alt without template
@@ -53,6 +84,8 @@ alt without template
     end note
 else using template
     Renderer -> Renderer: process\nsubstitutions
+    Renderer -> Renderer: process\ninclusions
+    activate Renderer
 
     loop included files
         note left of Renderer
@@ -60,23 +93,21 @@ else using template
             from other files
         end note
         Renderer -> Extractor: extract_docs(file)
-        Renderer <-- Extractor:
-        Renderer -> Processor: process_docs(docs)
-        Renderer <-- Processor:
+        activate Extractor
+        Extractor -> Processor: process_docs(docs)
+        activate Processor
+        Extractor <-- Processor: processed docs
+        deactivate Processor
+        Renderer <-- Extractor: extracted docs
+        deactivate Extractor
         Renderer -> Renderer: include docs
     end
+    |||
+    deactivate Renderer
+    |||
 end
 
-deactivate Extractor
-
-deactivate Processor
-
-Main <-- Renderer: rendered readme
-
+[<-- Renderer: rendered readme
 deactivate Renderer
-
-User <-- Main: result
-
-deactivate Main
 
 @enduml

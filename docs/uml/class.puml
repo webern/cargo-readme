@@ -1,0 +1,67 @@
+@startuml
+
+package std::iter {
+    interface Iterator<T>
+}
+
+class Main
+
+Main --> ConfigHelper
+Main --> Extractor
+Main --> EntrypointFinder
+Main ---> ManifestHelper
+Main ---> Renderer
+
+class ConfigHelper {
+    + get_settings()
+    - try_environment()
+    - try_file(Option<File>)
+    - try_cli(Matches)
+}
+
+class EntrypointFinder {
+    + find_entrypoint(cwd: &Path)
+}
+
+class ManifestHelper {
+    + crate_info
+    - process_badges
+}
+
+ManifestHelper ..> CrateInfo: <<creates>>
+
+class Renderer {
+    + render(docs, crate_info)
+    - render_template()
+    - render_no_template()
+}
+
+Renderer ..> CrateInfo
+
+class CrateInfo {
+    + name: String
+    + license: String
+    + lib: Pair<String, bool>
+    + bin: Pair<String, bool>[]
+    + badges: String[]
+}
+
+class Extractor {
+    + extract()
+}
+
+class Processor<T: String> implements Iterator {
+    + process()
+}
+
+Extractor -o Processor
+
+enum Section {
+    CodeRust
+    CodeOther
+    None
+}
+
+Processor --> Section
+
+@enduml
