@@ -4,7 +4,7 @@ actor User
 boundary Main
 participant ConfigHelper
 participant ManifestHelper
-participant EntrypointFinder
+participant EntrypointHelper
 participant Renderer
 participant Extractor
 participant Processor
@@ -23,7 +23,7 @@ ConfigHelper -> ConfigHelper: try command line
 Main <-- ConfigHelper: configuration
 deactivate ConfigHelper
 
-Main -> ManifestHelper: crate_info(manifest)
+Main -> ManifestHelper: manifest(manifest)
 activate ManifestHelper
 note right: Transform badges into markdown
 
@@ -33,10 +33,10 @@ Main <-- ManifestHelper: crate info
 deactivate ManifestHelper
 
 opt no entrypoint given
-    Main -> EntrypointFinder: find_entrypoint()
-    activate EntrypointFinder
-    Main <-- EntrypointFinder: entrypoint: File
-    deactivate EntrypointFinder
+    Main -> EntrypointHelper: find_entrypoint()
+    activate EntrypointHelper
+    Main <-- EntrypointHelper: entrypoint: File
+    deactivate EntrypointHelper
 end
 
 Main -> Extractor: extract_docs(File)
@@ -56,7 +56,7 @@ deactivate Processor
 Main <-- Extractor: processed docs
 deactivate Extractor
 
-Main -> Renderer: render(docs, crate_info)
+Main -> Renderer: render(docs, manifest)
 ref over Renderer, Extractor, Processor: render template
 Main <-- Renderer: readme
 
@@ -72,7 +72,7 @@ participant Renderer
 participant Extractor
 participant Processor
 
-[-> Renderer: render(docs, crate_info)
+[-> Renderer: render(docs, manifest)
 activate Renderer
 
 alt without template

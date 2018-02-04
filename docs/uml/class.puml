@@ -4,64 +4,89 @@ package std::iter {
     interface Iterator<T>
 }
 
+package config {
+    class ConfigHelper {
+        + get_config(defaults_from_cli)
+        - try_environment()
+        - try_file(Option<File>)
+    }
+
+    class ReadmeConfig {
+        + project_root: Path
+        + entrypoint: Path
+        + template: Option<Path>
+        + add_title: bool
+        + add_badges: bool
+        + add_license: bool
+        + indent_headings: bool
+    }
+
+    class ProjectHelper {
+        + find_root(cwd: &Path)
+        + find_entrypoint(cwd: &Path, Manifest)
+        + find_template(cwd: &Path)
+    }
+
+    class ManifestHelper {
+        + crate_info()
+        - process_badges()
+    }
+
+    class Manifest {
+        + name: String
+        + license: String
+        + lib: Pair<String, bool>
+        + bin: Pair<String, bool>[]
+        + badges: String[]
+    }
+
+    ConfigHelper ..> ReadmeConfig: <<creates>>
+    ManifestHelper .> Manifest: <<creates>>
+    ProjectHelper ..> Manifest
+    ConfigHelper ---> ManifestHelper
+    ConfigHelper --> ProjectHelper
+}
+
+package docs {
+    class Renderer {
+        + render(docs, crate_info)
+        - render_template()
+        - render_no_template()
+    }
+
+    Renderer ..> ReadmeConfig
+    Renderer ..> Manifest
+
+    class Extractor {
+        + extract(entrypoint)
+    }
+
+    class Processor<T: String> {
+        + process()
+    }
+
+    Iterator <|--- Processor
+    Extractor --o Processor
+
+    enum Section {
+        CodeRust
+        CodeOther
+        None
+    }
+
+    Processor --> Section
+}
+
 class Main
-
 Main --> ConfigHelper
-Main --> Extractor
-Main --> EntrypointFinder
-Main ---> ManifestHelper
-Main ---> Renderer
+Main -> Readme
 
-class ConfigHelper {
-    + get_settings()
-    - try_environment()
-    - try_file(Option<File>)
-    - try_cli(Matches)
+class Readme {
+    + generate_readme(ReadmeConfig, Manifest)
 }
 
-class EntrypointFinder {
-    + find_entrypoint(cwd: &Path)
-}
-
-class ManifestHelper {
-    + crate_info
-    - process_badges
-}
-
-ManifestHelper ..> CrateInfo: <<creates>>
-
-class Renderer {
-    + render(docs, crate_info)
-    - render_template()
-    - render_no_template()
-}
-
-Renderer ..> CrateInfo
-
-class CrateInfo {
-    + name: String
-    + license: String
-    + lib: Pair<String, bool>
-    + bin: Pair<String, bool>[]
-    + badges: String[]
-}
-
-class Extractor {
-    + extract()
-}
-
-class Processor<T: String> implements Iterator {
-    + process()
-}
-
-Extractor -o Processor
-
-enum Section {
-    CodeRust
-    CodeOther
-    None
-}
-
-Processor --> Section
+Readme --> Renderer
+Readme --> Extractor
+' Readme ..> ReadmeConfig
 
 @enduml
