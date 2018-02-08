@@ -2,7 +2,7 @@ use std::io::Read;
 use std::path::Path;
 
 mod extract;
-mod transform;
+mod process;
 mod template;
 
 use self::transform::DocTransform;

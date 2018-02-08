@@ -12,38 +12,16 @@ const REGEX_CODE_RUST: &'static str = r"^```(rust|((rust,)?(no_run|ignore|should
 const REGEX_CODE_TEXT: &'static str = r"^```text$";
 const REGEX_CODE_OTHER: &'static str = r"^```\w[\w,\+]*$";
 
-pub trait DocTransform {
-    fn transform_doc(self, indent_headings: bool) -> DocTransformer<Self>
-    where
-        Self: Sized + Iterator<Item = String>,
-    {
-        DocTransformer::new(self, indent_headings)
-    }
-}
-
-impl<I: Iterator<Item = String>> DocTransform for I {}
-
-#[derive(PartialEq)]
-enum Code {
-    Rust,
-    Other,
-    None,
-}
-
-pub struct DocTransformer<I: Iterator> {
-    iter: I,
+pub struct Processor {
+    section: Section,
     indent_headings: bool,
-    section: Code,
     re_code_rust: Regex,
     re_code_text: Regex,
     re_code_other: Regex,
 }
 
-impl<I: Iterator<Item = String>> DocTransformer<I> {
-    pub fn new<J: IntoIterator<IntoIter = I, Item = String>>(
-        iter: J,
-        indent_headings: bool,
-    ) -> Self {
+impl Processor {
+    pub fn new(indent_headings: bool) -> Self {
         // Is this code block rust?
         let re_code_rust = Regex::new(REGEX_CODE_RUST).unwrap();
         // Is this code block just text?
@@ -51,55 +29,61 @@ impl<I: Iterator<Item = String>> DocTransformer<I> {
         // Is this code block a language other than rust?
         let re_code_other = Regex::new(REGEX_CODE_OTHER).unwrap();
 
-        DocTransformer {
-            iter: iter.into_iter(),
+        Processor {
+            section: Section::None,
             indent_headings: indent_headings,
-            section: Code::None,
             re_code_rust: re_code_rust,
             re_code_text: re_code_text,
             re_code_other: re_code_other,
         }
     }
-}
 
-impl<I> Iterator for DocTransformer<I>
-where
-    I: Iterator<Item = String>,
-{
-    type Item = String;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let mut line = match self.iter.next() {
-            Some(line) => line,
-            None => return None,
-        };
-
+    pub fn process(&mut self, line: String) -> Option<String> {
         // Skip lines that should be hidden in docs
-        while self.section == Code::Rust && line.starts_with("# ") {
-            line = match self.iter.next() {
-                Some(line) => line,
-                None => return None,
-            };
+        if line.starts_with("# ") {
+            return None;
         }
 
         // indent heading when outside code
-        if self.indent_headings && self.section == Code::None && line.starts_with("#") {
+        if self.indent_headings && self.section == Section::None && line.starts_with("#") {
             line.insert(0, '#');
-        } else if self.section == Code::None && self.re_code_rust.is_match(&line) {
-            self.section = Code::Rust;
+        } else if self.section == Section::None && self.re_code_rust.is_match(&line) {
+            self.section = Section::CodeRust;
             line = "```rust".to_owned();
-        } else if self.section == Code::None && self.re_code_text.is_match(&line) {
-            self.section = Code::Other;
+        } else if self.section == Section::None && self.re_code_text.is_match(&line) {
+            self.section = Section::CodeOther;
             line = "```".to_owned();
-        } else if self.section == Code::None && self.re_code_other.is_match(&line) {
-            self.section = Code::Other;
-        } else if self.section != Code::None && line == "```" {
-            self.section = Code::None;
+        } else if self.section == Section::None && self.re_code_other.is_match(&line) {
+            self.section = Section::CodeOther;
+        } else if self.section != Section::None && line == "```" {
+            self.section = Section::None;
         }
 
         Some(line)
     }
 }
+
+#[derive(PartialEq)]
+enum Section {
+    CodeRust,
+    CodeOther,
+    None,
+}
+
+pub trait DocProcess {
+    fn process_doc(self, indent_headings: bool) -> Vec<String>
+    where
+        Self: Sized + IntoIterator<Item = String>,
+    {
+        self.into_iter()
+            .scan(
+                Processor::new(indent_headings),
+                |p, line| p.process(line)
+            ).collect()
+    }
+}
+
+impl<I: IntoIterator<Item = String>> DocProcess for I {}
 
 
 #[cfg(test)]

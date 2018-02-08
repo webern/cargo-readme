@@ -10,7 +10,7 @@ extern crate percent_encoding;
 #[macro_use] mod test_macros;
 
 mod readme;
-pub mod manifest;
+// pub mod manifest;
 mod config;
 
 pub use readme::generate_readme;

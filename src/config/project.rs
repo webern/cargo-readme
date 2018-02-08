@@ -8,7 +8,7 @@ use ::config::manifest::{Manifest, ManifestLib};
 /// The given path is appended to the current directory if is a relative path, otherwise it is used
 /// as is. If no path is given, the current directory is used.
 /// A `Cargo.toml` file must be present is the root directory.
-pub fn get_project_root(given_root: Option<&str>) -> Result<PathBuf, String> {
+pub fn get_root(given_root: Option<&str>) -> Result<PathBuf, String> {
     let current_dir = env::current_dir().map_err(|e| format!("{}", e))?;
     let root = match given_root {
         Some(root) => {
@@ -40,7 +40,7 @@ pub fn get_project_root(given_root: Option<&str>) -> Result<PathBuf, String> {
 /// - file defined in the `[lib]` section of Cargo.toml
 /// - file defined in the `[[bin]]` section of Cargo.toml, if there is only one
 ///   - if there is more than one `[[bin]]`, an error is returned
-pub fn find_entrypoint(current_dir: &Path, manifest: &Manifest) -> Result<PathBuf, String> {
+pub fn find_input(current_dir: &Path, manifest: &Manifest) -> Result<PathBuf, String> {
     // try lib.rs
     let lib_rs = current_dir.join("src/lib.rs");
     if lib_rs.exists() {

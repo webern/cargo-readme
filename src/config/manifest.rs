@@ -22,27 +22,6 @@ const BADGE_PROVIDERS: [&str; 8] = [
     "is-it-maintained-open-issues",
 ];
 
-pub struct ManifestLib {
-    pub path: PathBuf,
-    pub doc: bool,
-}
-
-impl ManifestLib {
-    fn new (path: PathBuf, doc: bool) -> Self {
-        ManifestLib {
-            path: path,
-            doc: doc
-        }
-    }
-
-    fn from_cargo_toml(lib: CargoTomlLib) -> Self {
-        ManifestLib {
-            path: PathBuf::from(lib.path),
-            doc: lib.doc.unwrap_or(true)
-        }
-    }
-}
-
 pub struct Manifest {
     pub name: String,
     pub license: Option<String>,
@@ -61,6 +40,27 @@ impl Manifest {
                 bin_vec.into_iter().map(|bin| ManifestLib::from_cargo_toml(bin)).collect()
             }).unwrap_or_default(),
             badges: process_badges(manifest.badges)
+        }
+    }
+}
+
+pub struct ManifestLib {
+    pub path: PathBuf,
+    pub doc: bool,
+}
+
+impl ManifestLib {
+    fn new (path: PathBuf, doc: bool) -> Self {
+        ManifestLib {
+            path: path,
+            doc: doc
+        }
+    }
+
+    fn from_cargo_toml(lib: CargoTomlLib) -> Self {
+        ManifestLib {
+            path: PathBuf::from(lib.path),
+            doc: lib.doc.unwrap_or(true)
         }
     }
 }

@@ -2,18 +2,21 @@
 
 use std::io::{self, Read, BufRead, BufReader};
 
-/// Read the given `Read`er and return a `Vec` of the rustdoc lines found
-pub fn extract_docs<R: Read>(reader: R) -> io::Result<Vec<String>> {
-    let mut reader = BufReader::new(reader);
+use ::readme::process::DocProcess;
 
+/// Read the given `Read`er and return a `Vec` of the rustdoc lines found
+pub fn extract_docs<R: Read>(reader: R, indent_headings: bool) -> io::Result<Vec<String>> {
+    let mut reader = BufReader::new(reader);
     let mut line = String::new();
 
     while reader.read_line(&mut line)? > 0 {
         if line.starts_with("//!") {
-            return extract_docs_singleline_style(line, reader);
+            return extract_docs_singleline_style(line, reader)
+                .map(|i| i.process_doc(indent_headings));
         }
         if line.starts_with("/*!") {
-            return extract_docs_multiline_style(line, reader);
+            return extract_docs_multiline_style(line, reader)
+                .map(|i| i.process_doc(indent_headings));
         }
 
         line.clear();
@@ -115,7 +118,7 @@ mod tests {
     #[test]
     fn extract_docs_singleline_style() {
         let reader = Cursor::new(INPUT_SINGLELINE.as_bytes());
-        let result = extract_docs(reader).unwrap();
+        let result = extract_docs(reader, false).unwrap();
         assert_eq!(result, EXPECTED);
     }
 
@@ -138,7 +141,7 @@ mod tests {
     #[test]
     fn extract_docs_multiline_style() {
         let reader = Cursor::new(INPUT_MULTILINE.as_bytes());
-        let result = extract_docs(reader).unwrap();
+        let result = extract_docs(reader, false).unwrap();
         assert_eq!(result, EXPECTED);
     }
 
@@ -153,7 +156,7 @@ mod tests {
     fn extract_docs_mix_styles_singleline() {
         let input = Cursor::new(INPUT_MIXED_SINGLELINE.as_bytes());
         let expected = ["singleline"];
-        let result = extract_docs(input).unwrap();
+        let result = extract_docs(input, false).unwrap();
         assert_eq!(result, expected)
     }
 
@@ -168,7 +171,7 @@ mod tests {
     fn extract_docs_mix_styles_multiline() {
         let input = Cursor::new(INPUT_MIXED_MULTILINE.as_bytes());
         let expected = ["multiline"];
-        let result = extract_docs(input).unwrap();
+        let result = extract_docs(input, false).unwrap();
         assert_eq!(result, expected);
     }
 
@@ -194,7 +197,7 @@ mod tests {
     #[test]
     fn extract_docs_nested_level_1() {
         let input = Cursor::new(INPUT_MULTILINE_NESTED_1.as_bytes());
-        let result = extract_docs(input).unwrap();
+        let result = extract_docs(input, false).unwrap();
         assert_eq!(result, EXPECTED_MULTILINE_NESTED_1);
     }
 
@@ -228,7 +231,7 @@ mod tests {
     #[test]
     fn extract_docs_nested_level_2() {
         let input = Cursor::new(INPUT_MULTILINE_NESTED_2.as_bytes());
-        let result = extract_docs(input).unwrap();
+        let result = extract_docs(input, false).unwrap();
         assert_eq!(result, EXPECTED_MULTILINE_NESTED_2);
     }
 }

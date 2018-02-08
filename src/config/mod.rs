@@ -1,11 +1,13 @@
+use std::path::{Path, PathBuf};
+
 mod manifest;
 mod project;
 
-use std::path::{Path, PathBuf};
+use self::manifest::Manifest;
 
 pub struct ReadmeConfig {
-    pub project_root: PathBuf,
-    pub entrypoint: PathBuf,
+    pub root: PathBuf,
+    pub input: PathBuf,
     pub template: Option<PathBuf>,
     pub add_title: bool,
     pub add_badges: bool,
@@ -14,8 +16,8 @@ pub struct ReadmeConfig {
 }
 
 pub struct ReadmeConfigDefaults<'a> {
-    pub project_root: Option<&'a Path>,
-    pub entrypoint: Option<&'a Path>,
+    pub root: Option<&'a Path>,
+    pub input: Option<&'a Path>,
     pub template: Option<&'a Path>,
     pub add_title: Option<bool>,
     pub add_badges: Option<bool>,
@@ -26,8 +28,8 @@ pub struct ReadmeConfigDefaults<'a> {
 impl<'a> Default for ReadmeConfigDefaults<'a> {
     fn default() -> Self {
         ReadmeConfigDefaults {
-            project_root: None,
-            entrypoint: None,
+            root: None,
+            input: None,
             template: None,
             add_title: None,
             add_badges: None,
@@ -37,14 +39,30 @@ impl<'a> Default for ReadmeConfigDefaults<'a> {
     }
 }
 
-pub fn get_config(defaults: ReadmeConfigDefaults) -> Result<ReadmeConfig, String> {
-    let project_root = defaults.project_root
+pub fn get_config(defaults: ReadmeConfigDefaults, manifest: &Manifest) -> Result<ReadmeConfig, String> {
+    let root = defaults.root
         .map(|root| root.to_path_buf())
-        .ok_or_else(project::get_project_root(None))?;
+        .unwrap_or(project::get_root(None)?);
 
-    let entrypoint = defaults.entrypoint
+    let input = defaults.input
         .map(|ep| ep.to_path_buf())
-        .ok_or_else(project::find_entrypoint(current_dir))
+        .unwrap_or(project::find_input(root.as_ref(), manifest)?);
 
-    Err(String::new())
+    let template = defaults.template
+        .map(|tpl| tpl.to_path_buf());
+
+    let add_title = defaults.add_title.unwrap_or(true);
+    let add_badges = defaults.add_badges.unwrap_or(true);
+    let add_license = defaults.add_license.unwrap_or(true);
+    let indent_headings = defaults.indent_headings.unwrap_or(true);
+
+    Ok(ReadmeConfig {
+        root: root,
+        input: input,
+        template: template,
+        add_title: add_title,
+        add_badges: add_badges,
+        add_license: add_license,
+        indent_headings: indent_headings
+    })
 }
