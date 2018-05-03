@@ -1,4 +1,4 @@
-use cargo_info::Cargo;
+use ::config::Manifest;
 
 /// Renders the template
 ///
@@ -6,37 +6,59 @@ use cargo_info::Cargo;
 pub fn render(
     template: Option<String>,
     mut readme: String,
-    cargo: Cargo,
+    cargo: Manifest,
     add_title: bool,
+    add_badges: bool,
     add_license: bool,
 ) -> Result<String, String> {
-    let title = cargo.package.name.as_ref();
-    let license = cargo.package.license.as_ref();
+    let title = cargo.name.as_ref();
+    let badges = cargo.badges.as_ref();
+    let license = cargo.license.as_ref();
 
     match template {
         Some(template) => {
             if template.contains("{{license}}") && !add_license {
                 return Err(
-                    "`{{license}}` was found in template but should not be rendered".to_owned(),
+                    "`{{license}}` was found in template but license should not be rendered".to_owned()
+                );
+            }
+
+            if template.contains("{{badges}}") && !add_badges {
+                return Err(
+                    "`{{badges}}` was found in template but badges should not be rendered".to_owned()
                 );
             }
 
             if template.contains("{{crate}}") && !add_title {
                 return Err(
-                    "`{{crate}}` was found in template but title should not be rendered"
-                        .to_owned(),
+                    "`{{crate}}` was found in template but title should not be rendered".to_owned()
                 );
             }
 
-            let title = if add_title { Some(title) } else { None };
-            let license = if add_license {
-                Some(license.unwrap().as_ref())
+            let title = if add_title {
+                Some(title)
             } else {
                 None
             };
+
+            let badges = if add_badges {
+                Some(badges)
+            } else {
+                None
+            };
+
+            let license = if add_license {
+                license.map(|l| l.as_ref())
+            } else {
+                None
+            };
+
             process_template(template, readme, title, license)
         }
         None => {
+            if add_badges {
+                readme = prepend_badges(readme, &badges);
+            }
             if add_title {
                 readme = prepend_title(readme, &title);
             }
@@ -94,6 +116,12 @@ fn process_template(
 
     let result = template.replace("{{readme}}", &readme);
     Ok(result)
+}
+
+/// Prepend badges to output string
+fn prepend_badges(readme: String, badges: &Vec<String>) -> String {
+    let badges = badges.iter().fold(String::new(), |acc, x| format!("{}\n{}", acc, x));
+    format!("{}\n\n{}", badges, readme)
 }
 
 /// Prepend title (crate name) to output string

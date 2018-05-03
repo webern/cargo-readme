@@ -3,7 +3,8 @@ use std::path::{Path, PathBuf};
 mod manifest;
 mod project;
 
-use self::manifest::Manifest;
+pub(crate) use self::manifest::Manifest;
+pub(crate) use self::manifest::get_manifest;
 
 pub struct ReadmeConfig {
     pub root: PathBuf,

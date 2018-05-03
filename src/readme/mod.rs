@@ -5,8 +5,7 @@ mod extract;
 mod process;
 mod template;
 
-use self::transform::DocTransform;
-use cargo_info;
+use ::config;
 
 /// Generates readme data from `source` file
 ///
@@ -17,20 +16,12 @@ pub fn generate_readme<T: Read>(
     template: Option<&mut T>,
     add_title: bool,
     add_license: bool,
+    add_badges: bool,
     indent_headings: bool,
 ) -> Result<String, String> {
 
-    let readme = extract::extract_docs(source)
-        .map_err(|e| format!("{}", e))?
-        .into_iter()
-        .transform_doc(indent_headings)
-        .fold(String::new(), |mut acc, x| {
-            if !acc.is_empty() {
-                acc.push('\n');
-            }
-            acc.push_str(&x);
-            acc
-        });
+    let readme = extract::extract_docs(source, indent_headings)
+        .map_err(|e| format!("{}", e))?;
 
     // get template from file
     let template = if let Some(template) = template {
@@ -39,13 +30,18 @@ pub fn generate_readme<T: Read>(
         None
     };
 
-    // get cargo info from Cargo.toml
-    let cargo = cargo_info::get_cargo_info(project_root)?;
-    if add_license && cargo.package.license.is_none() {
+    // get manifest from Cargo.toml
+    let cargo = config::get_manifest(project_root)?;
+
+    if add_license && cargo.license.is_none() {
         return Err("License not found in Cargo.toml".to_owned());
     }
 
-    template::render(template, readme, cargo, add_title, add_license)
+    if add_badges && cargo.badges.is_empty() {
+        return Err("No badges found in Cargo.toml".to_owned());
+    }
+
+    template::render(template, readme, cargo, add_title, add_badges, add_license)
 }
 
 /// Load a template String from a file

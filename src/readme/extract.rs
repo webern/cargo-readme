@@ -5,24 +5,34 @@ use std::io::{self, Read, BufRead, BufReader};
 use ::readme::process::DocProcess;
 
 /// Read the given `Read`er and return a `Vec` of the rustdoc lines found
-pub fn extract_docs<R: Read>(reader: R, indent_headings: bool) -> io::Result<Vec<String>> {
+pub fn extract_docs<R: Read>(reader: R, indent_headings: bool) -> io::Result<String> {
     let mut reader = BufReader::new(reader);
     let mut line = String::new();
 
+    let mut lines = Vec::new();
+
     while reader.read_line(&mut line)? > 0 {
         if line.starts_with("//!") {
-            return extract_docs_singleline_style(line, reader)
-                .map(|i| i.process_doc(indent_headings));
+            lines = extract_docs_singleline_style(line, reader)?;
+            break
         }
+
         if line.starts_with("/*!") {
-            return extract_docs_multiline_style(line, reader)
-                .map(|i| i.process_doc(indent_headings));
+            lines = extract_docs_multiline_style(line, reader)?;
+            break
         }
 
         line.clear();
     }
 
-    Ok(Vec::new())
+    let readme = lines.process_doc(indent_headings).into_iter()
+        .fold(String::new(), |mut acc, x| {
+            if !acc.is_empty() { acc.push('\n'); }
+            acc.push_str(&x);
+            acc
+        });
+
+    Ok(readme)
 }
 
 fn extract_docs_singleline_style<R: Read>(first_line: String, reader: BufReader<R>) -> io::Result<Vec<String>> {

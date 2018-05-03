@@ -22,6 +22,34 @@ const BADGE_PROVIDERS: [&str; 8] = [
     "is-it-maintained-open-issues",
 ];
 
+/// Try to get manifest info from Cargo.toml
+pub fn get_manifest(project_root: &Path) -> Result<Manifest, String> {
+    let mut cargo_toml = File::open(project_root.join("Cargo.toml"))
+        .map_err(|e| format!("Could not read Cargo.toml: {}", e))?;
+
+    let buf = {
+        let mut buf = String::new();
+        cargo_toml.read_to_string(&mut buf)
+            .map_err(|e| format!("{}", e))?;
+        buf
+    };
+
+    let cargo_toml: CargoToml = toml::from_str(&buf)
+        .map_err(|e| format!("{}", e))?;
+
+    let manifest = Manifest {
+        name: cargo_toml.package.name,
+        license: cargo_toml.package.license,
+        lib: cargo_toml.lib.map(|lib| ManifestLib::from_cargo_toml(lib)),
+        bin: cargo_toml.bin.map(|bin_vec| {
+            bin_vec.into_iter().map(|bin| ManifestLib::from_cargo_toml(bin)).collect()
+        }).unwrap_or_default(),
+        badges: process_badges(cargo_toml.badges)
+    };
+
+    Ok(manifest)
+}
+
 pub struct Manifest {
     pub name: String,
     pub license: Option<String>,
@@ -173,22 +201,4 @@ struct CargoTomlPackage {
 struct CargoTomlLib {
     pub path: String,
     pub doc: Option<bool>,
-}
-
-/// Try to get crate info from Cargo.toml
-pub fn get_crate_info(project_root: &Path) -> Result<Manifest, String> {
-    let mut cargo_toml = File::open(project_root.join("Cargo.toml"))
-        .map_err(|e| format!("Could not read Cargo.toml: {}", e))?;
-
-    let buf = {
-        let mut buf = String::new();
-        cargo_toml.read_to_string(&mut buf)
-            .map_err(|e| format!("{}", e))?;
-        buf
-    };
-
-    let cargo_toml = toml::from_str(&buf)
-        .map_err(|e| format!("{}", e))?;
-
-    Ok(Manifest::new(cargo_toml))
 }
