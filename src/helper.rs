@@ -1,9 +1,9 @@
-use std::env;
-use std::io::{self, Write, ErrorKind};
+use std::io::{Write, ErrorKind};
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
-use cargo_info;
+use cargo_readme::get_manifest;
+use cargo_readme::project;
 
 const DEFAULT_TEMPLATE: &'static str = "README.tpl";
 
@@ -13,27 +13,7 @@ const DEFAULT_TEMPLATE: &'static str = "README.tpl";
 /// as is. If no path is given, the current directory is used.
 /// A `Cargo.toml` file must be present is the root directory.
 pub fn get_project_root(given_root: Option<&str>) -> Result<PathBuf, String> {
-    let current_dir = env::current_dir().map_err(|e| format!("{}", e))?;
-    let root = match given_root {
-        Some(root) => {
-            let root = Path::new(root);
-            if root.is_absolute() {
-                root.to_path_buf()
-            } else {
-                current_dir.join(root)
-            }
-        }
-        None => current_dir,
-    };
-
-    if !root.join("Cargo.toml").is_file() {
-        return Err(format!(
-            "`{:?}` does not look like a Rust/Cargo project",
-            root
-        ));
-    }
-
-    Ok(root)
+   project::get_root(given_root)
 }
 
 /// Get the source file from which the doc comments will be extracted
@@ -121,90 +101,14 @@ pub fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), Strin
 /// Find the default entrypoiny to read the doc comments from
 ///
 /// Try to read entrypoint in the following order:
-/// - src/main.rs
 /// - src/lib.rs
+/// - src/main.rs
 /// - file defined in the `[lib]` section of Cargo.toml
 /// - file defined in the `[[bin]]` section of Cargo.toml, if there is only one
 ///   - if there is more than one `[[bin]]`, an error is returned
 pub fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
-    let lib_rs = current_dir.join("src/lib.rs");
-    let main_rs = current_dir.join("src/main.rs");
+    let manifest = get_manifest(current_dir)?;
+    let entrypoint = project::find_entrypoint(current_dir, &manifest)?;
 
-    let cargo = try!(cargo_info::get_cargo_info(current_dir));
-
-    // try src/main.rs
-    match File::open(&main_rs) {
-        Ok(file) => return Ok(file),
-        Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
-            return Err(format!(
-                "Could not open file '{}': {}",
-                main_rs.to_string_lossy(),
-                e
-            ))
-        }
-        _ => {}
-    }
-
-    // try src/lib.rs
-    match File::open(&lib_rs) {
-        Ok(file) => return Ok(file),
-        Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
-            return Err(format!(
-                "Could not open file '{}': {}",
-                lib_rs.to_string_lossy(),
-                e
-            ))
-        }
-        _ => {}
-    }
-
-    // try lib defined in `Cargo.toml`
-    match cargo.lib {
-        Some(lib) => {
-            match File::open(current_dir.join(&lib.path)) {
-                Ok(file) => return Ok(file),
-                Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
-                    return Err(format!(
-                        "Could not open file '{}': {}",
-                        current_dir.join(&lib.path).to_string_lossy(),
-                        e
-                    ))
-                }
-                _ => {}
-            }
-        }
-        _ => {}
-    }
-
-    // try bin defined in `Cargo.toml`
-    match cargo.bin {
-        // if there is only one, use it
-        Some(ref bin_list) if bin_list.len() == 1 => {
-            match File::open(current_dir.join(&bin_list[0].path)) {
-                Ok(file) => return Ok(file),
-                Err(ref e) if e.kind() != io::ErrorKind::NotFound => {
-                    return Err(format!(
-                        "Could not open file '{}': {}",
-                        current_dir.join(&bin_list[0].path).to_string_lossy(),
-                        e
-                    ))
-                }
-                _ => {}
-            }
-        }
-        // if there is more than one, return an error
-        Some(ref bin_list) if bin_list.len() > 1 => {
-            let first = bin_list[0].path.clone();
-            let paths = bin_list
-                .iter()
-                .skip(1)
-                .map(|ref bin| bin.path.clone())
-                .fold(first, |acc, path| format!("{}, {}", acc, path));
-            return Err(format!("Multiple binaries found, choose one: [{}]", paths));
-        }
-        _ => {}
-    }
-
-    // if no entrypoint is found, return an error
-    Err("No entrypoint found".to_owned())
+    File::open(current_dir.join(entrypoint)).map_err(|e| format!("{}", e))
 }

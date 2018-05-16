@@ -122,8 +122,6 @@ use std::io::{self, Write};
 
 use clap::{Arg, ArgMatches, App, AppSettings, SubCommand};
 
-use cargo_readme::cargo_info;
-
 mod helper;
 
 fn main() {
@@ -172,6 +170,12 @@ fn main() {
                        By default, the title ('# crate-name') is prepended to the output. If a \
                        template is used and it contains the tag '{{crate}}', the template takes \
                        precedence and this option is ignored."))
+            .arg(Arg::with_name("NO_BADGES")
+                .long("no-badges")
+                .help("Do not prepend badges line.{n}\
+                       Badges defined in Cargo.toml are prepended to the output. If a template is \
+                       used and it contains the tag '{{badges}}', the template takes precedence \
+                       and this option is ignored."))
             .arg(Arg::with_name("NO_LICENSE")
                 .long("no-license")
                 .help("Do not append license line. By default, the license, if defined in \
@@ -209,6 +213,7 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
     let output = m.value_of("OUTPUT");
     let template = m.value_of("TEMPLATE");
     let add_title = !m.is_present("NO_TITLE");
+    let add_badges = !m.is_present("NO_BADGES");
     let add_license = !m.is_present("NO_LICENSE");
     let no_template = m.is_present("NO_TEMPLATE");
     let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
@@ -235,6 +240,7 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
         &mut source,
         template_file.as_mut(),
         add_title,
+        add_badges,
         add_license,
         indent_headings,
     )?;

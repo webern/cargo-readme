@@ -35,12 +35,12 @@ pub fn get_root(given_root: Option<&str>) -> Result<PathBuf, String> {
 /// Find the default entrypoiny to read the doc comments from
 ///
 /// Try to read entrypoint in the following order:
-/// - src/main.rs
 /// - src/lib.rs
+/// - src/main.rs
 /// - file defined in the `[lib]` section of Cargo.toml
 /// - file defined in the `[[bin]]` section of Cargo.toml, if there is only one
 ///   - if there is more than one `[[bin]]`, an error is returned
-pub fn find_input(current_dir: &Path, manifest: &Manifest) -> Result<PathBuf, String> {
+pub fn find_entrypoint(current_dir: &Path, manifest: &Manifest) -> Result<PathBuf, String> {
     // try lib.rs
     let lib_rs = current_dir.join("src/lib.rs");
     if lib_rs.exists() {
@@ -54,8 +54,8 @@ pub fn find_input(current_dir: &Path, manifest: &Manifest) -> Result<PathBuf, St
     }
 
     // try lib defined in `Cargo.toml`
-    if let Some(ManifestLib{ path: lib, doc: true }) = manifest.lib {
-         return Ok(lib)
+    if let Some(ManifestLib { path: ref lib, doc: true }) = manifest.lib {
+        return Ok(lib.to_path_buf())
     }
 
     // try bin defined in `Cargo.toml`
@@ -63,7 +63,7 @@ pub fn find_input(current_dir: &Path, manifest: &Manifest) -> Result<PathBuf, St
         let bin_list: Vec<_> = manifest.bin.iter().filter(|b| b.doc == true).collect();
 
         if bin_list.len() > 1 {
-            let first = bin_list[0].path.to_string_lossy().to_owned();
+            let first = bin_list[0].path.to_string_lossy().into_owned();
             let paths = bin_list
                 .iter()
                 .skip(1)
@@ -73,7 +73,7 @@ pub fn find_input(current_dir: &Path, manifest: &Manifest) -> Result<PathBuf, St
         }
 
         if bin_list.len() == 1 {
-            return Ok(bin_list[1].path)
+            return Ok(bin_list[0].path.clone())
         }
     }
 

@@ -15,8 +15,8 @@ pub fn generate_readme<T: Read>(
     source: &mut T,
     template: Option<&mut T>,
     add_title: bool,
-    add_license: bool,
     add_badges: bool,
+    add_license: bool,
     indent_headings: bool,
 ) -> Result<String, String> {
 
@@ -32,14 +32,6 @@ pub fn generate_readme<T: Read>(
 
     // get manifest from Cargo.toml
     let cargo = config::get_manifest(project_root)?;
-
-    if add_license && cargo.license.is_none() {
-        return Err("License not found in Cargo.toml".to_owned());
-    }
-
-    if add_badges && cargo.badges.is_empty() {
-        return Err("No badges found in Cargo.toml".to_owned());
-    }
 
     template::render(template, readme, cargo, add_title, add_badges, add_license)
 }

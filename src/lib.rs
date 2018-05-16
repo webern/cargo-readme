@@ -13,3 +13,5 @@ mod readme;
 mod config;
 
 pub use readme::generate_readme;
+pub use config::get_manifest;
+pub use config::project;

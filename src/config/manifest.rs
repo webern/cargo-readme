@@ -37,15 +37,7 @@ pub fn get_manifest(project_root: &Path) -> Result<Manifest, String> {
     let cargo_toml: CargoToml = toml::from_str(&buf)
         .map_err(|e| format!("{}", e))?;
 
-    let manifest = Manifest {
-        name: cargo_toml.package.name,
-        license: cargo_toml.package.license,
-        lib: cargo_toml.lib.map(|lib| ManifestLib::from_cargo_toml(lib)),
-        bin: cargo_toml.bin.map(|bin_vec| {
-            bin_vec.into_iter().map(|bin| ManifestLib::from_cargo_toml(bin)).collect()
-        }).unwrap_or_default(),
-        badges: process_badges(cargo_toml.badges)
-    };
+    let manifest = Manifest::new(cargo_toml);
 
     Ok(manifest)
 }
@@ -59,15 +51,17 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    fn new(manifest: CargoToml) -> Manifest {
+    fn new(cargo_toml: CargoToml) -> Manifest {
         Manifest {
-            name: manifest.package.name,
-            license: manifest.package.license,
-            lib: manifest.lib.map(|lib| ManifestLib::from_cargo_toml(lib)),
-            bin: manifest.bin.map(|bin_vec| {
+            name: cargo_toml.package.name,
+            license: cargo_toml.package.license,
+            lib: cargo_toml.lib.map(|lib| ManifestLib::from_cargo_toml(lib)),
+            bin: cargo_toml.bin.map(|bin_vec| {
                 bin_vec.into_iter().map(|bin| ManifestLib::from_cargo_toml(bin)).collect()
             }).unwrap_or_default(),
-            badges: process_badges(manifest.badges)
+            badges: cargo_toml.badges
+                .map(|b| process_badges(b))
+                .unwrap_or_default()
         }
     }
 }
@@ -78,13 +72,6 @@ pub struct ManifestLib {
 }
 
 impl ManifestLib {
-    fn new (path: PathBuf, doc: bool) -> Self {
-        ManifestLib {
-            path: path,
-            doc: doc
-        }
-    }
-
     fn from_cargo_toml(lib: CargoTomlLib) -> Self {
         ManifestLib {
             path: PathBuf::from(lib.path),
@@ -95,11 +82,11 @@ impl ManifestLib {
 
 fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<String> {
     badges.into_iter()
-        .filter(|&(name, _)| BADGE_PROVIDERS.contains(&name.as_ref()))
+        .filter(|(ref name, _)| BADGE_PROVIDERS.contains(&name.as_ref()))
         .map(|(name, attrs)| {
         match name.as_ref() {
             "appveyor" => {
-                let repo = attrs["repository"];
+                let repo = &attrs["repository"];
                 let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
                 let service = attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT);
 
@@ -108,7 +95,7 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
                     repo=repo, branch=branch, service=percent_encode(service))
             }
             "circle-ci" => {
-                let repo = attrs["repository"];
+                let repo = &attrs["repository"];
                 let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
                 let service = badge_service_short_name(
                     attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT)
@@ -119,7 +106,7 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
                     repo=repo, service=service, branch=percent_encode(branch))
             }
             "gitlab" => {
-                let repo = attrs["repository"];
+                let repo = &attrs["repository"];
                 let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
 
                 format!(
@@ -127,7 +114,7 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
                     repo=repo, branch=percent_encode(branch))
             }
             "travis-ci" => {
-                let repo = attrs["repository"];
+                let repo = &attrs["repository"];
                 let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
 
                 format!(
@@ -135,7 +122,7 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
                     repo=repo, branch=percent_encode(branch))
             }
             "codecov" => {
-                let repo = attrs["repository"];
+                let repo = &attrs["repository"];
                 let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
                 let service = badge_service_short_name(
                     attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT)
@@ -146,7 +133,7 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
                     repo=repo, branch=percent_encode(branch), service=service)
             }
             "coveralls" => {
-                let repo = attrs["repository"];
+                let repo = &attrs["repository"];
                 let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
                 let service = attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT);
 
@@ -164,6 +151,9 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
                     "[![Percentage of issues still open](http://isitmaintained.com/badge/open/{repo}.svg)](http://isitmaintained.com/project/{repo} \"Percentage of issues still open\")",
                     repo=attrs["repository"])
             }
+            _ => {
+                String::new()
+            }
         }
     }).collect()
 }
@@ -177,6 +167,7 @@ fn badge_service_short_name(service: &str) -> &'static str {
         "github" => "gh",
         "bitbucket" => "bb",
         "gitlab" => "gl",
+        _ => "gh",
     }
 }
 
@@ -186,7 +177,7 @@ struct CargoToml {
     pub package: CargoTomlPackage,
     pub lib: Option<CargoTomlLib>,
     pub bin: Option<Vec<CargoTomlLib>>,
-    pub badges: BTreeMap<String, BTreeMap<String, String>>,
+    pub badges: Option<BTreeMap<String, BTreeMap<String, String>>>,
 }
 
 /// Cargo.toml crate package information

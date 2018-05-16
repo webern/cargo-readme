@@ -38,9 +38,9 @@ impl Processor {
         }
     }
 
-    pub fn process(&mut self, line: String) -> Option<String> {
+    pub fn process(&mut self, mut line: String) -> Option<String> {
         // Skip lines that should be hidden in docs
-        if line.starts_with("# ") {
+        if self.section == Section::CodeRust && line.starts_with("# ") {
             return None;
         }
 
@@ -75,11 +75,15 @@ pub trait DocProcess {
     where
         Self: Sized + IntoIterator<Item = String>,
     {
+        let mut p = Processor::new(indent_headings);
         self.into_iter()
-            .scan(
-                Processor::new(indent_headings),
-                |p, line| p.process(line)
-            ).collect()
+            .filter_map(|line| p.process(line))
+            .collect()
+        // self.into_iter()
+        //     .scan(
+        //         Processor::new(indent_headings),
+        //         |p, line| p.process(line)
+        //     ).collect()
     }
 }
 
@@ -88,7 +92,7 @@ impl<I: IntoIterator<Item = String>> DocProcess for I {}
 
 #[cfg(test)]
 mod tests {
-    use super::DocTransformer;
+    use super::DocProcess;
 
     const INPUT_HIDDEN_LINE: &str = concat_lines!(
         "```",
@@ -110,7 +114,7 @@ mod tests {
         let input: Vec<_> = INPUT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
         let expected: Vec<_> = EXPECTED_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
 
-        let result: Vec<_> = DocTransformer::new(input, true).collect();
+        let result = input.process_doc(true);
 
         assert_eq!(result, expected);
     }
@@ -143,7 +147,7 @@ mod tests {
         let input: Vec<_> = INPUT_NOT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
         let expected: Vec<_> = EXPECTED_NOT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
 
-        let result: Vec<_> = DocTransformer::new(input, true).collect();
+        let result = input.process_doc(true);
 
         assert_eq!(result, expected);
     }
@@ -197,7 +201,7 @@ mod tests {
         let input: Vec<_> = INPUT_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
         let expected: Vec<_> = EXPECTED_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
 
-        let result: Vec<_> = DocTransformer::new(input, true).collect();
+        let result = input.process_doc(true);
 
         assert_eq!(result, expected);
     }
@@ -229,7 +233,7 @@ mod tests {
         let input: Vec<_> = INPUT_RUST_CODE_BLOCK_RUST_PREFIX.lines().map(|x| x.to_owned()).collect();
         let expected: Vec<_> = EXPECTED_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
 
-        let result: Vec<_> = DocTransformer::new(input, true).collect();
+        let result = input.process_doc(true);
 
         assert_eq!(result, expected);
     }
@@ -251,7 +255,7 @@ mod tests {
         let input: Vec<_> = INPUT_TEXT_BLOCK.lines().map(|x| x.to_owned()).collect();
         let expected: Vec<_> = EXPECTED_TEXT_BLOCK.lines().map(|x| x.to_owned()).collect();
 
-        let result: Vec<_> = DocTransformer::new(input, true).collect();
+        let result = input.process_doc(true);
 
         assert_eq!(result, expected);
     }
@@ -271,7 +275,7 @@ mod tests {
         let input: Vec<_> = INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS.lines().map(|x| x.to_owned()).collect();
         let expected: Vec<_> = INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS.lines().map(|x| x.to_owned()).collect();
 
-        let result: Vec<_> = DocTransformer::new(input, true).collect();
+        let result = input.process_doc(true);
 
         assert_eq!(result, expected);
     }
@@ -295,7 +299,7 @@ mod tests {
         let input: Vec<_> = INPUT_INDENT_HEADINGS.lines().map(|x| x.to_owned()).collect();
         let expected: Vec<_> = EXPECTED_INDENT_HEADINGS.lines().collect();
 
-        let result: Vec<_> = DocTransformer::new(input, true).collect();
+        let result = input.process_doc(true);
 
         assert_eq!(result, expected);
     }
@@ -305,7 +309,7 @@ mod tests {
         let input: Vec<_> = INPUT_INDENT_HEADINGS.lines().map(|x| x.to_owned()).collect();
         let expected: Vec<_> = INPUT_INDENT_HEADINGS.lines().collect();
 
-        let result: Vec<_> = DocTransformer::new(input, false).collect();
+        let result = input.process_doc(false);
 
         assert_eq!(result, expected);
     }

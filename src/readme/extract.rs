@@ -99,17 +99,17 @@ mod tests {
     use std::io::Cursor;
     use super::*;
 
-    const EXPECTED: &[&str] = &[
+    const EXPECTED: &str = concat_lines!(
         "first line",
         "",
-        "```",
+        "```rust",
         "let rust_code = \"safe\";",
         "```",
         "",
         "```C",
         "int i = 0; // no rust code",
         "```",
-    ];
+    );
 
     const INPUT_SINGLELINE: &str = concat_lines!(
         "//! first line",
@@ -129,7 +129,7 @@ mod tests {
     fn extract_docs_singleline_style() {
         let reader = Cursor::new(INPUT_SINGLELINE.as_bytes());
         let result = extract_docs(reader, false).unwrap();
-        assert_eq!(result, EXPECTED);
+        assert_eq!(result, EXPECTED.trim_right());
     }
 
     const INPUT_MULTILINE: &str = concat_lines!(
@@ -152,7 +152,7 @@ mod tests {
     fn extract_docs_multiline_style() {
         let reader = Cursor::new(INPUT_MULTILINE.as_bytes());
         let result = extract_docs(reader, false).unwrap();
-        assert_eq!(result, EXPECTED);
+        assert_eq!(result, EXPECTED.trim_right());
     }
 
     const INPUT_MIXED_SINGLELINE: &str = concat_lines!(
@@ -165,7 +165,7 @@ mod tests {
     #[test]
     fn extract_docs_mix_styles_singleline() {
         let input = Cursor::new(INPUT_MIXED_SINGLELINE.as_bytes());
-        let expected = ["singleline"];
+        let expected = "singleline";
         let result = extract_docs(input, false).unwrap();
         assert_eq!(result, expected)
     }
@@ -180,7 +180,7 @@ mod tests {
     #[test]
     fn extract_docs_mix_styles_multiline() {
         let input = Cursor::new(INPUT_MIXED_MULTILINE.as_bytes());
-        let expected = ["multiline"];
+        let expected = "multiline";
         let result = extract_docs(input, false).unwrap();
         assert_eq!(result, expected);
     }
@@ -196,19 +196,19 @@ mod tests {
         "fn main() {}",
     );
 
-    const EXPECTED_MULTILINE_NESTED_1: &[&str] = &[
+    const EXPECTED_MULTILINE_NESTED_1: &str = concat_lines!(
         "level 0",
         "/*",
         "level 1",
         "*/",
         "level 0",
-    ];
+    );
 
     #[test]
     fn extract_docs_nested_level_1() {
         let input = Cursor::new(INPUT_MULTILINE_NESTED_1.as_bytes());
         let result = extract_docs(input, false).unwrap();
-        assert_eq!(result, EXPECTED_MULTILINE_NESTED_1);
+        assert_eq!(result, EXPECTED_MULTILINE_NESTED_1.trim_right());
     }
 
     const INPUT_MULTILINE_NESTED_2: &str = concat_lines!(
@@ -226,7 +226,7 @@ mod tests {
         "fn main() {}",
     );
 
-    const EXPECTED_MULTILINE_NESTED_2: &[&str] = &[
+    const EXPECTED_MULTILINE_NESTED_2: &str = concat_lines!(
         "level 0",
         "/*",
         "level 1",
@@ -236,12 +236,12 @@ mod tests {
         "level 1",
         "*/",
         "level 0",
-    ];
+    );
 
     #[test]
     fn extract_docs_nested_level_2() {
         let input = Cursor::new(INPUT_MULTILINE_NESTED_2.as_bytes());
         let result = extract_docs(input, false).unwrap();
-        assert_eq!(result, EXPECTED_MULTILINE_NESTED_2);
+        assert_eq!(result, EXPECTED_MULTILINE_NESTED_2.trim_right());
     }
 }

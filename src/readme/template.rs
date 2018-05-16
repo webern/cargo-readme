@@ -53,7 +53,7 @@ pub fn render(
                 None
             };
 
-            process_template(template, readme, title, license)
+            process_template(template, readme, title, badges, license)
         }
         None => {
             if add_badges {
@@ -76,11 +76,13 @@ pub fn render(
 /// Available variable:
 /// - `{{readme}}` documentation extracted from the rust docs
 /// - `{{crate}}` crate name defined in `Cargo.toml`
+/// - `{{badges}}` badges defined in `Cargo.toml`
 /// - `{{license}}` license defined in `Cargo.toml`
 fn process_template(
     mut template: String,
     readme: String,
     title: Option<&str>,
+    badges: Option<&Vec<String>>,
     license: Option<&str>,
 ) -> Result<String, String> {
 
@@ -88,6 +90,12 @@ fn process_template(
 
     if !template.contains("{{readme}}") {
         return Err("Missing `{{readme}}` in template".to_owned());
+    }
+
+    if template.contains("{{badges}}") && badges.is_none() {
+        return Err(
+            "`{{badges}}` was found in template but no badges were provided".to_owned(),
+        );
     }
 
     if template.contains("{{license}}") && license.is_none() {
@@ -108,6 +116,13 @@ fn process_template(
         }
     }
 
+    if let Some(badges) = badges {
+        if template.contains("{{badges}}") {
+            let badges = fold_badges(badges);
+            template = template.replace("{{badges}}", &badges);
+        }
+    }
+
     if let Some(license) = license {
         if template.contains("{{license}}") {
             template = template.replace("{{license}}", &license);
@@ -118,10 +133,18 @@ fn process_template(
     Ok(result)
 }
 
+fn fold_badges(badges: &Vec<String>) -> String {
+    badges.iter().fold(String::new(), |acc, x| format!("{}\n{}", acc, x))
+}
+
 /// Prepend badges to output string
 fn prepend_badges(readme: String, badges: &Vec<String>) -> String {
-    let badges = badges.iter().fold(String::new(), |acc, x| format!("{}\n{}", acc, x));
-    format!("{}\n\n{}", badges, readme)
+    if badges.len() > 0 {
+        let badges = fold_badges(badges);
+        format!("{}\n\n{}", badges, readme)
+    } else {
+        readme
+    }
 }
 
 /// Prepend title (crate name) to output string
@@ -147,6 +170,7 @@ fn append_license(readme: String, license: &str) -> String {
 #[cfg(test)]
 mod tests {
     const CRATE_NAME: &str = "my_crate";
+    const BADGE: &str = "travis-ci";
     const LICENSE: &str = "MPL";
 
     const TEMPLATE_NO_CRATE_NO_LICENSE: &str = "{{readme}}";
@@ -159,6 +183,7 @@ mod tests {
           $template:ident,
           input => $input:expr,
           with_title => $with_title:expr,
+          with_badges => $with_badges:expr,
           with_license => $with_license:expr,
           expected => $expected:expr) =>
         {
@@ -166,10 +191,14 @@ mod tests {
             fn $name() {
                 let input = $input;
                 let title = if $with_title { Some(CRATE_NAME) } else { None };
+
+                let badge_vec = vec![BADGE.to_owned()];
+                let badges = if $with_badges { Some(&badge_vec) } else { None };
+                
                 let license = if $with_license { Some(LICENSE) } else { None };
 
                 let result = super::process_template(
-                    $template.to_owned(), input.into(), title, license
+                    $template.to_owned(), input.into(), title, badges, license
                 ).unwrap();
 
                 assert_eq!($expected, result);
@@ -180,6 +209,7 @@ mod tests {
           $template:ident,
           input => $input:expr,
           with_title => $with_title:expr,
+          with_badges => $with_badges:expr,
           with_license => $with_license:expr,
           panic => $panic:expr) =>
         {
@@ -188,10 +218,14 @@ mod tests {
             fn $name() {
                 let input = $input;
                 let title = if $with_title { Some(CRATE_NAME) } else { None };
+
+                let badge_vec = vec![BADGE.to_owned()];
+                let badges = if $with_badges { Some(&badge_vec) } else { None };
+
                 let license = if $with_license { Some(LICENSE) } else { None };
 
                 super::process_template(
-                    $template.to_owned(), input.into(), title, license
+                    $template.to_owned(), input.into(), title, badges, license
                 ).unwrap();
             }
         }
@@ -205,6 +239,7 @@ mod tests {
         TEMPLATE_NO_CRATE_NO_LICENSE,
         input => "# documentation",
         with_title => true,
+        with_badges => false,
         with_license => true,
         expected => "# documentation"
     );
@@ -215,6 +250,7 @@ mod tests {
         TEMPLATE_NO_CRATE_NO_LICENSE,
         input => "# documentation",
         with_title => true,
+        with_badges => false,
         with_license => false,
         expected => "# documentation"
     );
@@ -225,6 +261,7 @@ mod tests {
         TEMPLATE_NO_CRATE_NO_LICENSE,
         input => "# documentation",
         with_title => false,
+        with_badges => false,
         with_license => true,
         expected => "# documentation"
     );
@@ -235,6 +272,7 @@ mod tests {
         TEMPLATE_NO_CRATE_NO_LICENSE,
         input => "# documentation",
         with_title => false,
+        with_badges => false,
         with_license => false,
         expected => "# documentation"
     );
@@ -247,6 +285,7 @@ mod tests {
         TEMPLATE_CRATE_NO_LICENSE,
         input => "# documentation",
         with_title => true,
+        with_badges => false,
         with_license => true,
         expected => "# my_crate\n\n# documentation"
     );
@@ -257,6 +296,7 @@ mod tests {
         TEMPLATE_CRATE_NO_LICENSE,
         input => "# documentation",
         with_title => true,
+        with_badges => false,
         with_license => false,
         expected => "# my_crate\n\n# documentation"
     );
@@ -267,6 +307,7 @@ mod tests {
         TEMPLATE_CRATE_NO_LICENSE,
         input => "# documentation",
         with_title => false,
+        with_badges => false,
         with_license => true,
         panic => "`{{crate}}` was found in template but no crate name was provided"
     );
@@ -277,6 +318,7 @@ mod tests {
         TEMPLATE_CRATE_NO_LICENSE,
         input => "# documentation",
         with_title => false,
+        with_badges => false,
         with_license => false,
         panic => "`{{crate}}` was found in template but no crate name was provided"
     );
@@ -289,6 +331,7 @@ mod tests {
         TEMPLATE_NO_CRATE_LICENSE,
         input => "# documentation",
         with_title => true,
+        with_badges => false,
         with_license => true,
         expected => "# documentation\n\nLicense: MPL"
     );
@@ -299,6 +342,7 @@ mod tests {
         TEMPLATE_NO_CRATE_LICENSE,
         input => "# documentation",
         with_title => true,
+        with_badges => false,
         with_license => false,
         panic => "`{{license}}` was found in template but no license was provided"
     );
@@ -309,6 +353,7 @@ mod tests {
         TEMPLATE_NO_CRATE_LICENSE,
         input => "# documentation",
         with_title => false,
+        with_badges => false,
         with_license => true,
         expected => "# documentation\n\nLicense: MPL"
     );
@@ -319,6 +364,7 @@ mod tests {
         TEMPLATE_NO_CRATE_LICENSE,
         input => "# documentation",
         with_title => false,
+        with_badges => false,
         with_license => false,
         panic => "`{{license}}` was found in template but no license was provided"
     );
@@ -331,6 +377,7 @@ mod tests {
         TEMPLATE_CRATE_LICENSE,
         input => "# documentation",
         with_title => true,
+        with_badges => false,
         with_license => true,
         expected => "# my_crate\n\n# documentation\n\nLicense: MPL"
     );
@@ -341,6 +388,7 @@ mod tests {
         TEMPLATE_CRATE_LICENSE,
         input => "# documentation",
         with_title => true,
+        with_badges => false,
         with_license => false,
         panic => "`{{license}}` was found in template but no license was provided"
     );
@@ -351,6 +399,7 @@ mod tests {
         TEMPLATE_CRATE_LICENSE,
         input => "# documentation",
         with_title => false,
+        with_badges => false,
         with_license => true,
         panic => "`{{crate}}` was found in template but no crate name was provided"
     );
@@ -361,6 +410,7 @@ mod tests {
         TEMPLATE_CRATE_LICENSE,
         input => "# documentation",
         with_title => false,
+        with_badges => false,
         with_license => false,
         panic => "`{{license}}` was found in template but no license was provided"
     );
