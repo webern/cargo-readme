@@ -15,7 +15,7 @@ fn main() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("main")
+        .and().stdout().is("main")
         .unwrap();
 }
 
@@ -32,7 +32,7 @@ fn lib() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("lib")
+        .and().stdout().is("lib")
         .unwrap();
 }
 
@@ -49,7 +49,7 @@ fn cargo_lib() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("cargo lib")
+        .and().stdout().is("cargo lib")
         .unwrap();
 }
 
@@ -66,6 +66,6 @@ fn cargo_bin() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("cargo bin")
+        .and().stdout().is("cargo bin")
         .unwrap();
 }

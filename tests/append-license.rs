@@ -58,7 +58,7 @@ fn append_license() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(expected)
+        .and().stdout().is(&*expected)
         .unwrap();
 }
 
@@ -75,6 +75,6 @@ fn no_append_license() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(EXPECTED)
+        .and().stdout().is(EXPECTED)
         .unwrap();
 }

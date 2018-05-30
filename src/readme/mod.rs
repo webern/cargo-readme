@@ -20,8 +20,16 @@ pub fn generate_readme<T: Read>(
     indent_headings: bool,
 ) -> Result<String, String> {
 
-    let readme = extract::extract_docs(source, indent_headings)
+    let lines = extract::extract_docs(source)
         .map_err(|e| format!("{}", e))?;
+
+    let readme = process::process_docs(lines, indent_headings)
+        .into_iter()
+        .fold(String::new(), |mut acc, x| {
+            if !acc.is_empty() { acc.push('\n'); }
+            acc.push_str(&x);
+            acc
+        });
 
     // get template from file
     let template = if let Some(template) = template {

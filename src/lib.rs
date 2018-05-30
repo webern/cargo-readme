@@ -6,9 +6,6 @@ extern crate regex;
 extern crate toml;
 extern crate percent_encoding;
 
-#[cfg(test)]
-#[macro_use] mod test_macros;
-
 mod readme;
 mod config;
 

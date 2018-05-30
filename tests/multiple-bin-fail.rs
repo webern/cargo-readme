@@ -11,6 +11,6 @@ fn test() {
     Assert::main_binary()
         .with_args(&args)
         .fails()
-        .prints_error(EXPECTED)
+        .and().stderr().is(EXPECTED)
         .unwrap();
 }

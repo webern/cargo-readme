@@ -10,12 +10,12 @@ categories = ["development-tools::cargo-plugins"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-clap = "2.26"
+clap = "2.31"
 toml = "0.4"
-regex = "0.2"
+regex = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
 percent-encoding = "1.0"
 
 [dev-dependencies]
-assert_cli = "0.4"
+assert_cli = "0.6"

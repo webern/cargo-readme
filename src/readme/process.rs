@@ -12,6 +12,15 @@ const REGEX_CODE_RUST: &'static str = r"^```(rust|((rust,)?(no_run|ignore|should
 const REGEX_CODE_TEXT: &'static str = r"^```text$";
 const REGEX_CODE_OTHER: &'static str = r"^```\w[\w,\+]*$";
 
+/// Process and concatenate the doc lines into a single String
+///
+/// The processing transforms doc tests into regular rust code blocks and optionally indent the
+/// markdown headings in order to leave the top heading to the crate name
+pub fn process_docs<S: Into<String>, L: Into<Vec<S>>>(lines: L, indent_headings: bool) -> Vec<String> {
+    lines.into().into_iter()
+        .process_docs(indent_headings)
+}
+
 pub struct Processor {
     section: Section,
     indent_headings: bool,
@@ -38,7 +47,7 @@ impl Processor {
         }
     }
 
-    pub fn process(&mut self, mut line: String) -> Option<String> {
+    pub fn process_line(&mut self, mut line: String) -> Option<String> {
         // Skip lines that should be hidden in docs
         if self.section == Section::CodeRust && line.starts_with("# ") {
             return None;
@@ -70,56 +79,51 @@ enum Section {
     None,
 }
 
-pub trait DocProcess {
-    fn process_doc(self, indent_headings: bool) -> Vec<String>
+pub trait DocProcess<S: Into<String>> {
+    fn process_docs(self, indent_headings: bool) -> Vec<String>
     where
-        Self: Sized + IntoIterator<Item = String>,
+        Self: Sized + Iterator<Item = S>,
     {
         let mut p = Processor::new(indent_headings);
         self.into_iter()
-            .filter_map(|line| p.process(line))
+            .filter_map(|line| p.process_line(line.into()))
             .collect()
-        // self.into_iter()
-        //     .scan(
-        //         Processor::new(indent_headings),
-        //         |p, line| p.process(line)
-        //     ).collect()
     }
 }
 
-impl<I: IntoIterator<Item = String>> DocProcess for I {}
+impl<S: Into<String>, I: Iterator<Item = S>> DocProcess<S> for I {}
 
 
 #[cfg(test)]
 mod tests {
-    use super::DocProcess;
+    use super::process_docs;
 
-    const INPUT_HIDDEN_LINE: &str = concat_lines!(
+    const INPUT_HIDDEN_LINE: &[&str] = &[
         "```",
         "#[visible]",
         "let visible = \"visible\";",
         "# let hidden = \"hidden\";",
         "```",
-    );
+    ];
 
-    const EXPECTED_HIDDEN_LINE: &str = concat_lines!(
+    const EXPECTED_HIDDEN_LINE: &[&str] = &[
         "```rust",
         "#[visible]",
         "let visible = \"visible\";",
         "```",
-    );
+    ];
 
     #[test]
     fn hide_line_in_rust_code_block() {
-        let input: Vec<_> = INPUT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECTED_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
+        // let input: Vec<&str> = INPUT_HIDDEN_LINE.into_iter().collect();
+        // let expected: Vec<_> = EXPECTED_HIDDEN_LINE.into_iter().map(|x| x.to_owned()).collect();
 
-        let result = input.process_doc(true);
+        let result = process_docs(INPUT_HIDDEN_LINE, true);
 
-        assert_eq!(result, expected);
+        assert_eq!(result, EXPECTED_HIDDEN_LINE);
     }
 
-    const INPUT_NOT_HIDDEN_LINE: &str = concat_lines!(
+    const INPUT_NOT_HIDDEN_LINE: &[&str] = &[
         "```",
         "let visible = \"visible\";",
         "# let hidden = \"hidden\";",
@@ -129,9 +133,9 @@ mod tests {
         "# this line is visible",
         "visible = True",
         "```",
-    );
+    ];
 
-    const EXPECTED_NOT_HIDDEN_LINE: &str = concat_lines!(
+    const EXPECTED_NOT_HIDDEN_LINE: &[&str] = &[
         "```rust",
         "let visible = \"visible\";",
         "```",
@@ -140,19 +144,19 @@ mod tests {
         "# this line is visible",
         "visible = True",
         "```",
-    );
+    ];
 
     #[test]
     fn do_not_hide_line_in_code_block() {
-        let input: Vec<_> = INPUT_NOT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECTED_NOT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
+        // let input: Vec<_> = INPUT_NOT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
+        // let expected: Vec<_> = EXPECTED_NOT_HIDDEN_LINE.lines().map(|x| x.to_owned()).collect();
 
-        let result = input.process_doc(true);
+        let result = process_docs(INPUT_NOT_HIDDEN_LINE, true);
 
-        assert_eq!(result, expected);
+        assert_eq!(result, EXPECTED_NOT_HIDDEN_LINE);
     }
 
-    const INPUT_RUST_CODE_BLOCK: &'static str = concat_lines!(
+    const INPUT_RUST_CODE_BLOCK: &[&str] = &[
         "```",
         "let block = \"simple code block\";",
         "```",
@@ -172,9 +176,9 @@ mod tests {
         "```C",
         "int i = 0; // no rust code",
         "```",
-    );
+    ];
 
-    const EXPECTED_RUST_CODE_BLOCK: &str = concat_lines!(
+    const EXPECTED_RUST_CODE_BLOCK: &[&str] = &[
         "```rust",
         "let block = \"simple code block\";",
         "```",
@@ -194,19 +198,19 @@ mod tests {
         "```C",
         "int i = 0; // no rust code",
         "```",
-    );
+    ];
 
     #[test]
     fn transform_rust_code_block() {
-        let input: Vec<_> = INPUT_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECTED_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
+        // let input: Vec<_> = INPUT_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
+        // let expected: Vec<_> = EXPECTED_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
 
-        let result = input.process_doc(true);
+        let result = process_docs(INPUT_RUST_CODE_BLOCK, true);
 
-        assert_eq!(result, expected);
+        assert_eq!(result, EXPECTED_RUST_CODE_BLOCK);
     }
 
-    const INPUT_RUST_CODE_BLOCK_RUST_PREFIX: &'static str = concat_lines!(
+    const INPUT_RUST_CODE_BLOCK_RUST_PREFIX: &[&str] = &[
         "```rust",
         "let block = \"simple code block\";",
         "```",
@@ -226,41 +230,41 @@ mod tests {
         "```C",
         "int i = 0; // no rust code",
         "```",
-    );
+    ];
 
     #[test]
     fn transform_rust_code_block_with_prefix() {
-        let input: Vec<_> = INPUT_RUST_CODE_BLOCK_RUST_PREFIX.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECTED_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
+        // let input: Vec<_> = INPUT_RUST_CODE_BLOCK_RUST_PREFIX.lines().map(|x| x.to_owned()).collect();
+        // let expected: Vec<_> = EXPECTED_RUST_CODE_BLOCK.lines().map(|x| x.to_owned()).collect();
 
-        let result = input.process_doc(true);
+        let result = process_docs(INPUT_RUST_CODE_BLOCK_RUST_PREFIX, true);
 
-        assert_eq!(result, expected);
+        assert_eq!(result, EXPECTED_RUST_CODE_BLOCK);
     }
 
-    const INPUT_TEXT_BLOCK: &'static str = concat_lines!(
+    const INPUT_TEXT_BLOCK: &[&str] = &[
         "```text",
         "this is text",
         "```",
-    );
+    ];
 
-    const EXPECTED_TEXT_BLOCK: &str = concat_lines!(
+    const EXPECTED_TEXT_BLOCK: &[&str] = &[
         "```",
         "this is text",
         "```",
-    );
+    ];
 
     #[test]
     fn transform_text_block() {
-        let input: Vec<_> = INPUT_TEXT_BLOCK.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECTED_TEXT_BLOCK.lines().map(|x| x.to_owned()).collect();
+        // let input: Vec<_> = INPUT_TEXT_BLOCK.lines().map(|x| x.to_owned()).collect();
+        // let expected: Vec<_> = EXPECTED_TEXT_BLOCK.lines().map(|x| x.to_owned()).collect();
 
-        let result = input.process_doc(true);
+        let result = process_docs(INPUT_TEXT_BLOCK, true);
 
-        assert_eq!(result, expected);
+        assert_eq!(result, EXPECTED_TEXT_BLOCK);
     }
 
-    const INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS: &'static str = concat_lines!(
+    const INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS: &[&str] = &[
         "```html,django",
         "{% if True %}True{% endif %}",
         "```",
@@ -268,49 +272,49 @@ mod tests {
         "```html+django",
         "{% if True %}True{% endif %}",
         "```",
-    );
+    ];
 
     #[test]
     fn transform_other_code_block_with_symbols() {
-        let input: Vec<_> = INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS.lines().map(|x| x.to_owned()).collect();
+        // let input: Vec<_> = INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS.lines().map(|x| x.to_owned()).collect();
+        // let expected: Vec<_> = INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS.lines().map(|x| x.to_owned()).collect();
 
-        let result = input.process_doc(true);
+        let result = process_docs(INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS, true);
 
-        assert_eq!(result, expected);
+        assert_eq!(result, INPUT_OTHER_CODE_BLOCK_WITH_SYMBOLS);
     }
 
-    const INPUT_INDENT_HEADINGS: &'static str = concat_lines!(
+    const INPUT_INDENT_HEADINGS: &[&str] = &[
         "# heading 1",
         "some text",
         "## heading 2",
         "some other text",
-    );
+    ];
 
-    const EXPECTED_INDENT_HEADINGS: &str = concat_lines!(
+    const EXPECTED_INDENT_HEADINGS: &[&str] = &[
         "## heading 1",
         "some text",
         "### heading 2",
         "some other text",
-    );
+    ];
 
     #[test]
     fn indent_markdown_headings() {
-        let input: Vec<_> = INPUT_INDENT_HEADINGS.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = EXPECTED_INDENT_HEADINGS.lines().collect();
+        // let input: Vec<_> = INPUT_INDENT_HEADINGS.lines().map(|x| x.to_owned()).collect();
+        // let expected: Vec<_> = EXPECTED_INDENT_HEADINGS.lines().collect();
 
-        let result = input.process_doc(true);
+        let result = process_docs(INPUT_INDENT_HEADINGS, true);
 
-        assert_eq!(result, expected);
+        assert_eq!(result, EXPECTED_INDENT_HEADINGS);
     }
 
     #[test]
     fn do_not_indent_markdown_headings() {
-        let input: Vec<_> = INPUT_INDENT_HEADINGS.lines().map(|x| x.to_owned()).collect();
-        let expected: Vec<_> = INPUT_INDENT_HEADINGS.lines().collect();
+        // let input: Vec<_> = INPUT_INDENT_HEADINGS.lines().map(|x| x.to_owned()).collect();
+        // let expected: Vec<_> = INPUT_INDENT_HEADINGS.lines().collect();
 
-        let result = input.process_doc(false);
+        let result = process_docs(INPUT_INDENT_HEADINGS, false);
 
-        assert_eq!(result, expected);
+        assert_eq!(result, INPUT_INDENT_HEADINGS);
     }
 }
