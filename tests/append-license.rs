@@ -51,6 +51,7 @@ fn append_license() {
         "--project-root",
         "tests/test-project",
         "--no-template",
+        "--no-badges"
     ];
 
     let expected = format!("{}\n\n{}", EXPECTED.trim(), "License: MIT");
@@ -69,6 +70,7 @@ fn no_append_license() {
         "--project-root",
         "tests/test-project",
         "--no-template",
+        "--no-badges",
         "--no-license",
     ];
 

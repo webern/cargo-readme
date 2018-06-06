@@ -47,12 +47,13 @@ License: MIT
 "#;
 
 #[test]
-fn test() {
+fn no_template() {
     let args = [
         "readme",
         "--project-root",
         "tests/test-project",
         "--no-template",
+        "--no-badges",
     ];
 
     Assert::main_binary()

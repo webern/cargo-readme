@@ -3,9 +3,11 @@ extern crate assert_cli;
 use assert_cli::Assert;
 
 const EXPECTED: &str = r#"
+[![Build Status](https://travis-ci.org/livioribeiro/cargo-readme.svg?branch=master)](https://travis-ci.org/livioribeiro/cargo-readme)
+
 # readme-test
 
-Your badges here
+Some text here
 
 Test crate for cargo-readme
 
@@ -47,7 +49,7 @@ if condition {
 "#;
 
 #[test]
-fn test() {
+fn default_behavior() {
     let args = ["readme", "--project-root", "tests/test-project"];
 
     Assert::main_binary()

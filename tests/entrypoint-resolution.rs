@@ -3,7 +3,7 @@ extern crate assert_cli;
 use assert_cli::Assert;
 
 #[test]
-fn main() {
+fn entrypoint_resolution_main() {
     let args = [
         "readme",
         "--project-root",
@@ -20,7 +20,7 @@ fn main() {
 }
 
 #[test]
-fn lib() {
+fn entrypoint_resolution_lib() {
     let args = [
         "readme",
         "--project-root",
@@ -37,7 +37,7 @@ fn lib() {
 }
 
 #[test]
-fn cargo_lib() {
+fn entrypoint_resolution_cargo_lib() {
     let args = [
         "readme",
         "--project-root",
@@ -54,7 +54,7 @@ fn cargo_lib() {
 }
 
 #[test]
-fn cargo_bin() {
+fn entrypoint_resolution_cargo_bin() {
     let args = [
         "readme",
         "--project-root",

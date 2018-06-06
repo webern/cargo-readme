@@ -11,9 +11,9 @@ pub fn render(
     add_badges: bool,
     add_license: bool,
 ) -> Result<String, String> {
-    let title = cargo.name.as_ref();
-    let badges = cargo.badges.as_ref();
-    let license = cargo.license.as_ref();
+    let title = cargo.name;
+    let badges = cargo.badges;
+    let license = cargo.license;
 
     match template {
         Some(template) => {
@@ -35,29 +35,15 @@ pub fn render(
                 );
             }
 
-            let title = if add_title {
-                Some(title)
-            } else {
-                None
-            };
-
-            let badges = if add_badges {
-                Some(badges)
-            } else {
-                None
-            };
-
-            let license = if add_license {
-                license.map(|l| l.as_ref())
-            } else {
-                None
-            };
+            let title = if add_title { Some(title) } else { None };
+            let badges = if add_badges { Some(badges) } else { None };
+            let license = if add_license { license } else { None };
 
             process_template(template, readme, title, badges, license)
         }
         None => {
             if add_badges {
-                readme = prepend_badges(readme, &badges);
+                readme = prepend_badges(readme, badges);
             }
             if add_title {
                 readme = prepend_title(readme, &title);
@@ -81,9 +67,9 @@ pub fn render(
 fn process_template(
     mut template: String,
     readme: String,
-    title: Option<&str>,
-    badges: Option<&Vec<String>>,
-    license: Option<&str>,
+    title: Option<String>,
+    badges: Option<Vec<String>>,
+    license: Option<String>,
 ) -> Result<String, String> {
 
     template = template.trim_right_matches("\n").to_owned();
@@ -133,12 +119,19 @@ fn process_template(
     Ok(result)
 }
 
-fn fold_badges(badges: &Vec<String>) -> String {
-    badges.iter().fold(String::new(), |acc, x| format!("{}\n{}", acc, x))
+fn fold_badges(badges: Vec<String>) -> String {
+    match badges.as_slice() {
+        [] => String::new(),
+        [one] => one.to_owned(),
+        _ => {
+            let first = badges[0].clone();
+            badges.iter().skip(1).fold(first, |acc, x| format!("{}\n{}", acc, x))
+        }
+    }
 }
 
 /// Prepend badges to output string
-fn prepend_badges(readme: String, badges: &Vec<String>) -> String {
+fn prepend_badges(readme: String, badges: Vec<String>) -> String {
     if badges.len() > 0 {
         let badges = fold_badges(badges);
         format!("{}\n\n{}", badges, readme)
@@ -177,6 +170,7 @@ mod tests {
     const TEMPLATE_CRATE_NO_LICENSE: &str = "# {{crate}}\n\n{{readme}}";
     const TEMPLATE_NO_CRATE_LICENSE: &str = "{{readme}}\n\nLicense: {{license}}";
     const TEMPLATE_CRATE_LICENSE: &str = "# {{crate}}\n\n{{readme}}\n\nLicense: {{license}}";
+    const TEMPLATE_BADGES: &str = "{{badges}}\n\n{{readme}}";
 
     macro_rules! test_process_template {
         ( $name:ident,
@@ -190,12 +184,12 @@ mod tests {
             #[test]
             fn $name() {
                 let input = $input;
-                let title = if $with_title { Some(CRATE_NAME) } else { None };
+                let title = if $with_title { Some(CRATE_NAME.to_owned()) } else { None };
 
                 let badge_vec = vec![BADGE.to_owned()];
-                let badges = if $with_badges { Some(&badge_vec) } else { None };
+                let badges = if $with_badges { Some(badge_vec) } else { None };
                 
-                let license = if $with_license { Some(LICENSE) } else { None };
+                let license = if $with_license { Some(LICENSE.to_owned()) } else { None };
 
                 let result = super::process_template(
                     $template.to_owned(), input.into(), title, badges, license
@@ -217,12 +211,12 @@ mod tests {
             #[should_panic(expected = $panic)]
             fn $name() {
                 let input = $input;
-                let title = if $with_title { Some(CRATE_NAME) } else { None };
+                let title = if $with_title { Some(CRATE_NAME.to_owned()) } else { None };
 
                 let badge_vec = vec![BADGE.to_owned()];
-                let badges = if $with_badges { Some(&badge_vec) } else { None };
+                let badges = if $with_badges { Some(badge_vec) } else { None };
 
-                let license = if $with_license { Some(LICENSE) } else { None };
+                let license = if $with_license { Some(LICENSE.to_owned()) } else { None };
 
                 super::process_template(
                     $template.to_owned(), input.into(), title, badges, license
@@ -413,5 +407,29 @@ mod tests {
         with_badges => false,
         with_license => false,
         panic => "`{{license}}` was found in template but no license was provided"
+    );
+
+    // TEMPLATE_BADGES
+
+    // with badges
+    test_process_template!(
+        process_template_badges_with_badges,
+        TEMPLATE_BADGES,
+        input => "# documentation",
+        with_title => false,
+        with_badges => true,
+        with_license => false,
+        expected => "travis-ci\n\n# documentation"
+    );
+
+    // without badges
+    test_process_template!(
+        process_template_badges_without_badges,
+        TEMPLATE_BADGES,
+        input => "# documentation",
+        with_title => false,
+        with_badges => false,
+        with_license => false,
+        panic => "`{{badges}}` was found in template but no badges were provided"
     );
 }

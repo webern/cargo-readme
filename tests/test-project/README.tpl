@@ -1,5 +1,7 @@
+{{badges}}
+
 # {{crate}}
 
-Your badges here
+Some text here
 
 {{readme}}

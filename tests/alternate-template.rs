@@ -47,7 +47,7 @@ if condition {
 "#;
 
 #[test]
-fn test() {
+fn alternate_template() {
     let args = [
         "readme",
         "--project-root",
