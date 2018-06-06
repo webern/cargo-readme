@@ -19,3 +19,8 @@ percent-encoding = "1.0"
 
 [dev-dependencies]
 assert_cli = "0.6"
+
+[badges]
+appveyor = { repository = "livioribeiro/cargo-readme", service = "github" }
+circle-ci = { repository = "livioribeiro/cargo-readme" }
+travis-ci = { repository = "livioribeiro/cargo-readme" }

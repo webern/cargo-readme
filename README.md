@@ -1,5 +1,6 @@
+[![Build Status](https://ci.appveyor.com/api/projects/status/github/livioribeiro/cargo-readme?branch=master&svg=true)](https://ci.appveyor.com/project/livioribeiro/cargo-readme/branch/master)
+[![Build Status](https://circleci.com/gh/livioribeiro/cargo-readme/tree/master.svg?style=svg)](https://circleci.com/gh/livioribeiro/cargo-readme/cargo-readme/tree/master)
 [![Build Status](https://travis-ci.org/livioribeiro/cargo-readme.svg?branch=master)](https://travis-ci.org/livioribeiro/cargo-readme)
-[![Build status](https://ci.appveyor.com/api/projects/status/j5s4eoffgpxn0l6q/branch/master?svg=true)](https://ci.appveyor.com/project/livioribeiro/cargo-readme/branch/master)
 
 # cargo-readme
 
