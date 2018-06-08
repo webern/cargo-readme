@@ -104,7 +104,7 @@ fn process_template(
 
     if let Some(badges) = badges {
         if template.contains("{{badges}}") {
-            let badges = fold_badges(badges);
+            let badges = badges.join("\n");
             template = template.replace("{{badges}}", &badges);
         }
     }
@@ -119,21 +119,10 @@ fn process_template(
     Ok(result)
 }
 
-fn fold_badges(badges: Vec<String>) -> String {
-    match badges.as_slice() {
-        [] => String::new(),
-        [one] => one.to_owned(),
-        _ => {
-            let first = badges[0].clone();
-            badges.iter().skip(1).fold(first, |acc, x| format!("{}\n{}", acc, x))
-        }
-    }
-}
-
 /// Prepend badges to output string
 fn prepend_badges(readme: String, badges: Vec<String>) -> String {
     if badges.len() > 0 {
-        let badges = fold_badges(badges);
+        let badges = badges.join("\n");
         format!("{}\n\n{}", badges, readme)
     } else {
         readme

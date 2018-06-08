@@ -17,13 +17,6 @@ pub fn extract_docs<R: Read>(reader: R) -> io::Result<Vec<String>> {
         }
     }
 
-    // let readme = lines.process_doc(indent_headings).into_iter()
-    //     .fold(String::new(), |mut acc, x| {
-    //         if !acc.is_empty() { acc.push('\n'); }
-    //         acc.push_str(&x);
-    //         acc
-    //     });
-
     Ok(Vec::new())
 }
 

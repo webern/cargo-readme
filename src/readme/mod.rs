@@ -23,13 +23,7 @@ pub fn generate_readme<T: Read>(
     let lines = extract::extract_docs(source)
         .map_err(|e| format!("{}", e))?;
 
-    let readme = process::process_docs(lines, indent_headings)
-        .into_iter()
-        .fold(String::new(), |mut acc, x| {
-            if !acc.is_empty() { acc.push('\n'); }
-            acc.push_str(&x);
-            acc
-        });
+    let readme = process::process_docs(lines, indent_headings).join("\n");
 
     // get template from file
     let template = if let Some(template) = template {

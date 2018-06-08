@@ -60,20 +60,18 @@ pub fn find_entrypoint(current_dir: &Path, manifest: &Manifest) -> Result<PathBu
 
     // try bin defined in `Cargo.toml`
     if manifest.bin.len() > 0 {
-        let bin_list: Vec<_> = manifest.bin.iter().filter(|b| b.doc == true).collect();
+        let mut bin_list: Vec<_> = manifest.bin.iter()
+            .filter(|b| b.doc == true)
+            .map(|b| b.path.clone())
+            .collect();
 
         if bin_list.len() > 1 {
-            let first = bin_list[0].path.to_string_lossy().into_owned();
-            let paths = bin_list
-                .iter()
-                .skip(1)
-                .map(|ref bin| bin.path.to_string_lossy().to_owned())
-                .fold(first, |acc, path| format!("{}, {}", acc, path));
+            let paths = bin_list.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>().join(", ");
             return Err(format!("Multiple binaries found, choose one: [{}]", paths));
         }
 
-        if bin_list.len() == 1 {
-            return Ok(bin_list[0].path.clone())
+        if let Some(bin) = bin_list.pop() {
+            return Ok(bin);
         }
     }
 
