@@ -71,89 +71,112 @@ impl ManifestLib {
     }
 }
 
+fn badge_filter_map((name, attrs): (String, BTreeMap<String, String>)) -> Option<(u16, String)> {
+    let mut order = 0;
+    let badge = match name.as_ref() {
+        "appveyor" => {
+            order = 1;
+
+            let repo = &attrs["repository"];
+            let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
+            let service = attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT);
+
+            format!(
+                "[![Build Status](https://ci.appveyor.com/api/projects/status/{service}/{repo}?branch={branch}&svg=true)](https://ci.appveyor.com/project/{repo}/branch/{branch})",
+                repo=repo, branch=branch, service=service
+            )
+        }
+        "circle-ci" => {
+            order = 2;
+
+            let repo = &attrs["repository"];
+            let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
+            let service = badge_service_short_name(
+                attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT)
+            );
+
+            format!(
+                "[![Build Status](https://circleci.com/{service}/{repo}/tree/{branch}.svg?style=svg)](https://circleci.com/{service}/{repo}/cargo-readme/tree/{branch})",
+                repo=repo, service=service, branch=percent_encode(branch)
+            )
+        }
+        "gitlab" => {
+            order = 3;
+
+            let repo = &attrs["repository"];
+            let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
+
+            format!(
+                "[![Build Status](https://gitlab.com/{repo}/badges/{branch}/build.svg)](https://gitlab.com/{repo}/commits/master)",
+                repo=repo, branch=percent_encode(branch)
+            )
+        }
+        "travis-ci" => {
+            order = 4;
+
+            let repo = &attrs["repository"];
+            let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
+
+            format!(
+                "[![Build Status](https://travis-ci.org/{repo}.svg?branch={branch})](https://travis-ci.org/{repo})",
+                repo=repo, branch=percent_encode(branch)
+            )
+        }
+        "codecov" => {
+            order = 5;
+            let repo = &attrs["repository"];
+            let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
+            let service = badge_service_short_name(
+                attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT)
+            );
+
+            format!(
+                "[![Coverage Status](https://codecov.io/{service}/{repo}/branch/{branch}/graph/badge.svg)](https://codecov.io/{service}/{repo})",
+                repo=repo, branch=percent_encode(branch), service=service
+            )
+        }
+        "coveralls" => {
+            order = 6;
+
+            let repo = &attrs["repository"];
+            let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
+            let service = attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT);
+
+            format!(
+                "[![Coverage Status](https://coveralls.io/repos/{service}/{repo}/badge.svg?branch=branch)](https://coveralls.io/{service}/{repo}?branch={branch})",
+                repo=repo, branch=percent_encode(branch), service=service
+            )
+        }
+        "is-it-maintained-issue-resolution" => {
+            order = 7;
+
+            format!(
+                "[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/{repo}.svg)](http://isitmaintained.com/project/{repo} \"Average time to resolve an issue\")",
+                repo=attrs["repository"]
+            )
+        }
+        "is-it-maintained-open-issues" => {
+            order = 8;
+
+            format!(
+                "[![Percentage of issues still open](http://isitmaintained.com/badge/open/{repo}.svg)](http://isitmaintained.com/project/{repo} \"Percentage of issues still open\")",
+                repo=attrs["repository"]
+            )
+        }
+        _ => {
+            return None;
+        }
+    };
+
+    Some((order, badge))
+}
+
 fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<String> {
-    badges.into_iter()
-        .filter_map(|(name, attrs)| {
-            match name.as_ref() {
-                "appveyor" => {
-                    let repo = &attrs["repository"];
-                    let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
-                    let service = attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT);
+    let mut b: Vec<(u16, _)> = badges.into_iter()
+        .filter_map(badge_filter_map).collect();
 
-                    Some(format!(
-                        "[![Build Status](https://ci.appveyor.com/api/projects/status/{service}/{repo}?branch={branch}&svg=true)](https://ci.appveyor.com/project/{repo}/branch/{branch})",
-                        repo=repo, branch=branch, service=service
-                    ))
-                }
-                "circle-ci" => {
-                    let repo = &attrs["repository"];
-                    let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
-                    let service = badge_service_short_name(
-                        attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT)
-                    );
-
-                    Some(format!(
-                        "[![Build Status](https://circleci.com/{service}/{repo}/tree/{branch}.svg?style=svg)](https://circleci.com/{service}/{repo}/cargo-readme/tree/{branch})",
-                        repo=repo, service=service, branch=percent_encode(branch)
-                    ))
-                }
-                "gitlab" => {
-                    let repo = &attrs["repository"];
-                    let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
-
-                    Some(format!(
-                        "[![Build Status](https://gitlab.com/{repo}/badges/{branch}/build.svg)](https://gitlab.com/{repo}/commits/master)",
-                        repo=repo, branch=percent_encode(branch)
-                    ))
-                }
-                "travis-ci" => {
-                    let repo = &attrs["repository"];
-                    let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
-
-                    Some(format!(
-                        "[![Build Status](https://travis-ci.org/{repo}.svg?branch={branch})](https://travis-ci.org/{repo})",
-                        repo=repo, branch=percent_encode(branch)
-                    ))
-                }
-                "codecov" => {
-                    let repo = &attrs["repository"];
-                    let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
-                    let service = badge_service_short_name(
-                        attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT)
-                    );
-
-                    Some(format!(
-                        "[![Coverage Status](https://codecov.io/{service}/{repo}/branch/{branch}/graph/badge.svg)](https://codecov.io/{service}/{repo})",
-                        repo=repo, branch=percent_encode(branch), service=service
-                    ))
-                }
-                "coveralls" => {
-                    let repo = &attrs["repository"];
-                    let branch = attrs.get("branch").map(|i| i.as_ref()).unwrap_or(BADGE_BRANCH_DEFAULT);
-                    let service = attrs.get("service").map(|i| i.as_ref()).unwrap_or(BADGE_SERVICE_DEFAULT);
-
-                    Some(format!(
-                        "[![Coverage Status](https://coveralls.io/repos/{service}/{repo}/badge.svg?branch=branch)](https://coveralls.io/{service}/{repo}?branch={branch})",
-                        repo=repo, branch=percent_encode(branch), service=service
-                    ))
-                }
-                "is-it-maintained-issue-resolution" => {
-                    Some(format!(
-                        "[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/{repo}.svg)](http://isitmaintained.com/project/{repo} \"Average time to resolve an issue\")",
-                        repo=attrs["repository"]
-                    ))
-                }
-                "is-it-maintained-open-issues" => {
-                    Some(format!(
-                        "[![Percentage of issues still open](http://isitmaintained.com/badge/open/{repo}.svg)](http://isitmaintained.com/project/{repo} \"Percentage of issues still open\")",
-                        repo=attrs["repository"]
-                    ))
-                }
-                _ => {
-                    None
-                }
-            }
-        }).collect()
+    b.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+    b.into_iter().map(|(_, badge)| badge).collect()
 }
 
 fn percent_encode(input: &str) -> pe::PercentEncode<pe::PATH_SEGMENT_ENCODE_SET> {
