@@ -1,118 +1,4 @@
 //! Generate README.md from doc comments.
-//!
-//! Cargo subcommand that extract documentation from your crate's doc comments that you can use to
-//! populate your README.md.
-//!
-//! # Installation
-//!
-//!     cargo install cargo-readme
-//!
-//! # Motivation
-//!
-//! As you write documentation, you often have to show examples of how to use your software. But
-//! how do you make sure your examples are all working properly? That we didn't forget to update
-//! them after a braking change and left our (possibly new) users with errors they will have to
-//! figure out by themselves?
-//!
-//! With `cargo-readme`, you just write the rustdoc, run the tests, and then run:
-//!
-//!     cargo readme > README.md
-//!
-//! And that's it! Your `README.md` is populated with the contents of the doc comments from your
-//! `lib.rs` (or `main.rs`).
-//!
-//! # Usage
-//!
-//! Let's take the following rust doc:
-//!
-//!     //! This is my awesome crate
-//!     //!
-//!     //! Here goes some other description of what it is and what is does
-//!     //!
-//!     //! # Examples
-//!     //! ```
-//!     //! fn sum2(n1: i32, n2: i32) -> i32 {
-//!     //!   n1 + n2
-//!     //! }
-//!     //! # assert_eq!(4, sum2(2, 2));
-//!     //! ```
-//!
-//! Running `cargo readme` will output the following:
-//!
-//!     # my_crate
-//!
-//!     This is my awesome crate
-//!
-//!     Here goes some other description of what it is and what is does
-//!
-//!     ## Examples
-//!     ```rust
-//!     fn sum2(n1: i32, n2: i32) -> i32 {
-//!       n1 + n2
-//!     }
-//!     ```
-//!
-//!     License: MY_LICENSE
-//!
-//! Let's see what's happened:
-//! - the crate name ("my-crate") was added at the top
-//! - "# Examples" heading became "## Examples"
-//! - code block became "```rust"
-//! - hidden line `# assert_eq!(4, sum2(2, 2));` was removed
-//!
-//! `cargo-readme` also supports multiline doc comments `/*! */` (but you cannot mix styles):
-//!
-//!     /*!
-//!     This is my awesome crate
-//!
-//!     Here goes some other description of what it is and what is does
-//!
-//!     # Examples
-//!     ```
-//!     fn sum2(n1: i32, n2: i32) -> i32 {
-//!       n1 + n2
-//!     }
-//!     # assert_eq!(4, sum2(2, 2));
-//!     ```
-//!     */
-//!
-//! If you have additional information that does not fit in doc comments, you can use a template.
-//! Just create a file called `README.tpl` in the same directory as `Cargo.toml` with the following
-//! content:
-//!
-//!     Badges here
-//!
-//!     # {{crate}}
-//!
-//!     {{readme}}
-//!
-//!     Some additional info here
-//!
-//!     License: {{license}}
-//!
-//! The output will look like this
-//!
-//!     Badges here
-//!
-//!     # my_crate
-//!
-//!     This is my awesome crate
-//!
-//!     Here goes some other description of what it is and what is does
-//!
-//!     ## Examples
-//!     ```rust
-//!     fn sum2(n1: i32, n2: i32) -> i32 {
-//!       n1 + n2
-//!     }
-//!     ```
-//!
-//!     Some additional info here
-//!
-//!     License: MY_LICENSE
-//!
-//! By default, `README.tpl` will be used as the template, but you can override it using the
-//! `--template` to choose a different template or `--no-template` to disable it.
 
 #[macro_use] extern crate clap;
 
@@ -167,21 +53,18 @@ fn main() {
             .arg(Arg::with_name("NO_TITLE")
                 .long("no-title")
                 .help("Do not prepend title line.{n}\
-                       By default, the title ('# crate-name') is prepended to the output. If a \
-                       template is used and it contains the tag '{{crate}}', the template takes \
-                       precedence and this option is ignored."))
+                       By default, the title ('# crate-name') is prepended to the output.{n}\
+                       Ignored when using a template."))
             .arg(Arg::with_name("NO_BADGES")
                 .long("no-badges")
                 .help("Do not prepend badges line.{n}\
-                       Badges defined in Cargo.toml are prepended to the output. If a template is \
-                       used and it contains the tag '{{badges}}', the template takes precedence \
-                       and this option is ignored."))
+                       By default, badges defined in Cargo.toml are prepended to the output.{n}\
+                       Ignored when using a template."))
             .arg(Arg::with_name("NO_LICENSE")
                 .long("no-license")
-                .help("Do not append license line. By default, the license, if defined in \
-                       `Cargo.toml`, will be prepended to the output. If a template is used \
-                       and it contains the tag '{{license}}', the template takes precedence and \
-                       this option is ignored."))
+                .help("Do not append license line.{n}\
+                       By default, the license defined in `Cargo.toml` will be prepended to the output.{n}\
+                       Ignored when using a template."))
             .arg(Arg::with_name("NO_TEMPLATE")
                 .long("no-template")
                 .help("Ignore template file when generating README.{n}\
