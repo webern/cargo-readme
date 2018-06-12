@@ -1,3 +1,4 @@
+mod badges;
 mod manifest;
 pub mod project;
 
