@@ -28,10 +28,10 @@ fn main() {
                 .long("input")
                 .takes_value(true)
                 .help("File to read from.{n}\
-                       If not provided, will try to use `src/main.rs`, then `src/lib.rs`. If \
+                       If not provided, will try to use `src/lib.rs`, then `src/main.rs`. If \
                        neither file could be found, will look into `Cargo.toml` for a `[lib]`, \
-                       then for a single `[[bin]]`. If multiple binaries are found, you will be \
-                       asked to choose one."))
+                       then for a single `[[bin]]`. If multiple binaries are found, an error \
+                       will be returned."))
             .arg(Arg::with_name("OUTPUT")
                 .short("o")
                 .long("output")
@@ -73,7 +73,7 @@ fn main() {
                 .long("no-indent-headings")
                 .help("Do not add an extra level to headings.{n}\
                        By default, '#' headings become '##', so the first '#' can be the crate \
-                       name. Use this option to prevent this behavior.{n}")))
+                       name. Use this option to prevent this behavior.")))
         .get_matches();
 
     if let Some(m) = matches.subcommand_matches("readme") {
