@@ -47,7 +47,7 @@ if condition {
 "#;
 
 #[test]
-fn test() {
+fn alternate_template() {
     let args = [
         "readme",
         "--project-root",
@@ -59,6 +59,6 @@ fn test() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(EXPECTED)
+        .and().stdout().is(EXPECTED)
         .unwrap();
 }

@@ -3,3 +3,6 @@ name = "readme-test"
 version = "0.1.0"
 authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
 license = "MIT"
+
+[badges]
+travis-ci = { repository = "livioribeiro/cargo-readme" }

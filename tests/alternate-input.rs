@@ -3,12 +3,13 @@ extern crate assert_cli;
 use assert_cli::Assert;
 
 #[test]
-fn empty_docs() {
+fn alternate_input_empty_docs() {
     let args = [
         "readme",
         "--project-root",
         "tests/test-project",
         "--no-template",
+        "--no-badges",
         "--input",
         "src/no_docs.rs",
     ];
@@ -16,17 +17,18 @@ fn empty_docs() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("# readme-test\n\nLicense: MIT")
+        .and().stdout().is("# readme-test\n\nLicense: MIT")
         .unwrap();
 }
 
 #[test]
-fn single_line() {
+fn alternate_input_single_line() {
     let args = [
         "readme",
         "--project-root",
         "tests/test-project",
         "--no-template",
+        "--no-badges",
         "--input",
         "src/single_line.rs",
     ];
@@ -42,17 +44,18 @@ License: MIT
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(expected)
+        .and().stdout().is(expected)
         .unwrap();
 }
 
 #[test]
-fn a_little_bit_longer() {
+fn alternate_input_a_little_bit_longer() {
     let args = [
         "readme",
         "--project-root",
         "tests/test-project",
         "--no-template",
+        "--no-badges",
         "--input",
         "src/other.rs",
     ];
@@ -70,6 +73,6 @@ License: MIT
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(expected)
+        .and().stdout().is(expected)
         .unwrap();
 }

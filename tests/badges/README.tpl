@@ -2,6 +2,6 @@
 
 # {{crate}}
 
-Some text here
-
 {{readme}}
+
+License: {{license}}

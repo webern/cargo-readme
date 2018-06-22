@@ -51,6 +51,7 @@ fn append_license() {
         "--project-root",
         "tests/test-project",
         "--no-template",
+        "--no-badges"
     ];
 
     let expected = format!("{}\n\n{}", EXPECTED.trim(), "License: MIT");
@@ -58,7 +59,7 @@ fn append_license() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(expected)
+        .and().stdout().is(&*expected)
         .unwrap();
 }
 
@@ -69,12 +70,13 @@ fn no_append_license() {
         "--project-root",
         "tests/test-project",
         "--no-template",
+        "--no-badges",
         "--no-license",
     ];
 
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly(EXPECTED)
+        .and().stdout().is(EXPECTED)
         .unwrap();
 }

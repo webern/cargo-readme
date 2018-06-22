@@ -1,6 +1,6 @@
 [package]
 name = "cargo-readme"
-version = "2.0.1"
+version = "3.0.0"
 authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
 description = "A cargo subcommand to generate README.md content from doc comments"
 repository = "https://github.com/livioribeiro/cargo-readme"
@@ -10,11 +10,18 @@ categories = ["development-tools::cargo-plugins"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-clap = "2.26"
+clap = "2.31"
 toml = "0.4"
-regex = "0.2"
+regex = "1.0"
 serde = "1.0"
 serde_derive = "1.0"
+percent-encoding = "1.0"
+lazy_static = "1.0"
 
 [dev-dependencies]
-assert_cli = "0.4"
+assert_cli = "0.6"
+
+[badges]
+appveyor = { repository = "livioribeiro/cargo-readme", service = "github" }
+circle-ci = { repository = "livioribeiro/cargo-readme" }
+travis-ci = { repository = "livioribeiro/cargo-readme" }

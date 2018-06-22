@@ -1,51 +1,27 @@
-use cargo_info::Cargo;
+use ::config::Manifest;
 
 /// Renders the template
 ///
 /// This is not a real template engine, it just processes a few substitutions.
 pub fn render(
     template: Option<String>,
-    mut readme: String,
-    cargo: Cargo,
+    readme: String,
+    cargo: &Manifest,
     add_title: bool,
+    add_badges: bool,
     add_license: bool,
 ) -> Result<String, String> {
-    let title = cargo.package.name.as_ref();
-    let license = cargo.package.license.as_ref();
+    let title: &str = &cargo.name;
 
-    match template {
-        Some(template) => {
-            if template.contains("{{license}}") && !add_license {
-                return Err(
-                    "`{{license}}` was found in template but should not be rendered".to_owned(),
-                );
-            }
+    let badges: Vec<&str> = cargo.badges.iter().map(AsRef::as_ref).collect();
+    let badges: &[&str] = badges.as_ref();
 
-            if template.contains("{{crate}}") && !add_title {
-                return Err(
-                    "`{{crate}}` was found in template but title should not be rendered"
-                        .to_owned(),
-                );
-            }
+    let license: Option<&str> = cargo.license.as_ref().map(AsRef::as_ref);
 
-            let title = if add_title { Some(title) } else { None };
-            let license = if add_license {
-                Some(license.unwrap().as_ref())
-            } else {
-                None
-            };
-            process_template(template, readme, title, license)
-        }
-        None => {
-            if add_title {
-                readme = prepend_title(readme, &title);
-            }
-            if add_license {
-                readme = append_license(readme, &license.unwrap());
-            }
-
-            Ok(readme)
-        }
+    if let Some(template) = template {
+        process_template(template, readme, title, badges, license)
+    } else {
+        process_string(readme, title, badges, license, add_title, add_badges, add_license)
     }
 }
 
@@ -54,11 +30,13 @@ pub fn render(
 /// Available variable:
 /// - `{{readme}}` documentation extracted from the rust docs
 /// - `{{crate}}` crate name defined in `Cargo.toml`
+/// - `{{badges}}` badges defined in `Cargo.toml`
 /// - `{{license}}` license defined in `Cargo.toml`
 fn process_template(
     mut template: String,
     readme: String,
-    title: Option<&str>,
+    title: &str,
+    badges: &[&str],
     license: Option<&str>,
 ) -> Result<String, String> {
 
@@ -68,32 +46,65 @@ fn process_template(
         return Err("Missing `{{readme}}` in template".to_owned());
     }
 
-    if template.contains("{{license}}") && license.is_none() {
-        return Err(
-            "`{{license}}` was found in template but no license was provided".to_owned(),
-        );
+    if template.contains("{{crate}}") {
+        template = template.replace("{{crate}}", &title);
     }
 
-    if template.contains("{{crate}}") && title.is_none() {
-        return Err(
-            "`{{crate}}` was found in template but no crate name was provided".to_owned(),
-        );
-    }
-
-    if let Some(title) = title {
-        if template.contains("{{crate}}") {
-            template = template.replace("{{crate}}", &title);
+    if template.contains("{{badges}}") {
+        if badges.is_empty() {
+            return Err(
+                "`{{badges}}` was found in template but no badges were provided".to_owned(),
+            );
         }
+        let badges = badges.join("\n");
+        template = template.replace("{{badges}}", &badges);
     }
 
-    if let Some(license) = license {
-        if template.contains("{{license}}") {
+    if template.contains("{{license}}") {
+        if let Some(license) = license {
             template = template.replace("{{license}}", &license);
+        } else {
+            return Err(
+                "`{{license}}` was found in template but no license was provided".to_owned()
+            );
         }
     }
 
     let result = template.replace("{{readme}}", &readme);
     Ok(result)
+}
+
+/// Process output without template
+fn process_string(mut readme: String, title: &str, badges: &[&str], license: Option<&str>, add_title: bool, add_badges: bool, add_license: bool) -> Result<String, String> {
+    if add_title {
+        readme = prepend_title(readme, title);
+    }
+
+    if add_badges {
+        readme = prepend_badges(readme, badges);
+    }
+
+    if add_license {
+        if let Some(license) = license {
+            readme = append_license(readme, license);
+        }
+    }
+
+    Ok(readme)
+}
+
+/// Prepend badges to output string
+fn prepend_badges(readme: String, badges: &[&str]) -> String {
+    if badges.len() > 0 {
+        let badges = badges.join("\n");
+        if !readme.is_empty() {
+            format!("{}\n\n{}", badges, readme)
+        } else {
+            badges
+        }
+    } else {
+        readme
+    }
 }
 
 /// Prepend title (crate name) to output string
@@ -118,222 +129,160 @@ fn append_license(readme: String, license: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    const CRATE_NAME: &str = "my_crate";
-    const LICENSE: &str = "MPL";
+    const TEMPLATE_MINIMAL: &str = "{{readme}}";
+    const TEMPLATE_WITH_TITLE: &str = "# {{crate}}\n\n{{readme}}";
+    const TEMPLATE_WITH_BADGES: &str = "{{badges}}\n\n{{readme}}";
+    const TEMPLATE_WITH_LICENSE: &str = "{{readme}}\n\n{{license}}";
+    const TEMPLATE_FULL: &str = "{{badges}}\n\n# {{crate}}\n\n{{readme}}\n\n{{license}}";
 
-    const TEMPLATE_NO_CRATE_NO_LICENSE: &str = "{{readme}}";
-    const TEMPLATE_CRATE_NO_LICENSE: &str = "# {{crate}}\n\n{{readme}}";
-    const TEMPLATE_NO_CRATE_LICENSE: &str = "{{readme}}\n\nLicense: {{license}}";
-    const TEMPLATE_CRATE_LICENSE: &str = "# {{crate}}\n\n{{readme}}\n\nLicense: {{license}}";
-
-    macro_rules! test_process_template {
-        ( $name:ident,
-          $template:ident,
-          input => $input:expr,
-          with_title => $with_title:expr,
-          with_license => $with_license:expr,
-          expected => $expected:expr) =>
-        {
-            #[test]
-            fn $name() {
-                let input = $input;
-                let title = if $with_title { Some(CRATE_NAME) } else { None };
-                let license = if $with_license { Some(LICENSE) } else { None };
-
-                let result = super::process_template(
-                    $template.to_owned(), input.into(), title, license
-                ).unwrap();
-
-                assert_eq!($expected, result);
-            }
-        };
-
-        ( $name:ident,
-          $template:ident,
-          input => $input:expr,
-          with_title => $with_title:expr,
-          with_license => $with_license:expr,
-          panic => $panic:expr) =>
-        {
-            #[test]
-            #[should_panic(expected = $panic)]
-            fn $name() {
-                let input = $input;
-                let title = if $with_title { Some(CRATE_NAME) } else { None };
-                let license = if $with_license { Some(LICENSE) } else { None };
-
-                super::process_template(
-                    $template.to_owned(), input.into(), title, license
-                ).unwrap();
-            }
-        }
+    // process template
+    #[test]
+    fn template_without_readme_should_fail() {
+        let result = super::process_template(String::new(), String::new(), "", &[], None);
+        assert!(result.is_err());
+        assert_eq!("Missing `{{readme}}` in template", result.unwrap_err());
     }
 
-    // TEMPLATE_NO_CRATE_NO_LICENSE
+    #[test]
+    fn template_with_badge_tag_but_missing_badges_should_fail() {
+        let result = super::process_template(TEMPLATE_WITH_BADGES.to_owned(), String::new(), "", &[], None);
+        assert!(result.is_err());
+        assert_eq!("`{{badges}}` was found in template but no badges were provided", result.unwrap_err());
+    }
 
-    // with title with license
-    test_process_template!(
-        process_template_no_crate_no_license_with_title_with_license,
-        TEMPLATE_NO_CRATE_NO_LICENSE,
-        input => "# documentation",
-        with_title => true,
-        with_license => true,
-        expected => "# documentation"
-    );
+    #[test]
+    fn template_with_license_tag_but_missing_license_should_fail() {
+        let result = super::process_template(TEMPLATE_WITH_LICENSE.to_owned(), String::new(), "", &[], None);
+        assert!(result.is_err());
+        assert_eq!("`{{license}}` was found in template but no license was provided", result.unwrap_err());
+    }
 
-    // with title without license
-    test_process_template!(
-        process_template_no_crate_no_license_with_title_without_license,
-        TEMPLATE_NO_CRATE_NO_LICENSE,
-        input => "# documentation",
-        with_title => true,
-        with_license => false,
-        expected => "# documentation"
-    );
+    #[test]
+    fn template_minimal() {
+        let result = super::process_template(TEMPLATE_MINIMAL.to_owned(), "readme".to_owned(), "", &[], None);
+        assert!(result.is_ok());
+        assert_eq!("readme", result.unwrap());
+    }
 
-    // without title with license
-    test_process_template!(
-        process_template_no_crate_no_license_without_title_with_license,
-        TEMPLATE_NO_CRATE_NO_LICENSE,
-        input => "# documentation",
-        with_title => false,
-        with_license => true,
-        expected => "# documentation"
-    );
+    #[test]
+    fn template_with_title() {
+        let result = super::process_template(TEMPLATE_WITH_TITLE.to_owned(), "readme".to_owned(), "title", &[], None);
+        assert!(result.is_ok());
+        assert_eq!("# title\n\nreadme", result.unwrap());
+    }
 
-    // without title without license
-    test_process_template!(
-        process_template_no_crate_no_license_without_title_without_license,
-        TEMPLATE_NO_CRATE_NO_LICENSE,
-        input => "# documentation",
-        with_title => false,
-        with_license => false,
-        expected => "# documentation"
-    );
+    #[test]
+    fn template_with_badges() {
+        let result = super::process_template(TEMPLATE_WITH_BADGES.to_owned(), "readme".to_owned(), "", &["badge1", "badge2"], None);
+        assert!(result.is_ok());
+        assert_eq!("badge1\nbadge2\n\nreadme", result.unwrap());
+    }
 
-    // TEMPLATE_CRATE_NO_LICENSE
+    #[test]
+    fn template_with_license() {
+        let result = super::process_template(TEMPLATE_WITH_LICENSE.to_owned(), "readme".to_owned(), "", &[], Some("license"));
+        assert!(result.is_ok());
+        assert_eq!("readme\n\nlicense", result.unwrap());
+    }
 
-    // with title with license
-    test_process_template!(
-        process_template_crate_no_license_with_title_with_license,
-        TEMPLATE_CRATE_NO_LICENSE,
-        input => "# documentation",
-        with_title => true,
-        with_license => true,
-        expected => "# my_crate\n\n# documentation"
-    );
+    #[test]
+    fn template_full() {
+        let result = super::process_template(TEMPLATE_FULL.to_owned(), "readme".to_owned(), "title", &["badge1", "badge2"], Some("license"));
+        assert!(result.is_ok());
+        assert_eq!("badge1\nbadge2\n\n# title\n\nreadme\n\nlicense", result.unwrap());
+    }
 
-    // with title without license
-    test_process_template!(
-        process_template_crate_no_license_with_title_without_license,
-        TEMPLATE_CRATE_NO_LICENSE,
-        input => "# documentation",
-        with_title => true,
-        with_license => false,
-        expected => "# my_crate\n\n# documentation"
-    );
+    // process string
+    #[test]
+    fn render_minimal() {
+        let result = super::process_string("readme".to_owned(), "", &[], None, false, false, false);
+        assert!(result.is_ok());
+        assert_eq!("readme", result.unwrap());
+    }
 
-    // without title with license
-    test_process_template!(
-        process_template_crate_no_license_without_title_with_license,
-        TEMPLATE_CRATE_NO_LICENSE,
-        input => "# documentation",
-        with_title => false,
-        with_license => true,
-        panic => "`{{crate}}` was found in template but no crate name was provided"
-    );
+    #[test]
+    fn render_title() {
+        let result = super::process_string("readme".to_owned(), "title", &[], None, true, false, false);
+        assert!(result.is_ok());
+        assert_eq!("# title\n\nreadme", result.unwrap());
+    }
 
-    // without title without license
-    test_process_template!(
-        process_template_crate_no_license_without_title_without_license,
-        TEMPLATE_CRATE_NO_LICENSE,
-        input => "# documentation",
-        with_title => false,
-        with_license => false,
-        panic => "`{{crate}}` was found in template but no crate name was provided"
-    );
+    #[test]
+    fn render_badges() {
+        let result = super::process_string("readme".to_owned(), "", &["badge1", "badge2"], None, false, true, false);
+        assert!(result.is_ok());
+        assert_eq!("badge1\nbadge2\n\nreadme", result.unwrap());
+    }
 
-    // TEMPLATE_NO_CRATE_LICENSE
+    #[test]
+    fn render_license() {
+        let result = super::process_string("readme".to_owned(), "", &[], Some("license"), false, false, true);
+        assert!(result.is_ok());
+        assert_eq!("readme\n\nLicense: license", result.unwrap());
+    }
 
-    // with title with license
-    test_process_template!(
-        process_template_no_crate_license_with_title_with_license,
-        TEMPLATE_NO_CRATE_LICENSE,
-        input => "# documentation",
-        with_title => true,
-        with_license => true,
-        expected => "# documentation\n\nLicense: MPL"
-    );
+    #[test]
+    fn render_full() {
+        let result = super::process_string("readme".to_owned(), "title", &["badge1", "badge2"], Some("license"), true, true, true);
+        assert!(result.is_ok());
+        assert_eq!("badge1\nbadge2\n\n# title\n\nreadme\n\nLicense: license", result.unwrap());
+    }
 
-    // with title without license
-    test_process_template!(
-        process_template_no_crate_license_with_title_without_license,
-        TEMPLATE_NO_CRATE_LICENSE,
-        input => "# documentation",
-        with_title => true,
-        with_license => false,
-        panic => "`{{license}}` was found in template but no license was provided"
-    );
+    #[test]
+    fn render_nothing() {
+        let result = super::process_string("readme".to_owned(), "title", &["badge1", "badge2"], Some("license"), false, false, false);
+        assert!(result.is_ok());
+        assert_eq!("readme", result.unwrap());
+    }
 
-    // without title with license
-    test_process_template!(
-        process_template_no_crate_license_without_title_with_license,
-        TEMPLATE_NO_CRATE_LICENSE,
-        input => "# documentation",
-        with_title => false,
-        with_license => true,
-        expected => "# documentation\n\nLicense: MPL"
-    );
+    // prepend badges
+    #[test]
+    fn prepend_badges_with_filled_readme_and_non_empty_badges() {
+        let result = super::prepend_badges("readme".into(), &["badge1", "badge2"]);
+        assert_eq!("badge1\nbadge2\n\nreadme", result);
+    }
 
-    // without title without license
-    test_process_template!(
-        process_template_no_crate_license_without_title_without_license,
-        TEMPLATE_NO_CRATE_LICENSE,
-        input => "# documentation",
-        with_title => false,
-        with_license => false,
-        panic => "`{{license}}` was found in template but no license was provided"
-    );
+    #[test]
+    fn prepend_badges_with_empty_readme_and_non_empty_badges() {
+        let result = super::prepend_badges("".into(), &["badge1", "badge2"]);
+        assert_eq!("badge1\nbadge2", result);
+    }
 
-    // TEMPLATE_CRATE_LICENSE
+    #[test]
+    fn prepend_badges_with_filled_readme_and_empty_badges() {
+        let result = super::prepend_badges("readme".into(), &[]);
+        assert_eq!("readme", result);
+    }
 
-    // with title with license
-    test_process_template!(
-        process_template_crate_license_with_title_with_license,
-        TEMPLATE_CRATE_LICENSE,
-        input => "# documentation",
-        with_title => true,
-        with_license => true,
-        expected => "# my_crate\n\n# documentation\n\nLicense: MPL"
-    );
+    #[test]
+    fn prepend_badges_with_empty_readme_and_empty_badges() {
+        let result = super::prepend_badges("".into(), &[]);
+        assert_eq!("", result);
+    }
 
-    // with title without license
-    test_process_template!(
-        process_template_crate_license_with_title_without_license,
-        TEMPLATE_CRATE_LICENSE,
-        input => "# documentation",
-        with_title => true,
-        with_license => false,
-        panic => "`{{license}}` was found in template but no license was provided"
-    );
+    // prepend title
+    #[test]
+    fn prepend_title_with_filled_readme() {
+        let result = super::prepend_title("readme".into(), "title");
+        assert_eq!("# title\n\nreadme", result);
+    }
 
-    // without title with license
-    test_process_template!(
-        process_template_crate_license_without_title_with_license,
-        TEMPLATE_CRATE_LICENSE,
-        input => "# documentation",
-        with_title => false,
-        with_license => true,
-        panic => "`{{crate}}` was found in template but no crate name was provided"
-    );
+    #[test]
+    fn prepend_title_with_empty_readme() {
+        let result = super::prepend_title("".into(), "title");
+        assert_eq!("# title", result);
+    }
 
-    // without title with license
-    test_process_template!(
-        process_template_crate_license_without_title_witout_license,
-        TEMPLATE_CRATE_LICENSE,
-        input => "# documentation",
-        with_title => false,
-        with_license => false,
-        panic => "`{{license}}` was found in template but no license was provided"
-    );
+    // append license
+    #[test]
+    fn append_license_with_filled_readme() {
+        let result = super::append_license("readme".into(), "license");
+        assert_eq!("readme\n\nLicense: license", result);
+    }
+
+    #[test]
+    fn append_license_with_empty_readme() {
+        let result = super::append_license("".into(), "license");
+        assert_eq!("License: license", result);
+    }
 }

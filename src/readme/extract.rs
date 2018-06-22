@@ -5,18 +5,16 @@ use std::io::{self, Read, BufRead, BufReader};
 /// Read the given `Read`er and return a `Vec` of the rustdoc lines found
 pub fn extract_docs<R: Read>(reader: R) -> io::Result<Vec<String>> {
     let mut reader = BufReader::new(reader);
-
     let mut line = String::new();
 
     while reader.read_line(&mut line)? > 0 {
         if line.starts_with("//!") {
             return extract_docs_singleline_style(line, reader);
         }
+
         if line.starts_with("/*!") {
             return extract_docs_multiline_style(line, reader);
         }
-
-        line.clear();
     }
 
     Ok(Vec::new())
@@ -98,19 +96,18 @@ mod tests {
         "```",
     ];
 
-    const INPUT_SINGLELINE: &str = concat_lines!(
-        "//! first line",
-        "//!",
-        "//! ```",
-        "//! let rust_code = \"safe\";",
-        "//! ```",
-        "//!",
-        "//! ```C",
-        "//! int i = 0; // no rust code",
-        "//! ```",
-        "use std::any::Any;",
-        "fn main() {}",
-    );
+    const INPUT_SINGLELINE: &str = "\
+        //! first line \n\
+        //! \n\
+        //! ``` \n\
+        //! let rust_code = \"safe\"; \n\
+        //! ``` \n\
+        //! \n\
+        //! ```C \n\
+        //! int i = 0; // no rust code \n\
+        //! ``` \n\
+        use std::any::Any; \n\
+        fn main() {}";
 
     #[test]
     fn extract_docs_singleline_style() {
@@ -119,21 +116,20 @@ mod tests {
         assert_eq!(result, EXPECTED);
     }
 
-    const INPUT_MULTILINE: &str = concat_lines!(
-        "/*!",
-        "first line",
-        "",
-        "```",
-        "let rust_code = \"safe\";",
-        "```",
-        "",
-        "```C",
-        "int i = 0; // no rust code",
-        "```",
-        "*/",
-        "use std::any::Any;",
-        "fn main() {}",
-    );
+    const INPUT_MULTILINE: &str = "\
+        /*! \n\
+        first line \n\
+         \n\
+        ``` \n\
+        let rust_code = \"safe\"; \n\
+        ``` \n\
+         \n\
+        ```C \n\
+        int i = 0; // no rust code \n\
+        ``` \n\
+        */ \n\
+        use std::any::Any; \n\
+        fn main() {}";
 
     #[test]
     fn extract_docs_multiline_style() {
@@ -142,46 +138,43 @@ mod tests {
         assert_eq!(result, EXPECTED);
     }
 
-    const INPUT_MIXED_SINGLELINE: &str = concat_lines!(
-        "//! singleline",
-        "/*!",
-        "multiline",
-        "*/",
-    );
+    const INPUT_MIXED_SINGLELINE: &str = "\
+        //! singleline \n\
+        /*! \n\
+        multiline \n\
+        */";
 
     #[test]
     fn extract_docs_mix_styles_singleline() {
         let input = Cursor::new(INPUT_MIXED_SINGLELINE.as_bytes());
-        let expected = ["singleline"];
+        let expected = "singleline";
         let result = extract_docs(input).unwrap();
-        assert_eq!(result, expected)
+        assert_eq!(result, &[expected])
     }
 
-    const INPUT_MIXED_MULTILINE: &str = concat_lines!(
-        "/*!",
-        "multiline",
-        "*/",
-        "//! singleline",
-    );
+    const INPUT_MIXED_MULTILINE: &str = "\
+        /*! \n\
+        multiline \n\
+        */ \n\
+        //! singleline";
 
     #[test]
     fn extract_docs_mix_styles_multiline() {
         let input = Cursor::new(INPUT_MIXED_MULTILINE.as_bytes());
-        let expected = ["multiline"];
+        let expected = "multiline";
         let result = extract_docs(input).unwrap();
-        assert_eq!(result, expected);
+        assert_eq!(result, &[expected]);
     }
 
-    const INPUT_MULTILINE_NESTED_1: &str = concat_lines!(
-        "/*!",
-        "level 0",
-        "/*",
-        "level 1",
-        "*/",
-        "level 0",
-        "*/",
-        "fn main() {}",
-    );
+    const INPUT_MULTILINE_NESTED_1: &str = "\
+        /*! \n\
+        level 0 \n\
+        /* \n\
+        level 1 \n\
+        */ \n\
+        level 0 \n\
+        */ \n\
+        fn main() {}";
 
     const EXPECTED_MULTILINE_NESTED_1: &[&str] = &[
         "level 0",
@@ -198,20 +191,19 @@ mod tests {
         assert_eq!(result, EXPECTED_MULTILINE_NESTED_1);
     }
 
-    const INPUT_MULTILINE_NESTED_2: &str = concat_lines!(
-        "/*!",
-        "level 0",
-        "/*",
-        "level 1",
-        "/*",
-        "level 2",
-        "*/",
-        "level 1",
-        "*/",
-        "level 0",
-        "*/",
-        "fn main() {}",
-    );
+    const INPUT_MULTILINE_NESTED_2: &str = "\
+        /*! \n\
+        level 0 \n\
+        /* \n\
+        level 1 \n\
+        /* \n\
+        level 2 \n\
+        */ \n\
+        level 1 \n\
+        */ \n\
+        level 0 \n\
+        */ \n\
+        fn main() {}";
 
     const EXPECTED_MULTILINE_NESTED_2: &[&str] = &[
         "level 0",

@@ -3,7 +3,7 @@ extern crate assert_cli;
 use assert_cli::Assert;
 
 #[test]
-fn main() {
+fn entrypoint_resolution_main() {
     let args = [
         "readme",
         "--project-root",
@@ -15,12 +15,12 @@ fn main() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("main")
+        .and().stdout().is("main")
         .unwrap();
 }
 
 #[test]
-fn lib() {
+fn entrypoint_resolution_lib() {
     let args = [
         "readme",
         "--project-root",
@@ -32,12 +32,12 @@ fn lib() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("lib")
+        .and().stdout().is("lib")
         .unwrap();
 }
 
 #[test]
-fn cargo_lib() {
+fn entrypoint_resolution_cargo_lib() {
     let args = [
         "readme",
         "--project-root",
@@ -49,12 +49,12 @@ fn cargo_lib() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("cargo lib")
+        .and().stdout().is("cargo lib")
         .unwrap();
 }
 
 #[test]
-fn cargo_bin() {
+fn entrypoint_resolution_cargo_bin() {
     let args = [
         "readme",
         "--project-root",
@@ -66,6 +66,6 @@ fn cargo_bin() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .prints_exactly("cargo bin")
+        .and().stdout().is("cargo bin")
         .unwrap();
 }
