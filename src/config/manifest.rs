@@ -36,6 +36,7 @@ pub struct Manifest {
     pub lib: Option<ManifestLib>,
     pub bin: Vec<ManifestLib>,
     pub badges: Vec<String>,
+    pub version: String,
 }
 
 impl Manifest {
@@ -49,7 +50,8 @@ impl Manifest {
             }).unwrap_or_default(),
             badges: cargo_toml.badges
                 .map(|b| process_badges(b))
-                .unwrap_or_default()
+                .unwrap_or_default(),
+            version: cargo_toml.package.version,
         }
     }
 }
@@ -103,6 +105,7 @@ struct CargoToml {
 struct CargoTomlPackage {
     pub name: String,
     pub license: Option<String>,
+    pub version: String,
 }
 
 /// Cargo.toml crate lib information
