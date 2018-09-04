@@ -4,7 +4,7 @@ use assert_cli::Assert;
 
 const EXPECTED: &str = r#"
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/cargo-readme/test?branch=master&svg=true)](https://ci.appveyor.com/project/cargo-readme/test/branch/master)
-[![Build Status](https://circleci.com/gh/cargo-readme/test/tree/master.svg?style=svg)](https://circleci.com/gh/cargo-readme/test/cargo-readme/tree/master)
+[![Build Status](https://circleci.com/gh/cargo-readme/test/tree/master.svg?style=shield)](https://circleci.com/gh/cargo-readme/test/cargo-readme/tree/master)
 [![Build Status](https://gitlab.com/cargo-readme/test/badges/master/build.svg)](https://gitlab.com/cargo-readme/test/commits/master)
 [![Build Status](https://travis-ci.org/cargo-readme/test.svg?branch=master)](https://travis-ci.org/cargo-readme/test)
 [![Coverage Status](https://codecov.io/gh/cargo-readme/test/branch/master/graph/badge.svg)](https://codecov.io/gh/cargo-readme/test)

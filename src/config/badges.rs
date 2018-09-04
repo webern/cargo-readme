@@ -27,7 +27,7 @@ pub fn circle_ci(attrs: Attrs) -> String {
     );
 
     format!(
-        "[![Build Status](https://circleci.com/{service}/{repo}/tree/{branch}.svg?style=svg)]\
+        "[![Build Status](https://circleci.com/{service}/{repo}/tree/{branch}.svg?style=shield)]\
         (https://circleci.com/{service}/{repo}/cargo-readme/tree/{branch})",
         repo=repo, service=service, branch=percent_encode(branch)
     )
