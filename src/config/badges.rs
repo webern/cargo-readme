@@ -84,8 +84,8 @@ pub fn coveralls(attrs: Attrs) -> String {
 pub fn is_it_maintained_issue_resolution(attrs: Attrs) -> String {
     let repo = &attrs["repository"];
     format!(
-        "[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/{repo}.svg)]\
-        (http://isitmaintained.com/project/{repo} \"Average time to resolve an issue\")",
+        "[![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/{repo}.svg)]\
+        (https://isitmaintained.com/project/{repo} \"Average time to resolve an issue\")",
         repo=repo
     )
 }
@@ -93,8 +93,8 @@ pub fn is_it_maintained_issue_resolution(attrs: Attrs) -> String {
 pub fn is_it_maintained_open_issues(attrs: Attrs) -> String {
     let repo = &attrs["repository"];
     format!(
-        "[![Percentage of issues still open](http://isitmaintained.com/badge/open/{repo}.svg)]\
-        (http://isitmaintained.com/project/{repo} \"Percentage of issues still open\")",
+        "[![Percentage of issues still open](https://isitmaintained.com/badge/open/{repo}.svg)]\
+        (https://isitmaintained.com/project/{repo} \"Percentage of issues still open\")",
         repo=repo
     )
 }

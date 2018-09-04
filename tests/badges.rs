@@ -9,8 +9,8 @@ const EXPECTED: &str = r#"
 [![Build Status](https://travis-ci.org/cargo-readme/test.svg?branch=master)](https://travis-ci.org/cargo-readme/test)
 [![Coverage Status](https://codecov.io/gh/cargo-readme/test/branch/master/graph/badge.svg)](https://codecov.io/gh/cargo-readme/test)
 [![Coverage Status](https://coveralls.io/repos/github/cargo-readme/test/badge.svg?branch=branch)](https://coveralls.io/github/cargo-readme/test?branch=master)
-[![Average time to resolve an issue](http://isitmaintained.com/badge/resolution/cargo-readme/test.svg)](http://isitmaintained.com/project/cargo-readme/test "Average time to resolve an issue")
-[![Percentage of issues still open](http://isitmaintained.com/badge/open/cargo-readme/test.svg)](http://isitmaintained.com/project/cargo-readme/test "Percentage of issues still open")
+[![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/cargo-readme/test.svg)](https://isitmaintained.com/project/cargo-readme/test "Average time to resolve an issue")
+[![Percentage of issues still open](https://isitmaintained.com/badge/open/cargo-readme/test.svg)](https://isitmaintained.com/project/cargo-readme/test "Percentage of issues still open")
 
 # readme-test
 
