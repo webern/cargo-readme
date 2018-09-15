@@ -1,0 +1,6 @@
+[package]
+name = "project-with-version"
+version = "0.1.0"
+authors = ["mexus <gilaldpellaeon@gmail.com>"]
+
+[dependencies]

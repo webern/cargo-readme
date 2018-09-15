@@ -13,7 +13,7 @@
 //!
 //! As you write documentation, you often have to show examples of how to use your software. But
 //! how do you make sure your examples are all working properly? That we didn't forget to update
-//! them after a braking change and left our (possibly new) users with errors they will have to
+//! them after a breaking change and left our (possibly new) users with errors they will have to
 //! figure out by themselves?
 //!
 //! With `cargo-readme`, you just write the rustdoc, run the tests, and then run:
@@ -101,7 +101,7 @@
 //!
 //! {{readme}}
 //!
-//! Some additional info here
+//! Some additional info here, like: "current version is {{version}}"
 //!
 //! License: {{license}}
 //! ```
