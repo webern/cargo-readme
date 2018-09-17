@@ -1,4 +1,4 @@
-[![3.1.0](https://img.shields.io/badge/crates.io-v3.1.0-blue.svg?longCache=true)](https://crates.io/crates/cargo-readme/3.1.0)
+[![3.1.1](https://img.shields.io/badge/crates.io-v3.1.1-blue.svg?longCache=true)](https://crates.io/crates/cargo-readme/3.1.1)
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/livioribeiro/cargo-readme?branch=master&svg=true)](https://ci.appveyor.com/project/livioribeiro/cargo-readme/branch/master)
 [![Build Status](https://circleci.com/gh/livioribeiro/cargo-readme/tree/master.svg?style=shield)](https://circleci.com/gh/livioribeiro/cargo-readme/cargo-readme/tree/master)
 [![Build Status](https://travis-ci.org/livioribeiro/cargo-readme.svg?branch=master)](https://travis-ci.org/livioribeiro/cargo-readme)
@@ -145,8 +145,8 @@ By default, `README.tpl` will be used as the template, but you can override it u
 
 Licensed under either of
 
- * Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
- * MIT license ([LICENSE-MIT](LICENSE-MIT) or https://opensource.org/licenses/MIT)
+* Apache License, Version 2.0, ([LICENSE-APACHE](LICENSE-APACHE) or https://www.apache.org/licenses/LICENSE-2.0)
+* MIT license ([LICENSE-MIT](LICENSE-MIT) or https://opensource.org/licenses/MIT)
 
 at your option.
 
