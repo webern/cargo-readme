@@ -101,7 +101,9 @@
 //!
 //! {{readme}}
 //!
-//! Some additional info here, like: "current version is {{version}}"
+//! Current version: {{version}}
+//!
+//! Some additional info here
 //!
 //! License: {{license}}
 //! ```
@@ -112,6 +114,8 @@
 //! [![Build Status](__badge_image__)](__badge_url__)
 //!
 //! # my_crate
+//!
+//! Current version: 3.0.0
 //!
 //! This is my awesome crate
 //!
