@@ -1,7 +1,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-use ::config::manifest::{Manifest, ManifestLib};
+use config::manifest::{Manifest, ManifestLib};
 
 /// Get the project root from given path or defaults to current directory
 ///
@@ -54,19 +54,29 @@ pub fn find_entrypoint(current_dir: &Path, manifest: &Manifest) -> Result<PathBu
     }
 
     // try lib defined in `Cargo.toml`
-    if let Some(ManifestLib { path: ref lib, doc: true }) = manifest.lib {
-        return Ok(lib.to_path_buf())
+    if let Some(ManifestLib {
+        path: ref lib,
+        doc: true,
+    }) = manifest.lib
+    {
+        return Ok(lib.to_path_buf());
     }
 
     // try bin defined in `Cargo.toml`
     if manifest.bin.len() > 0 {
-        let mut bin_list: Vec<_> = manifest.bin.iter()
+        let mut bin_list: Vec<_> = manifest
+            .bin
+            .iter()
             .filter(|b| b.doc == true)
             .map(|b| b.path.clone())
             .collect();
 
         if bin_list.len() > 1 {
-            let paths = bin_list.iter().map(|p| p.to_string_lossy()).collect::<Vec<_>>().join(", ");
+            let paths = bin_list
+                .iter()
+                .map(|p| p.to_string_lossy())
+                .collect::<Vec<_>>()
+                .join(", ");
             return Err(format!("Multiple binaries found, choose one: [{}]", paths));
         }
 

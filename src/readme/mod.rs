@@ -5,7 +5,7 @@ mod extract;
 mod process;
 mod template;
 
-use ::config;
+use config;
 
 /// Generates readme data from `source` file
 ///
@@ -19,9 +19,7 @@ pub fn generate_readme<T: Read>(
     add_license: bool,
     indent_headings: bool,
 ) -> Result<String, String> {
-
-    let lines = extract::extract_docs(source)
-        .map_err(|e| format!("{}", e))?;
+    let lines = extract::extract_docs(source).map_err(|e| format!("{}", e))?;
 
     let readme = process::process_docs(lines, indent_headings).join("\n");
 

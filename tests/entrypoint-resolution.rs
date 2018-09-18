@@ -9,13 +9,15 @@ fn entrypoint_resolution_main() {
         "--project-root",
         "tests/entrypoint-resolution/main",
         "--no-title",
-        "--no-license"
+        "--no-license",
     ];
 
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .and().stdout().is("main")
+        .and()
+        .stdout()
+        .is("main")
         .unwrap();
 }
 
@@ -26,13 +28,15 @@ fn entrypoint_resolution_lib() {
         "--project-root",
         "tests/entrypoint-resolution/lib",
         "--no-title",
-        "--no-license"
+        "--no-license",
     ];
 
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .and().stdout().is("lib")
+        .and()
+        .stdout()
+        .is("lib")
         .unwrap();
 }
 
@@ -43,13 +47,15 @@ fn entrypoint_resolution_cargo_lib() {
         "--project-root",
         "tests/entrypoint-resolution/cargo-lib",
         "--no-title",
-        "--no-license"
+        "--no-license",
     ];
 
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .and().stdout().is("cargo lib")
+        .and()
+        .stdout()
+        .is("cargo lib")
         .unwrap();
 }
 
@@ -60,12 +66,14 @@ fn entrypoint_resolution_cargo_bin() {
         "--project-root",
         "tests/entrypoint-resolution/cargo-bin",
         "--no-title",
-        "--no-license"
+        "--no-license",
     ];
 
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .and().stdout().is("cargo bin")
+        .and()
+        .stdout()
+        .is("cargo bin")
         .unwrap();
 }
