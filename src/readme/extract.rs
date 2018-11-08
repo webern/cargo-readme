@@ -15,6 +15,8 @@ pub fn extract_docs<R: Read>(reader: R) -> io::Result<Vec<String>> {
         if line.starts_with("/*!") {
             return extract_docs_multiline_style(line, reader);
         }
+
+        line.clear();
     }
 
     Ok(Vec::new())
