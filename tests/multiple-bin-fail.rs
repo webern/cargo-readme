@@ -11,6 +11,8 @@ fn multiple_bin_fail() {
     Assert::main_binary()
         .with_args(&args)
         .fails()
-        .and().stderr().is(EXPECTED)
+        .and()
+        .stderr()
+        .is(EXPECTED)
         .unwrap();
 }

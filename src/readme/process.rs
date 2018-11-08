@@ -4,7 +4,7 @@
 //! - "```", "```no_run", "```ignore" and "```should_panic" are converted to "```rust"
 //! - markdown heading are indentend to be one level lower, so the crate name is at the top level
 
-use std::iter::{Iterator, IntoIterator};
+use std::iter::{IntoIterator, Iterator};
 
 use regex::Regex;
 
@@ -21,9 +21,11 @@ lazy_static!{
 ///
 /// The processing transforms doc tests into regular rust code blocks and optionally indent the
 /// markdown headings in order to leave the top heading to the crate name
-pub fn process_docs<S: Into<String>, L: Into<Vec<S>>>(lines: L, indent_headings: bool) -> Vec<String> {
-    lines.into().into_iter()
-        .process_docs(indent_headings)
+pub fn process_docs<S: Into<String>, L: Into<Vec<S>>>(
+    lines: L,
+    indent_headings: bool,
+) -> Vec<String> {
+    lines.into().into_iter().process_docs(indent_headings)
 }
 
 pub struct Processor {
@@ -94,7 +96,6 @@ pub trait DocProcess<S: Into<String>> {
 
 impl<S: Into<String>, I: Iterator<Item = S>> DocProcess<S> for I {}
 
-
 #[cfg(test)]
 mod tests {
     use super::process_docs;
@@ -107,12 +108,8 @@ mod tests {
         "```",
     ];
 
-    const EXPECTED_HIDDEN_LINE: &[&str] = &[
-        "```rust",
-        "#[visible]",
-        "let visible = \"visible\";",
-        "```",
-    ];
+    const EXPECTED_HIDDEN_LINE: &[&str] =
+        &["```rust", "#[visible]", "let visible = \"visible\";", "```"];
 
     #[test]
     fn hide_line_in_rust_code_block() {
@@ -227,17 +224,9 @@ mod tests {
         assert_eq!(result, EXPECTED_RUST_CODE_BLOCK);
     }
 
-    const INPUT_TEXT_BLOCK: &[&str] = &[
-        "```text",
-        "this is text",
-        "```",
-    ];
+    const INPUT_TEXT_BLOCK: &[&str] = &["```text", "this is text", "```"];
 
-    const EXPECTED_TEXT_BLOCK: &[&str] = &[
-        "```",
-        "this is text",
-        "```",
-    ];
+    const EXPECTED_TEXT_BLOCK: &[&str] = &["```", "this is text", "```"];
 
     #[test]
     fn transform_text_block() {
@@ -287,17 +276,9 @@ mod tests {
         assert_eq!(result, INPUT_INDENT_HEADINGS);
     }
 
-    const INPUT_ALTERNATE_DELIMITER_4_BACKTICKS: &[&str] = &[
-        "````",
-        "let i = 1;",
-        "````",
-    ];
+    const INPUT_ALTERNATE_DELIMITER_4_BACKTICKS: &[&str] = &["````", "let i = 1;", "````"];
 
-    const EXPECTED_ALTERNATE_DELIMITER_4_BACKTICKS: &[&str] = &[
-        "````rust",
-        "let i = 1;",
-        "````",
-    ];
+    const EXPECTED_ALTERNATE_DELIMITER_4_BACKTICKS: &[&str] = &["````rust", "let i = 1;", "````"];
 
     #[test]
     fn alternate_delimiter_4_backticks() {
@@ -333,17 +314,9 @@ mod tests {
         assert_eq!(result, EXPECTED_ALTERNATE_DELIMITER_4_BACKTICKS_NESTED);
     }
 
-    const INPUT_ALTERNATE_DELIMITER_3_TILDES: &[&str] = &[
-        "~~~",
-        "let i = 1;",
-        "~~~",
-    ];
+    const INPUT_ALTERNATE_DELIMITER_3_TILDES: &[&str] = &["~~~", "let i = 1;", "~~~"];
 
-    const EXPECTED_ALTERNATE_DELIMITER_3_TILDES: &[&str] = &[
-        "~~~rust",
-        "let i = 1;",
-        "~~~",
-    ];
+    const EXPECTED_ALTERNATE_DELIMITER_3_TILDES: &[&str] = &["~~~rust", "let i = 1;", "~~~"];
 
     #[test]
     fn alternate_delimiter_3_tildes() {
@@ -351,17 +324,9 @@ mod tests {
         assert_eq!(result, EXPECTED_ALTERNATE_DELIMITER_3_TILDES);
     }
 
-    const INPUT_ALTERNATE_DELIMITER_4_TILDES: &[&str] = &[
-        "~~~~",
-        "let i = 1;",
-        "~~~~",
-    ];
+    const INPUT_ALTERNATE_DELIMITER_4_TILDES: &[&str] = &["~~~~", "let i = 1;", "~~~~"];
 
-    const EXPECTED_ALTERNATE_DELIMITER_4_TILDES: &[&str] = &[
-        "~~~~rust",
-        "let i = 1;",
-        "~~~~",
-    ];
+    const EXPECTED_ALTERNATE_DELIMITER_4_TILDES: &[&str] = &["~~~~rust", "let i = 1;", "~~~~"];
 
     #[test]
     fn alternate_delimiter_4_tildes() {

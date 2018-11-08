@@ -21,15 +21,13 @@ License: MIT
 
 #[test]
 fn badges() {
-    let args = [
-        "readme",
-        "--project-root",
-        "tests/badges",
-    ];
+    let args = ["readme", "--project-root", "tests/badges"];
 
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .and().stdout().is(EXPECTED)
+        .and()
+        .stdout()
+        .is(EXPECTED)
         .unwrap();
 }

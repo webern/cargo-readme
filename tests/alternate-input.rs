@@ -17,7 +17,9 @@ fn alternate_input_empty_docs() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .and().stdout().is("# readme-test\n\nLicense: MIT")
+        .and()
+        .stdout()
+        .is("# readme-test\n\nLicense: MIT")
         .unwrap();
 }
 
@@ -44,7 +46,9 @@ License: MIT
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .and().stdout().is(expected)
+        .and()
+        .stdout()
+        .is(expected)
         .unwrap();
 }
 
@@ -73,6 +77,8 @@ License: MIT
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .and().stdout().is(expected)
+        .and()
+        .stdout()
+        .is(expected)
         .unwrap();
 }

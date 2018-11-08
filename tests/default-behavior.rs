@@ -55,6 +55,8 @@ fn default_behavior() {
     Assert::main_binary()
         .with_args(&args)
         .succeeds()
-        .and().stdout().is(EXPECTED)
+        .and()
+        .stdout()
+        .is(EXPECTED)
         .unwrap();
 }

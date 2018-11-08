@@ -1,4 +1,4 @@
-use ::config::Manifest;
+use config::Manifest;
 
 /// Renders the template
 ///
@@ -23,7 +23,15 @@ pub fn render(
     if let Some(template) = template {
         process_template(template, readme, title, badges, license, version)
     } else {
-        process_string(readme, title, badges, license, add_title, add_badges, add_license)
+        process_string(
+            readme,
+            title,
+            badges,
+            license,
+            add_title,
+            add_badges,
+            add_license,
+        )
     }
 }
 
@@ -43,7 +51,6 @@ fn process_template(
     license: Option<&str>,
     version: &str,
 ) -> Result<String, String> {
-
     template = template.trim_right_matches("\n").to_owned();
 
     if !template.contains("{{readme}}") {
@@ -56,9 +63,7 @@ fn process_template(
 
     if template.contains("{{badges}}") {
         if badges.is_empty() {
-            return Err(
-                "`{{badges}}` was found in template but no badges were provided".to_owned(),
-            );
+            return Err("`{{badges}}` was found in template but no badges were provided".to_owned());
         }
         let badges = badges.join("\n");
         template = template.replace("{{badges}}", &badges);
@@ -69,7 +74,7 @@ fn process_template(
             template = template.replace("{{license}}", &license);
         } else {
             return Err(
-                "`{{license}}` was found in template but no license was provided".to_owned()
+                "`{{license}}` was found in template but no license was provided".to_owned(),
             );
         }
     }
@@ -81,7 +86,15 @@ fn process_template(
 }
 
 /// Process output without template
-fn process_string(mut readme: String, title: &str, badges: &[&str], license: Option<&str>, add_title: bool, add_badges: bool, add_license: bool) -> Result<String, String> {
+fn process_string(
+    mut readme: String,
+    title: &str,
+    badges: &[&str],
+    license: Option<&str>,
+    add_title: bool,
+    add_badges: bool,
+    add_license: bool,
+) -> Result<String, String> {
     if add_title {
         readme = prepend_title(readme, title);
     }
@@ -140,7 +153,8 @@ mod tests {
     const TEMPLATE_WITH_BADGES: &str = "{{badges}}\n\n{{readme}}";
     const TEMPLATE_WITH_LICENSE: &str = "{{readme}}\n\n{{license}}";
     const TEMPLATE_WITH_VERSION: &str = "{{readme}}\n\n{{version}}";
-    const TEMPLATE_FULL: &str = "{{badges}}\n\n# {{crate}}\n\n{{readme}}\n\n{{license}}\n\n{{version}}";
+    const TEMPLATE_FULL: &str =
+        "{{badges}}\n\n# {{crate}}\n\n{{readme}}\n\n{{license}}\n\n{{version}}";
 
     // process template
     #[test]
@@ -152,58 +166,123 @@ mod tests {
 
     #[test]
     fn template_with_badge_tag_but_missing_badges_should_fail() {
-        let result = super::process_template(TEMPLATE_WITH_BADGES.to_owned(), String::new(), "", &[], None, "");
+        let result = super::process_template(
+            TEMPLATE_WITH_BADGES.to_owned(),
+            String::new(),
+            "",
+            &[],
+            None,
+            "",
+        );
         assert!(result.is_err());
-        assert_eq!("`{{badges}}` was found in template but no badges were provided", result.unwrap_err());
+        assert_eq!(
+            "`{{badges}}` was found in template but no badges were provided",
+            result.unwrap_err()
+        );
     }
 
     #[test]
     fn template_with_license_tag_but_missing_license_should_fail() {
-        let result = super::process_template(TEMPLATE_WITH_LICENSE.to_owned(), String::new(), "", &[], None, "");
+        let result = super::process_template(
+            TEMPLATE_WITH_LICENSE.to_owned(),
+            String::new(),
+            "",
+            &[],
+            None,
+            "",
+        );
         assert!(result.is_err());
-        assert_eq!("`{{license}}` was found in template but no license was provided", result.unwrap_err());
+        assert_eq!(
+            "`{{license}}` was found in template but no license was provided",
+            result.unwrap_err()
+        );
     }
 
     #[test]
     fn template_minimal() {
-        let result = super::process_template(TEMPLATE_MINIMAL.to_owned(), "readme".to_owned(), "", &[], None, "");
+        let result = super::process_template(
+            TEMPLATE_MINIMAL.to_owned(),
+            "readme".to_owned(),
+            "",
+            &[],
+            None,
+            "",
+        );
         assert!(result.is_ok());
         assert_eq!("readme", result.unwrap());
     }
 
     #[test]
     fn template_with_title() {
-        let result = super::process_template(TEMPLATE_WITH_TITLE.to_owned(), "readme".to_owned(), "title", &[], None, "");
+        let result = super::process_template(
+            TEMPLATE_WITH_TITLE.to_owned(),
+            "readme".to_owned(),
+            "title",
+            &[],
+            None,
+            "",
+        );
         assert!(result.is_ok());
         assert_eq!("# title\n\nreadme", result.unwrap());
     }
 
     #[test]
     fn template_with_badges() {
-        let result = super::process_template(TEMPLATE_WITH_BADGES.to_owned(), "readme".to_owned(), "", &["badge1", "badge2"], None, "");
+        let result = super::process_template(
+            TEMPLATE_WITH_BADGES.to_owned(),
+            "readme".to_owned(),
+            "",
+            &["badge1", "badge2"],
+            None,
+            "",
+        );
         assert!(result.is_ok());
         assert_eq!("badge1\nbadge2\n\nreadme", result.unwrap());
     }
 
     #[test]
     fn template_with_license() {
-        let result = super::process_template(TEMPLATE_WITH_LICENSE.to_owned(), "readme".to_owned(), "", &[], Some("license"), "");
+        let result = super::process_template(
+            TEMPLATE_WITH_LICENSE.to_owned(),
+            "readme".to_owned(),
+            "",
+            &[],
+            Some("license"),
+            "",
+        );
         assert!(result.is_ok());
         assert_eq!("readme\n\nlicense", result.unwrap());
     }
 
     #[test]
     fn template_with_version() {
-        let result = super::process_template(TEMPLATE_WITH_VERSION.to_owned(), "readme".to_owned(), "", &[], None, "3.0.1");
+        let result = super::process_template(
+            TEMPLATE_WITH_VERSION.to_owned(),
+            "readme".to_owned(),
+            "",
+            &[],
+            None,
+            "3.0.1",
+        );
         assert!(result.is_ok());
         assert_eq!("readme\n\n3.0.1", result.unwrap());
     }
 
     #[test]
     fn template_full() {
-        let result = super::process_template(TEMPLATE_FULL.to_owned(), "readme".to_owned(), "title", &["badge1", "badge2"], Some("license"), "3.0.2");
+        let result = super::process_template(
+            TEMPLATE_FULL.to_owned(),
+            "readme".to_owned(),
+            "title",
+            &["badge1", "badge2"],
+            Some("license"),
+            "3.0.2",
+        );
         assert!(result.is_ok());
-        assert_eq!("badge1\nbadge2\n\n# title\n\nreadme\n\nlicense\n\n3.0.2", result.unwrap());
+        assert_eq!(
+            "badge1\nbadge2\n\n# title\n\nreadme\n\nlicense\n\n3.0.2",
+            result.unwrap()
+        );
     }
 
     // process string
@@ -216,35 +295,71 @@ mod tests {
 
     #[test]
     fn render_title() {
-        let result = super::process_string("readme".to_owned(), "title", &[], None, true, false, false);
+        let result =
+            super::process_string("readme".to_owned(), "title", &[], None, true, false, false);
         assert!(result.is_ok());
         assert_eq!("# title\n\nreadme", result.unwrap());
     }
 
     #[test]
     fn render_badges() {
-        let result = super::process_string("readme".to_owned(), "", &["badge1", "badge2"], None, false, true, false);
+        let result = super::process_string(
+            "readme".to_owned(),
+            "",
+            &["badge1", "badge2"],
+            None,
+            false,
+            true,
+            false,
+        );
         assert!(result.is_ok());
         assert_eq!("badge1\nbadge2\n\nreadme", result.unwrap());
     }
 
     #[test]
     fn render_license() {
-        let result = super::process_string("readme".to_owned(), "", &[], Some("license"), false, false, true);
+        let result = super::process_string(
+            "readme".to_owned(),
+            "",
+            &[],
+            Some("license"),
+            false,
+            false,
+            true,
+        );
         assert!(result.is_ok());
         assert_eq!("readme\n\nLicense: license", result.unwrap());
     }
 
     #[test]
     fn render_full() {
-        let result = super::process_string("readme".to_owned(), "title", &["badge1", "badge2"], Some("license"), true, true, true);
+        let result = super::process_string(
+            "readme".to_owned(),
+            "title",
+            &["badge1", "badge2"],
+            Some("license"),
+            true,
+            true,
+            true,
+        );
         assert!(result.is_ok());
-        assert_eq!("badge1\nbadge2\n\n# title\n\nreadme\n\nLicense: license", result.unwrap());
+        assert_eq!(
+            "badge1\nbadge2\n\n# title\n\nreadme\n\nLicense: license",
+            result.unwrap()
+        );
     }
 
     #[test]
     fn render_nothing() {
-        let result = super::process_string("readme".to_owned(), "title", &["badge1", "badge2"], Some("license"), false, false, false);
+        let result = super::process_string(
+            "readme".to_owned(),
+            "title",
+            &["badge1", "badge2"],
+            Some("license"),
+            false,
+            false,
+            false,
+        );
         assert!(result.is_ok());
         assert_eq!("readme", result.unwrap());
     }

@@ -1,5 +1,5 @@
-use std::io::{Write, ErrorKind};
 use std::fs::File;
+use std::io::{ErrorKind, Write};
 use std::path::{Path, PathBuf};
 
 use cargo_readme::get_manifest;
@@ -13,7 +13,7 @@ const DEFAULT_TEMPLATE: &'static str = "README.tpl";
 /// as is. If no path is given, the current directory is used.
 /// A `Cargo.toml` file must be present is the root directory.
 pub fn get_project_root(given_root: Option<&str>) -> Result<PathBuf, String> {
-   project::get_root(given_root)
+    project::get_root(given_root)
 }
 
 /// Get the source file from which the doc comments will be extracted
@@ -21,9 +21,8 @@ pub fn get_source(project_root: &Path, input: Option<&str>) -> Result<File, Stri
     match input {
         Some(input) => {
             let input = project_root.join(input);
-            File::open(&input).map_err(|e| {
-                format!("Could not open file '{}': {}", input.to_string_lossy(), e)
-            })
+            File::open(&input)
+                .map_err(|e| format!("Could not open file '{}': {}", input.to_string_lossy(), e))
         }
         None => find_entrypoint(&project_root),
     }
@@ -47,7 +46,10 @@ pub fn get_dest(project_root: &Path, output: Option<&str>) -> Result<Option<File
 }
 
 /// Get the template file that will be used to render the output
-pub fn get_template_file(project_root: &Path, template: Option<&str>) -> Result<Option<File>, String> {
+pub fn get_template_file(
+    project_root: &Path,
+    template: Option<&str>,
+) -> Result<Option<File>, String> {
     match template {
         // template path was given, try to read it
         Some(template) => {
@@ -69,8 +71,7 @@ pub fn get_template_file(project_root: &Path, template: Option<&str>) -> Result<
                 Err(ref e) if e.kind() != ErrorKind::NotFound => {
                     return Err(format!(
                         "Could not open template file '{}': {}",
-                        DEFAULT_TEMPLATE,
-                        e
+                        DEFAULT_TEMPLATE, e
                     ))
                 }
                 // default template not found, return `None`
@@ -88,9 +89,9 @@ pub fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), Strin
             // Append new line at end of file to match behavior of `cargo readme > README.md`
             bytes.push(b'\n');
 
-            dest.write_all(&mut bytes).map(|_| ()).map_err(|e| {
-                format!("Could not write to output file: {}", e)
-            })?;
+            dest.write_all(&mut bytes)
+                .map(|_| ())
+                .map_err(|e| format!("Could not write to output file: {}", e))?;
         }
         None => println!("{}", readme),
     }
