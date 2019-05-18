@@ -51,7 +51,7 @@ fn process_template(
     license: Option<&str>,
     version: &str,
 ) -> Result<String, String> {
-    template = template.trim_right_matches("\n").to_owned();
+    template = template.trim_end_matches("\n").to_owned();
 
     if !template.contains("{{readme}}") {
         return Err("Missing `{{readme}}` in template".to_owned());
