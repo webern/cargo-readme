@@ -44,13 +44,13 @@ impl Manifest {
         Manifest {
             name: cargo_toml.package.name,
             license: cargo_toml.package.license,
-            lib: cargo_toml.lib.map(|lib| ManifestLib::from_cargo_toml(lib)),
+            lib: cargo_toml.lib.map(|lib| ManifestLib::from_cargo_toml(lib, "str/lib.rs")),
             bin: cargo_toml
                 .bin
                 .map(|bin_vec| {
                     bin_vec
                         .into_iter()
-                        .map(|bin| ManifestLib::from_cargo_toml(bin))
+                        .map(|bin| ManifestLib::from_cargo_toml(bin, "str/main.rs"))
                         .collect()
                 })
                 .unwrap_or_default(),
@@ -70,9 +70,9 @@ pub struct ManifestLib {
 }
 
 impl ManifestLib {
-    fn from_cargo_toml(lib: CargoTomlLib) -> Self {
+    fn from_cargo_toml(lib: CargoTomlLib, default_path: &str) -> Self {
         ManifestLib {
-            path: PathBuf::from(lib.path),
+            path: PathBuf::from(lib.path.unwrap_or(default_path.to_owned())),
             doc: lib.doc.unwrap_or(true),
         }
     }
@@ -122,6 +122,6 @@ struct CargoTomlPackage {
 /// Cargo.toml crate lib information
 #[derive(Clone, Deserialize)]
 struct CargoTomlLib {
-    pub path: String,
+    pub path: Option<String>,
     pub doc: Option<bool>,
 }
