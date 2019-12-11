@@ -4,6 +4,7 @@ use percent_encoding as pe;
 
 const BADGE_BRANCH_DEFAULT: &str = "master";
 const BADGE_SERVICE_DEFAULT: &str = "github";
+const BADGE_WORKFLOW_DEFAULT: &str = "main";
 
 type Attrs = BTreeMap<String, String>;
 
@@ -74,6 +75,22 @@ pub fn travis_ci(attrs: Attrs) -> String {
          (https://travis-ci.org/{repo})",
         repo = repo,
         branch = percent_encode(branch)
+    )
+}
+
+pub fn github(attrs: Attrs) -> String {
+    let repo = &attrs["repository"];
+    let workflow = attrs
+        .get("workflow")
+        .map(|i| i.as_ref())
+        .unwrap_or(BADGE_WORKFLOW_DEFAULT);
+
+    format!(
+        "[![Workflow Status](https://github.com/{repo}/workflows/{workflow}/badge.svg)]\
+         (https://github.com/{repo}/actions?query=workflow%3A%22{workflow_plus}%22)",
+        repo = repo,
+        workflow = percent_encode(workflow),
+        workflow_plus = percent_encode(&str::replace(workflow, " ", "+"))
     )
 }
 
