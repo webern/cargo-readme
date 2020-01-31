@@ -69,7 +69,7 @@ fn extract_docs_multiline_style<R: Read>(
             }
         }
 
-        result.push(line.trim_right().to_owned());
+        result.push(line.trim_end().to_owned());
     }
 
     Ok(result)
@@ -83,7 +83,7 @@ fn normalize_line(mut line: String) -> String {
     } else {
         // if the first character after the comment mark is " ", remove it
         let split_at = if line.find(" ") == Some(3) { 4 } else { 3 };
-        line.split_at(split_at).1.trim_right().to_owned()
+        line.split_at(split_at).1.trim_end().to_owned()
     }
 }
 

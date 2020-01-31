@@ -55,7 +55,7 @@ pub fn gitlab(attrs: Attrs) -> String {
         .unwrap_or(BADGE_BRANCH_DEFAULT);
 
     format!(
-        "[![Build Status](https://gitlab.com/{repo}/badges/{branch}/build.svg)]\
+        "[![Build Status](https://gitlab.com/{repo}/badges/{branch}/pipeline.svg)]\
          (https://gitlab.com/{repo}/commits/master)",
         repo = repo,
         branch = percent_encode(branch)
