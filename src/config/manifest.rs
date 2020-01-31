@@ -86,13 +86,14 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
             "circle-ci" => Some((1, badges::circle_ci(attrs))),
             "gitlab" => Some((2, badges::gitlab(attrs))),
             "travis-ci" => Some((3, badges::travis_ci(attrs))),
-            "codecov" => Some((4, badges::codecov(attrs))),
-            "coveralls" => Some((5, badges::coveralls(attrs))),
+            "github" => Some((4, badges::github(attrs))),
+            "codecov" => Some((5, badges::codecov(attrs))),
+            "coveralls" => Some((6, badges::coveralls(attrs))),
             "is-it-maintained-issue-resolution" => {
-                Some((6, badges::is_it_maintained_issue_resolution(attrs)))
+                Some((7, badges::is_it_maintained_issue_resolution(attrs)))
             }
             "is-it-maintained-open-issues" => {
-                Some((7, badges::is_it_maintained_open_issues(attrs)))
+                Some((8, badges::is_it_maintained_open_issues(attrs)))
             }
             _ => return None,
         })
