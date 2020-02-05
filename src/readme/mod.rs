@@ -18,6 +18,7 @@ pub fn generate_readme<T: Read>(
     add_badges: bool,
     add_license: bool,
     indent_headings: bool,
+    force: bool,
 ) -> Result<String, String> {
     let lines = extract::extract_docs(source).map_err(|e| format!("{}", e))?;
 
@@ -33,7 +34,15 @@ pub fn generate_readme<T: Read>(
     // get manifest from Cargo.toml
     let cargo = config::get_manifest(project_root)?;
 
-    template::render(template, readme, &cargo, add_title, add_badges, add_license)
+    template::render(
+        template,
+        readme,
+        &cargo,
+        add_title,
+        add_badges,
+        add_license,
+        force,
+    )
 }
 
 /// Load a template String from a file

@@ -74,7 +74,10 @@ fn main() {
                 .long("no-indent-headings")
                 .help("Do not add an extra level to headings.{n}\
                        By default, '#' headings become '##', so the first '#' can be the crate \
-                       name. Use this option to prevent this behavior.")))
+                       name. Use this option to prevent this behavior."))
+            .arg(Arg::with_name("FORCE")
+                .long("force")
+                .help("Return warning instead of error whenever possible.")))
         .get_matches();
 
     if let Some(m) = matches.subcommand_matches("readme") {
@@ -101,6 +104,7 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
     let add_license = !m.is_present("NO_LICENSE");
     let no_template = m.is_present("NO_TEMPLATE");
     let indent_headings = !m.is_present("NO_INDENT_HEADINGS");
+    let force = m.is_present("FORCE");
 
     // get project root
     let project_root = helper::get_project_root(m.value_of("ROOT"))?;
@@ -127,6 +131,7 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
         add_badges,
         add_license,
         indent_headings,
+        force,
     )?;
 
     helper::write_output(&mut dest, readme)

@@ -10,6 +10,7 @@ pub fn render(
     add_title: bool,
     add_badges: bool,
     add_license: bool,
+    force: bool,
 ) -> Result<String, String> {
     let title: &str = &cargo.name;
 
@@ -21,7 +22,7 @@ pub fn render(
     let version: &str = cargo.version.as_ref();
 
     if let Some(template) = template {
-        process_template(template, readme, title, badges, license, version)
+        process_template(template, readme, title, badges, license, version, force)
     } else {
         process_string(
             readme,
@@ -50,6 +51,7 @@ fn process_template(
     badges: &[&str],
     license: Option<&str>,
     version: &str,
+    force: bool,
 ) -> Result<String, String> {
     template = template.trim_end_matches("\n").to_owned();
 
@@ -63,20 +65,29 @@ fn process_template(
 
     if template.contains("{{badges}}") {
         if badges.is_empty() {
-            return Err("`{{badges}}` was found in template but no badges were provided".to_owned());
+            let msg = "`{{badges}}` was found in template but no badges were provided".to_owned();
+            if force {
+                eprintln!("Warn: {}", msg);
+            } else {
+                return Err(msg);
+            }
         }
         let badges = badges.join("\n");
         template = template.replace("{{badges}}", &badges);
     }
 
     if template.contains("{{license}}") {
-        if let Some(license) = license {
-            template = template.replace("{{license}}", &license);
-        } else {
-            return Err(
-                "`{{license}}` was found in template but no license was provided".to_owned(),
-            );
+        if license.is_none() {
+            let msg = "`{{license}}` was found in template but no license was provided".to_owned();
+            if force {
+                eprintln!("Warn: {}", msg);
+            } else {
+                return Err(msg);
+            }
         }
+
+        let license_str = license.unwrap_or("");
+        template = template.replace("{{license}}", license_str);
     }
 
     template = template.replace("{{version}}", version);
@@ -159,7 +170,8 @@ mod tests {
     // process template
     #[test]
     fn template_without_readme_should_fail() {
-        let result = super::process_template(String::new(), String::new(), "", &[], None, "");
+        let result =
+            super::process_template(String::new(), String::new(), "", &[], None, "", false);
         assert!(result.is_err());
         assert_eq!("Missing `{{readme}}` in template", result.unwrap_err());
     }
@@ -173,6 +185,7 @@ mod tests {
             &[],
             None,
             "",
+            false,
         );
         assert!(result.is_err());
         assert_eq!(
@@ -190,6 +203,7 @@ mod tests {
             &[],
             None,
             "",
+            false,
         );
         assert!(result.is_err());
         assert_eq!(
@@ -207,6 +221,7 @@ mod tests {
             &[],
             None,
             "",
+            false,
         );
         assert!(result.is_ok());
         assert_eq!("readme", result.unwrap());
@@ -221,6 +236,7 @@ mod tests {
             &[],
             None,
             "",
+            false,
         );
         assert!(result.is_ok());
         assert_eq!("# title\n\nreadme", result.unwrap());
@@ -235,6 +251,7 @@ mod tests {
             &["badge1", "badge2"],
             None,
             "",
+            false,
         );
         assert!(result.is_ok());
         assert_eq!("badge1\nbadge2\n\nreadme", result.unwrap());
@@ -249,6 +266,7 @@ mod tests {
             &[],
             Some("license"),
             "",
+            false,
         );
         assert!(result.is_ok());
         assert_eq!("readme\n\nlicense", result.unwrap());
@@ -263,6 +281,7 @@ mod tests {
             &[],
             None,
             "3.0.1",
+            false,
         );
         assert!(result.is_ok());
         assert_eq!("readme\n\n3.0.1", result.unwrap());
@@ -277,6 +296,7 @@ mod tests {
             &["badge1", "badge2"],
             Some("license"),
             "3.0.2",
+            false,
         );
         assert!(result.is_ok());
         assert_eq!(
