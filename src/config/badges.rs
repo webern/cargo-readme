@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+// https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata
+
 use percent_encoding as pe;
 
 const BADGE_BRANCH_DEFAULT: &str = "master";
@@ -151,6 +153,15 @@ pub fn is_it_maintained_open_issues(attrs: Attrs) -> String {
         "[![Percentage of issues still open](https://isitmaintained.com/badge/open/{repo}.svg)]\
          (https://isitmaintained.com/project/{repo} \"Percentage of issues still open\")",
         repo = repo
+    )
+}
+
+pub fn maintenance(attrs: Attrs) -> String {
+    let status = &attrs["status"];
+    //example https://img.shields.io/badge/maintenance-experimental-blue.svg
+    format!(
+        "![Maintenance](https://img.shields.io/badge/maintenance-{status}-blue.svg)",
+        status = status
     )
 }
 
