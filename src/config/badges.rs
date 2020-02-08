@@ -158,10 +158,23 @@ pub fn is_it_maintained_open_issues(attrs: Attrs) -> String {
 
 pub fn maintenance(attrs: Attrs) -> String {
     let status = &attrs["status"];
+
+    // https://github.com/rust-lang/crates.io/blob/5a08887d4b531e034d01386d3e5997514f3c8ee5/src/models/badge.rs#L82
+    let status_with_color = match status.as_ref() {
+        "actively-developed" => "activly--developed-brightgreen",
+        "passively-maintained" => "passively--maintained-yellowgreen",
+        "as-is" => "as--is-yellow",
+        "none" => "maintenance-none-lightgrey", // color is a guess
+        "experimental" => "experimental-blue",
+        "looking-for-maintainer" => "looking--for--maintainer-darkblue", // color is a guess
+        "deprecated" => "deprecated-red",
+        _ => "unknow-black",
+    };
+
     //example https://img.shields.io/badge/maintenance-experimental-blue.svg
     format!(
-        "![Maintenance](https://img.shields.io/badge/maintenance-{status}-blue.svg)",
-        status = status
+        "![Maintenance](https://img.shields.io/badge/maintenance-{status}.svg)",
+        status = status_with_color
     )
 }
 
