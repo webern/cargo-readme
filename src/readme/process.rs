@@ -10,7 +10,7 @@ use regex::Regex;
 
 lazy_static!{
     // Is this code block rust?
-    static ref RE_CODE_RUST: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic)))?$").unwrap();
+    static ref RE_CODE_RUST: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic|compile_fail)))?$").unwrap();
     // Is this code block just text?
     static ref RE_CODE_TEXT: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})text$").unwrap();
     // Is this code block a language other than rust?
