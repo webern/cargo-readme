@@ -19,7 +19,7 @@
 //! With `cargo-readme`, you just write the rustdoc, run the tests, and then run:
 //!
 //! ```sh
-//! cargo readme > README.md
+//! cargo readme -o README.md
 //! ```
 //!
 //! And that's it! Your `README.md` is populated with the contents of the doc comments from your
