@@ -95,6 +95,7 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
             "is-it-maintained-open-issues" => {
                 Some((8, badges::is_it_maintained_open_issues(attrs)))
             }
+            "maintenance" => Some((9, badges::maintenance(attrs))),
             _ => return None,
         })
         .collect();
