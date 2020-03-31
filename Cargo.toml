@@ -1,6 +1,6 @@
 [package]
 name = "cargo-readme"
-version = "3.1.2"
+version = "3.2.0"
 authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
 description = "A cargo subcommand to generate README.md content from doc comments"
 repository = "https://github.com/livioribeiro/cargo-readme"
