@@ -178,8 +178,8 @@ pub fn maintenance(attrs: Attrs) -> String {
     )
 }
 
-fn percent_encode(input: &str) -> pe::PercentEncode<pe::PATH_SEGMENT_ENCODE_SET> {
-    pe::utf8_percent_encode(input, pe::PATH_SEGMENT_ENCODE_SET)
+fn percent_encode(input: &str) -> pe::PercentEncode {
+    pe::utf8_percent_encode(input, pe::NON_ALPHANUMERIC)
 }
 
 fn badge_service_short_name(service: &str) -> &'static str {
