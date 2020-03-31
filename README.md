@@ -1,7 +1,5 @@
 [![Crates.io](https://img.shields.io/crates/v/cargo-readme.svg)](https://crates.io/crates/cargo-readme)
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/livioribeiro/cargo-readme?branch=master&svg=true)](https://ci.appveyor.com/project/livioribeiro/cargo-readme/branch/master)
-[![Build Status](https://circleci.com/gh/livioribeiro/cargo-readme/tree/master.svg?style=shield)](https://circleci.com/gh/livioribeiro/cargo-readme/cargo-readme/tree/master)
-[![Build Status](https://travis-ci.org/livioribeiro/cargo-readme.svg?branch=master)](https://travis-ci.org/livioribeiro/cargo-readme)
+[![Workflow Status](https://github.com/livioribeiro/cargo-readme/workflows/main/badge.svg)](https://github.com/livioribeiro/cargo-readme/actions?query=workflow%3A%22main%22)
 
 # cargo-readme
 
