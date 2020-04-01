@@ -63,7 +63,9 @@ fn process_template(
 
     if template.contains("{{badges}}") {
         if badges.is_empty() {
-            return Err("`{{badges}}` was found in template but no badges were provided".to_owned());
+            return Err(
+                "`{{badges}}` was found in template but no badges were provided".to_owned(),
+            );
         }
         let badges = badges.join("\n");
         template = template.replace("{{badges}}", &badges);

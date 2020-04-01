@@ -5,10 +5,52 @@ use std::collections::BTreeMap;
 use percent_encoding as pe;
 
 const BADGE_BRANCH_DEFAULT: &str = "master";
+const BADGE_BUILD_DEFAULT: &str = "1";
 const BADGE_SERVICE_DEFAULT: &str = "github";
 const BADGE_WORKFLOW_DEFAULT: &str = "main";
 
+const PATH_SEGMENT_ENCODE_SET: &pe::AsciiSet = &pe::CONTROLS
+    .add(b' ')
+    .add(b'"')
+    .add(b'#')
+    .add(b'<')
+    .add(b'>')
+    .add(b'`')
+    .add(b'?')
+    .add(b'{')
+    .add(b'}')
+    .add(b'%')
+    .add(b'/');
+
+const AZURE_SPECIALS: &pe::AsciiSet = &pe::CONTROLS
+    .add(b' ')
+    .add(b'!')
+    .add(b'(')
+    .add(b')')
+    .add(b'-')
+    .add(b'.')
+    .add(b'^')
+    .add(b'_')
+    .add(b'`');
+
 type Attrs = BTreeMap<String, String>;
+
+pub fn azure_devops(attrs: Attrs) -> String {
+    let project = &attrs["project"];
+    let pipeline = &attrs["pipeline"];
+    let build = attrs
+        .get("build")
+        .map(|i| i.as_ref())
+        .unwrap_or(BADGE_BUILD_DEFAULT);
+
+    format!(
+        "[![Build Status](https://dev.azure.com/{project}/_apis/build/status/{pipeline})]\
+         (https://dev.azure.com/{project}/_build/latest?definitionId={build})",
+        project = pe::utf8_percent_encode(project, AZURE_SPECIALS),
+        pipeline = pe::utf8_percent_encode(pipeline, AZURE_SPECIALS),
+        build = build
+    )
+}
 
 pub fn appveyor(attrs: Attrs) -> String {
     let repo = &attrs["repository"];
@@ -179,7 +221,7 @@ pub fn maintenance(attrs: Attrs) -> String {
 }
 
 fn percent_encode(input: &str) -> pe::PercentEncode {
-    pe::utf8_percent_encode(input, pe::NON_ALPHANUMERIC)
+    pe::utf8_percent_encode(input, PATH_SEGMENT_ENCODE_SET)
 }
 
 fn badge_service_short_name(service: &str) -> &'static str {
