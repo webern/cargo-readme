@@ -1,0 +1,33 @@
+name: release
+
+on:
+  push:
+    branches: [ master ]
+    tags: [ '*.*.*' ]
+
+jobs:
+  release-crates:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Publish package to crates
+        run: |
+          cargo package
+          cargo publish --token ${{ secrets.CARGO_TOKEN }}
+
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Build
+        run: cargo build --release
+      - name: Archive
+        run: |
+          GIT_TAG=$(git describe --tags `git rev-list --tags --max-count=1`)
+          tar -C target/release -czf $(pwd)/cargo-readme-${GIT_TAG}.tar.gz cargo-readme
+      - name: Publish release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: cargo-readme-*.tar.gz
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
