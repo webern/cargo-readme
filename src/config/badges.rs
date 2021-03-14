@@ -178,6 +178,16 @@ pub fn maintenance(attrs: Attrs) -> String {
     )
 }
 
+pub fn crates_io(attrs: Attrs) -> String {
+    // XXX should add support for version-sync
+    // "![crates-io](https://img.shields.io/crates/v/version-sync.svg)"
+    let crate_name = &attrs["crate"];
+    format!(
+        "![crates-io](https://img.shields.io/crates/v/{crate_name}.svg)",
+        crate_name = crate_name
+    )
+}
+
 fn percent_encode(input: &str) -> pe::PercentEncode {
     pe::utf8_percent_encode(input, pe::NON_ALPHANUMERIC)
 }

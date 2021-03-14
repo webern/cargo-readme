@@ -23,3 +23,4 @@ assert_cli = "0.6"
 
 [badges]
 github = { repository = "livioribeiro/cargo-readme" }
+crates-io = { crate = "cargo-readme" }
