@@ -45,7 +45,7 @@ impl Processor {
 
     pub fn process_line(&mut self, mut line: String) -> Option<String> {
         // Skip lines that should be hidden in docs
-        if self.section == Section::CodeRust && line.starts_with("# ") {
+        if self.section == Section::CodeRust && (line.starts_with("# ") || line == "#") {
             return None;
         }
 
@@ -104,6 +104,7 @@ mod tests {
         "```",
         "#[visible]",
         "let visible = \"visible\";",
+        "#",
         "# let hidden = \"hidden\";",
         "```",
     ];

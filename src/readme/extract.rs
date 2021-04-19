@@ -60,8 +60,7 @@ fn extract_docs_multiline_style<R: Read>(
         if let Some(pos) = line.rfind("*/") {
             nesting -= line.matches("*/").count() as isize;
             if nesting < 0 {
-                let mut line = line;
-                line.split_off(pos);
+                let line = line[0..pos].to_string();
                 if !line.trim().is_empty() {
                     result.push(line);
                 }
