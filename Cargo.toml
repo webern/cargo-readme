@@ -5,21 +5,22 @@ authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
 description = "A cargo subcommand to generate README.md content from doc comments"
 repository = "https://github.com/livioribeiro/cargo-readme"
 readme = "README.md"
+edition = "2021"
 keywords = ["readme", "documentation", "cargo", "subcommand"]
 categories = ["development-tools::cargo-plugins"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-clap = "2.32"
+clap = "2"
 toml = "0.5"
-regex = "1.0"
-serde = "1.0"
-serde_derive = "1.0"
+regex = "1.5"
+serde = "1.0.136"
+serde_derive = "1"
 percent-encoding = "2.1"
-lazy_static = "1.1"
+lazy_static = "1.4"
 
 [dev-dependencies]
-assert_cli = "0.6"
+assert_cli = "0.6.3"
 
 [badges]
 github = { repository = "livioribeiro/cargo-readme" }

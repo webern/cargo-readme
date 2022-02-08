@@ -56,6 +56,11 @@ fn main() {
                 .help("Do not prepend title line.{n}\
                        By default, the title ('# crate-name') is prepended to the output.{n}\
                        Ignored when using a template."))
+            .arg(Arg::with_name("QUOTE_TITLE")
+                .long("quote-title")
+                .help("Quote the prepended title line.{n}\
+                       The title ('# `crate-name`') is prepended to the output.{n}\
+                       Ignored when using a template or --no-title."))
             .arg(Arg::with_name("NO_BADGES")
                 .long("no-badges")
                 .help("Do not prepend badges line.{n}\
@@ -97,6 +102,7 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
     let output = m.value_of("OUTPUT");
     let template = m.value_of("TEMPLATE");
     let add_title = !m.is_present("NO_TITLE");
+    let quote_title = m.is_present("QUOTE_TITLE");
     let add_badges = !m.is_present("NO_BADGES");
     let add_license = !m.is_present("NO_LICENSE");
     let no_template = m.is_present("NO_TEMPLATE");
@@ -124,6 +130,7 @@ fn execute(m: &ArgMatches) -> Result<(), String> {
         &mut source,
         template_file.as_mut(),
         add_title,
+        quote_title,
         add_badges,
         add_license,
         indent_headings,
