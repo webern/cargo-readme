@@ -8,7 +8,7 @@ use std::iter::{IntoIterator, Iterator};
 
 use regex::Regex;
 
-lazy_static!{
+lazy_static! {
     // Is this code block rust?
     static ref RE_CODE_RUST: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic)))?$").unwrap();
     // Is this code block just text?

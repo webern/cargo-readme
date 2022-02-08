@@ -65,7 +65,9 @@ fn process_template(
 
     if template.contains("{{badges}}") {
         if badges.is_empty() {
-            return Err("`{{badges}}` was found in template but no badges were provided".to_owned());
+            return Err(
+                "`{{badges}}` was found in template but no badges were provided".to_owned(),
+            );
         }
         let badges = badges.join("\n");
         template = template.replace("{{badges}}", &badges);
@@ -131,12 +133,11 @@ fn prepend_badges(readme: String, badges: &[&str]) -> String {
 
 /// Prepend title (crate name) to output string
 fn prepend_title(readme: String, crate_name: &str, quote_title: bool) -> String {
-    let title =
-        if quote_title {
-            format!("# `{}`", crate_name)
-        } else {
-            format!("# {}", crate_name)
-        };
+    let title = if quote_title {
+        format!("# `{}`", crate_name)
+    } else {
+        format!("# {}", crate_name)
+    };
     if !readme.trim().is_empty() {
         format!("{}\n\n{}", title, readme)
     } else {
@@ -296,15 +297,32 @@ mod tests {
     // process string
     #[test]
     fn render_minimal() {
-        let result = super::process_string("readme".to_owned(), "", &[], None, false, false, false, false);
+        let result = super::process_string(
+            "readme".to_owned(),
+            "",
+            &[],
+            None,
+            false,
+            false,
+            false,
+            false,
+        );
         assert!(result.is_ok());
         assert_eq!("readme", result.unwrap());
     }
 
     #[test]
     fn render_title() {
-        let result =
-            super::process_string("readme".to_owned(), "title", &[], None, true, false, false, false);
+        let result = super::process_string(
+            "readme".to_owned(),
+            "title",
+            &[],
+            None,
+            true,
+            false,
+            false,
+            false,
+        );
         assert!(result.is_ok());
         assert_eq!("# title\n\nreadme", result.unwrap());
     }

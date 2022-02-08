@@ -34,7 +34,15 @@ pub fn generate_readme<T: Read>(
     // get manifest from Cargo.toml
     let cargo = config::get_manifest(project_root)?;
 
-    template::render(template, readme, &cargo, add_title, quote_title, add_badges, add_license)
+    template::render(
+        template,
+        readme,
+        &cargo,
+        add_title,
+        quote_title,
+        add_badges,
+        add_license,
+    )
 }
 
 /// Load a template String from a file
