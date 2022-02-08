@@ -1,4 +1,4 @@
-use config::Manifest;
+use crate::config::Manifest;
 
 /// Renders the template
 ///
@@ -8,6 +8,7 @@ pub fn render(
     readme: String,
     cargo: &Manifest,
     add_title: bool,
+    quote_title: bool,
     add_badges: bool,
     add_license: bool,
 ) -> Result<String, String> {
@@ -29,6 +30,7 @@ pub fn render(
             badges,
             license,
             add_title,
+            quote_title,
             add_badges,
             add_license,
         )
@@ -63,7 +65,9 @@ fn process_template(
 
     if template.contains("{{badges}}") {
         if badges.is_empty() {
-            return Err("`{{badges}}` was found in template but no badges were provided".to_owned());
+            return Err(
+                "`{{badges}}` was found in template but no badges were provided".to_owned(),
+            );
         }
         let badges = badges.join("\n");
         template = template.replace("{{badges}}", &badges);
@@ -92,11 +96,12 @@ fn process_string(
     badges: &[&str],
     license: Option<&str>,
     add_title: bool,
+    quote_title: bool,
     add_badges: bool,
     add_license: bool,
 ) -> Result<String, String> {
     if add_title {
-        readme = prepend_title(readme, title);
+        readme = prepend_title(readme, title, quote_title);
     }
 
     if add_badges {
@@ -127,8 +132,12 @@ fn prepend_badges(readme: String, badges: &[&str]) -> String {
 }
 
 /// Prepend title (crate name) to output string
-fn prepend_title(readme: String, crate_name: &str) -> String {
-    let title = format!("# {}", crate_name);
+fn prepend_title(readme: String, crate_name: &str, quote_title: bool) -> String {
+    let title = if quote_title {
+        format!("# `{}`", crate_name)
+    } else {
+        format!("# {}", crate_name)
+    };
     if !readme.trim().is_empty() {
         format!("{}\n\n{}", title, readme)
     } else {
@@ -288,15 +297,32 @@ mod tests {
     // process string
     #[test]
     fn render_minimal() {
-        let result = super::process_string("readme".to_owned(), "", &[], None, false, false, false);
+        let result = super::process_string(
+            "readme".to_owned(),
+            "",
+            &[],
+            None,
+            false,
+            false,
+            false,
+            false,
+        );
         assert!(result.is_ok());
         assert_eq!("readme", result.unwrap());
     }
 
     #[test]
     fn render_title() {
-        let result =
-            super::process_string("readme".to_owned(), "title", &[], None, true, false, false);
+        let result = super::process_string(
+            "readme".to_owned(),
+            "title",
+            &[],
+            None,
+            true,
+            false,
+            false,
+            false,
+        );
         assert!(result.is_ok());
         assert_eq!("# title\n\nreadme", result.unwrap());
     }
@@ -308,6 +334,7 @@ mod tests {
             "",
             &["badge1", "badge2"],
             None,
+            false,
             false,
             true,
             false,
@@ -325,6 +352,7 @@ mod tests {
             Some("license"),
             false,
             false,
+            false,
             true,
         );
         assert!(result.is_ok());
@@ -339,6 +367,7 @@ mod tests {
             &["badge1", "badge2"],
             Some("license"),
             true,
+            false,
             true,
             true,
         );
@@ -356,6 +385,7 @@ mod tests {
             "title",
             &["badge1", "badge2"],
             Some("license"),
+            false,
             false,
             false,
             false,
@@ -392,14 +422,20 @@ mod tests {
     // prepend title
     #[test]
     fn prepend_title_with_filled_readme() {
-        let result = super::prepend_title("readme".into(), "title");
+        let result = super::prepend_title("readme".into(), "title", false);
         assert_eq!("# title\n\nreadme", result);
     }
 
     #[test]
     fn prepend_title_with_empty_readme() {
-        let result = super::prepend_title("".into(), "title");
+        let result = super::prepend_title("".into(), "title", false);
         assert_eq!("# title", result);
+    }
+
+    #[test]
+    fn prepend_title_with_quotes_and_empty_readme() {
+        let result = super::prepend_title("".into(), "title", true);
+        assert_eq!("# `title`", result);
     }
 
     // append license

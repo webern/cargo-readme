@@ -148,6 +148,6 @@ extern crate toml;
 mod config;
 mod readme;
 
-pub use config::get_manifest;
-pub use config::project;
-pub use readme::generate_readme;
+pub use crate::config::get_manifest;
+pub use crate::config::project;
+pub use crate::readme::generate_readme;
