@@ -62,7 +62,7 @@ pub fn get_template_file(
                 )
             })
         }
-        // try to read the defautl template file
+        // try to read the default template file
         None => {
             let template = project_root.join(DEFAULT_TEMPLATE);
             match File::open(&template) {
