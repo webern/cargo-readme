@@ -51,19 +51,21 @@ fn process_template(
     license: Option<&str>,
     version: &str,
 ) -> Result<String, String> {
-    template = template.trim_end_matches("\n").to_owned();
+    template = template.trim_end_matches('\n').to_owned();
 
     if !template.contains("{{readme}}") {
         return Err("Missing `{{readme}}` in template".to_owned());
     }
 
     if template.contains("{{crate}}") {
-        template = template.replace("{{crate}}", &title);
+        template = template.replace("{{crate}}", title);
     }
 
     if template.contains("{{badges}}") {
         if badges.is_empty() {
-            return Err("`{{badges}}` was found in template but no badges were provided".to_owned());
+            return Err(
+                "`{{badges}}` was found in template but no badges were provided".to_owned(),
+            );
         }
         let badges = badges.join("\n");
         template = template.replace("{{badges}}", &badges);
@@ -71,7 +73,7 @@ fn process_template(
 
     if template.contains("{{license}}") {
         if let Some(license) = license {
-            template = template.replace("{{license}}", &license);
+            template = template.replace("{{license}}", license);
         } else {
             return Err(
                 "`{{license}}` was found in template but no license was provided".to_owned(),
@@ -114,7 +116,7 @@ fn process_string(
 
 /// Prepend badges to output string
 fn prepend_badges(readme: String, badges: &[&str]) -> String {
-    if badges.len() > 0 {
+    if !badges.is_empty() {
         let badges = badges.join("\n");
         if !readme.is_empty() {
             format!("{}\n\n{}", badges, readme)

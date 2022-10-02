@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use cargo_readme::get_manifest;
 use cargo_readme::project;
 
-const DEFAULT_TEMPLATE: &'static str = "README.tpl";
+const DEFAULT_TEMPLATE: &str = "README.tpl";
 
 /// Get the project root from given path or defaults to current directory
 ///
@@ -24,7 +24,7 @@ pub fn get_source(project_root: &Path, input: Option<&str>) -> Result<File, Stri
             File::open(&input)
                 .map_err(|e| format!("Could not open file '{}': {}", input.to_string_lossy(), e))
         }
-        None => find_entrypoint(&project_root),
+        None => find_entrypoint(project_root),
     }
 }
 
@@ -33,7 +33,7 @@ pub fn get_dest(project_root: &Path, output: Option<&str>) -> Result<Option<File
     match output {
         Some(filename) => {
             let output = project_root.join(filename);
-            File::create(&output).map(|f| Some(f)).map_err(|e| {
+            File::create(&output).map(Some).map_err(|e| {
                 format!(
                     "Could not create output file '{}': {}",
                     output.to_string_lossy(),
@@ -54,7 +54,7 @@ pub fn get_template_file(
         // template path was given, try to read it
         Some(template) => {
             let template = project_root.join(template);
-            File::open(&template).map(|f| Some(f)).map_err(|e| {
+            File::open(&template).map(Some).map_err(|e| {
                 format!(
                     "Could not open template file '{}': {}",
                     template.to_string_lossy(),
@@ -62,18 +62,16 @@ pub fn get_template_file(
                 )
             })
         }
-        // try to read the defautl template file
+        // try to read the default template file
         None => {
             let template = project_root.join(DEFAULT_TEMPLATE);
             match File::open(&template) {
                 Ok(file) => Ok(Some(file)),
                 // do not generate an error on file not found
-                Err(ref e) if e.kind() != ErrorKind::NotFound => {
-                    return Err(format!(
-                        "Could not open template file '{}': {}",
-                        DEFAULT_TEMPLATE, e
-                    ))
-                }
+                Err(ref e) if e.kind() != ErrorKind::NotFound => Err(format!(
+                    "Could not open template file '{}': {}",
+                    DEFAULT_TEMPLATE, e
+                )),
                 // default template not found, return `None`
                 _ => Ok(None),
             }
@@ -89,7 +87,7 @@ pub fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), Strin
             // Append new line at end of file to match behavior of `cargo readme > README.md`
             bytes.push(b'\n');
 
-            dest.write_all(&mut bytes)
+            dest.write_all(&bytes)
                 .map(|_| ())
                 .map_err(|e| format!("Could not write to output file: {}", e))?;
         }

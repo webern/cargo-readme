@@ -8,7 +8,7 @@ use std::iter::{IntoIterator, Iterator};
 
 use regex::Regex;
 
-lazy_static!{
+lazy_static! {
     // Is this code block rust?
     static ref RE_CODE_RUST: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic)))?$").unwrap();
     // Is this code block just text?
@@ -38,7 +38,7 @@ impl Processor {
     pub fn new(indent_headings: bool) -> Self {
         Processor {
             section: Section::None,
-            indent_headings: indent_headings,
+            indent_headings,
             delimiter: None,
         }
     }
@@ -50,7 +50,7 @@ impl Processor {
         }
 
         // indent heading when outside code
-        if self.indent_headings && self.section == Section::None && line.starts_with("#") {
+        if self.indent_headings && self.section == Section::None && line.starts_with('#') {
             line.insert(0, '#');
         } else if self.section == Section::None {
             let l = line.clone();
@@ -68,7 +68,7 @@ impl Processor {
             }
         } else if self.section != Section::None && Some(&line) == self.delimiter.as_ref() {
             self.section = Section::None;
-            line = self.delimiter.take().unwrap_or("```".to_owned());
+            line = self.delimiter.take().unwrap_or_else(|| "```".to_owned());
         }
 
         Some(line)
