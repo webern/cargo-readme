@@ -17,6 +17,7 @@ serde = "1.0"
 serde_derive = "1.0"
 percent-encoding = "2.1"
 lazy_static = "1.1"
+cargo_metadata = "0.15.3"
 
 [dev-dependencies]
 assert_cli = "0.6"

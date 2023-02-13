@@ -1,8 +1,6 @@
 //! Read crate information from `Cargo.toml`
 
 use std::collections::BTreeMap;
-use std::fs::File;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use toml;
@@ -11,20 +9,17 @@ use super::badges;
 
 /// Try to get manifest info from Cargo.toml
 pub fn get_manifest(project_root: &Path) -> Result<Manifest, String> {
-    let mut cargo_toml = File::open(project_root.join("Cargo.toml"))
+    let cargo_toml = std::fs::read_to_string(project_root.join("Cargo.toml"))
         .map_err(|e| format!("Could not read Cargo.toml: {}", e))?;
+    let cargo_toml: CargoToml = toml::from_str(&cargo_toml).map_err(|e| format!("{}", e))?;
 
-    let buf = {
-        let mut buf = String::new();
-        cargo_toml
-            .read_to_string(&mut buf)
-            .map_err(|e| format!("{}", e))?;
-        buf
-    };
+    let metadata = cargo_metadata::MetadataCommand::new()
+        .manifest_path(project_root.join("Cargo.toml"))
+        .exec()
+        .map_err(|e| e.to_string())?;
+    let package = metadata.root_package().unwrap();
 
-    let cargo_toml: CargoToml = toml::from_str(&buf).map_err(|e| format!("{}", e))?;
-
-    let manifest = Manifest::new(cargo_toml);
+    let manifest = Manifest::new(package, cargo_toml.badges);
 
     Ok(manifest)
 }
@@ -40,25 +35,20 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    fn new(cargo_toml: CargoToml) -> Manifest {
+    fn new(
+        cargo_toml: &cargo_metadata::Package,
+        badges: Option<BTreeMap<String, BTreeMap<String, String>>>,
+    ) -> Manifest {
+        let lib = cargo_toml.targets.iter().find(|t| t.is_lib());
+        let bins = cargo_toml.targets.iter().filter(|t| t.is_bin());
+
         Manifest {
-            name: cargo_toml.package.name,
-            license: cargo_toml.package.license,
-            lib: cargo_toml.lib.map(|lib| ManifestLib::from_cargo_toml(lib)),
-            bin: cargo_toml
-                .bin
-                .map(|bin_vec| {
-                    bin_vec
-                        .into_iter()
-                        .map(|bin| ManifestLib::from_cargo_toml(bin))
-                        .collect()
-                })
-                .unwrap_or_default(),
-            badges: cargo_toml
-                .badges
-                .map(|b| process_badges(b))
-                .unwrap_or_default(),
-            version: cargo_toml.package.version,
+            name: cargo_toml.name.clone(),
+            license: cargo_toml.license.clone(),
+            lib: lib.map(ManifestLib::from_cargo_toml),
+            bin: bins.map(ManifestLib::from_cargo_toml).collect(),
+            badges: badges.map(process_badges).unwrap_or_default(),
+            version: cargo_toml.version.to_string(),
         }
     }
 }
@@ -70,10 +60,10 @@ pub struct ManifestLib {
 }
 
 impl ManifestLib {
-    fn from_cargo_toml(lib: CargoTomlLib) -> Self {
+    fn from_cargo_toml(lib: &cargo_metadata::Target) -> Self {
         ManifestLib {
-            path: PathBuf::from(lib.path),
-            doc: lib.doc.unwrap_or(true),
+            path: lib.src_path.clone().into(),
+            doc: lib.doc,
         }
     }
 }
@@ -107,23 +97,5 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
 /// Cargo.toml crate information
 #[derive(Clone, Deserialize)]
 struct CargoToml {
-    pub package: CargoTomlPackage,
-    pub lib: Option<CargoTomlLib>,
-    pub bin: Option<Vec<CargoTomlLib>>,
     pub badges: Option<BTreeMap<String, BTreeMap<String, String>>>,
-}
-
-/// Cargo.toml crate package information
-#[derive(Clone, Deserialize)]
-struct CargoTomlPackage {
-    pub name: String,
-    pub license: Option<String>,
-    pub version: String,
-}
-
-/// Cargo.toml crate lib information
-#[derive(Clone, Deserialize)]
-struct CargoTomlLib {
-    pub path: String,
-    pub doc: Option<bool>,
 }
