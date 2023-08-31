@@ -11,7 +11,7 @@ categories = ["development-tools::cargo-plugins"]
 license = "MIT OR Apache-2.0"
 
 [dependencies]
-clap = "2.32"
+clap = { version = "4", features = [ "derive" ] }
 toml = "0.7"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
