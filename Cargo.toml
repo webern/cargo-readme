@@ -3,7 +3,7 @@ name = "cargo-readme"
 version = "3.2.0"
 authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
 description = "A cargo subcommand to generate README.md content from doc comments"
-repository = "https://github.com/livioribeiro/cargo-readme"
+repository = "https://github.com/webern/cargo-readme"
 readme = "README.md"
 keywords = ["readme", "documentation", "cargo", "subcommand"]
 categories = ["development-tools::cargo-plugins"]
@@ -22,4 +22,4 @@ lazy_static = "1.1"
 assert_cli = "0.6"
 
 [badges]
-github = { repository = "livioribeiro/cargo-readme" }
+github = { repository = "webern/cargo-readme" }

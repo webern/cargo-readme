@@ -3,6 +3,12 @@
 //! Cargo subcommand that extract documentation from your crate's doc comments that you can use to
 //! populate your README.md.
 //!
+//! ### Attribution
+//!
+//! This library was authored by Livio Ribeiro ([@livioribeiro](https://github.com/livioribeiro))
+//! and originally located at `https://github.com/livioribeiro/cargo-readme`, which now redirects
+//! here (as of August 2023). Thank you, Livio, for this lib!
+//!
 //! # Installation
 //!
 //! ```sh
