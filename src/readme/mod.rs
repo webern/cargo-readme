@@ -5,7 +5,7 @@ mod extract;
 mod process;
 mod template;
 
-use config;
+use crate::config;
 
 /// Generates readme data from `source` file
 ///

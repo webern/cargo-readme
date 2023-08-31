@@ -1,4 +1,4 @@
-use config::Manifest;
+use crate::config::Manifest;
 
 /// Renders the template
 ///

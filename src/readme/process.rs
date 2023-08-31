@@ -4,9 +4,9 @@
 //! - "```", "```no_run", "```ignore" and "```should_panic" are converted to "```rust"
 //! - markdown heading are indentend to be one level lower, so the crate name is at the top level
 
-use std::iter::{IntoIterator, Iterator};
-
+use lazy_static::lazy_static;
 use regex::Regex;
+use std::iter::{IntoIterator, Iterator};
 
 lazy_static! {
     // Is this code block rust?

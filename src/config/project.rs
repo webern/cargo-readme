@@ -1,7 +1,7 @@
 use std::env;
 use std::path::{Path, PathBuf};
 
-use config::manifest::{Manifest, ManifestLib};
+use crate::config::manifest::{Manifest, ManifestLib};
 
 /// Get the project root from given path or defaults to current directory
 ///

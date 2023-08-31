@@ -142,15 +142,6 @@
 //! By default, `README.tpl` will be used as the template, but you can override it using the
 //! `--template` to choose a different template or `--no-template` to disable it.
 
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate lazy_static;
-
-extern crate percent_encoding;
-extern crate regex;
-extern crate toml;
-
 mod config;
 mod readme;
 

@@ -1,13 +1,10 @@
 //! Generate README.md from doc comments.
 
-#[macro_use]
 extern crate clap;
-
-extern crate cargo_readme;
 
 use std::io::{self, Write};
 
-use clap::{App, AppSettings, Arg, ArgMatches, SubCommand};
+use clap::{crate_version, App, AppSettings, Arg, ArgMatches, SubCommand};
 
 mod helper;
 
