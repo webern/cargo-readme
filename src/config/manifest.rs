@@ -1,5 +1,6 @@
 //! Read crate information from `Cargo.toml`
 
+use serde::Deserialize;
 use std::collections::BTreeMap;
 use std::fs::File;
 use std::io::Read;

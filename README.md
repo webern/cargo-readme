@@ -1,5 +1,5 @@
 [![Crates.io](https://img.shields.io/crates/v/cargo-readme.svg)](https://crates.io/crates/cargo-readme)
-[![Workflow Status](https://github.com/livioribeiro/cargo-readme/workflows/main/badge.svg)](https://github.com/livioribeiro/cargo-readme/actions?query=workflow%3A%22main%22)
+[![Workflow Status](https://github.com/webern/cargo-readme/workflows/main/badge.svg)](https://github.com/webern/cargo-readme/actions?query=workflow%3A%22main%22)
 
 # cargo-readme
 
@@ -7,6 +7,12 @@ Generate README.md from doc comments.
 
 Cargo subcommand that extract documentation from your crate's doc comments that you can use to
 populate your README.md.
+
+#### Attribution
+
+This library was authored by Livio Ribeiro ([@livioribeiro](https://github.com/livioribeiro))
+and originally located at `https://github.com/livioribeiro/cargo-readme`, which now redirects
+here (as of August 2023). Thank you, Livio, for this lib!
 
 ## Installation
 

@@ -3,6 +3,12 @@
 //! Cargo subcommand that extract documentation from your crate's doc comments that you can use to
 //! populate your README.md.
 //!
+//! ### Attribution
+//!
+//! This library was authored by Livio Ribeiro ([@livioribeiro](https://github.com/livioribeiro))
+//! and originally located at `https://github.com/livioribeiro/cargo-readme`, which now redirects
+//! here (as of August 2023). Thank you, Livio, for this lib!
+//!
 //! # Installation
 //!
 //! ```sh
@@ -135,15 +141,6 @@
 //!
 //! By default, `README.tpl` will be used as the template, but you can override it using the
 //! `--template` to choose a different template or `--no-template` to disable it.
-
-#[macro_use]
-extern crate serde_derive;
-#[macro_use]
-extern crate lazy_static;
-
-extern crate percent_encoding;
-extern crate regex;
-extern crate toml;
 
 mod config;
 mod readme;
