@@ -72,9 +72,16 @@ pub fn travis_ci(attrs: Attrs) -> String {
         .map(|i| i.as_ref())
         .unwrap_or(BADGE_BRANCH_DEFAULT);
 
+    let url = match &attrs.get("tld").unwrap_or(&"org".to_string())[..] {
+        "com" => "https://travis-ci.com",
+        "org" => "https://travis-ci.org",
+        other => panic!("Invalid travis-ci tld found: allowed: com,org but found: {}", other),
+    };
+
     format!(
-        "[![Build Status](https://travis-ci.org/{repo}.svg?branch={branch})]\
-         (https://travis-ci.org/{repo})",
+        "[![Build Status]({url}/{repo}.svg?branch={branch})]\
+         ({url}/{repo})",
+        url = url,
         repo = repo,
         branch = percent_encode(branch)
     )
