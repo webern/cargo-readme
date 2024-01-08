@@ -1,27 +1,15 @@
 //! Read crate information from `Cargo.toml`
 
-use std::fs::File;
-use std::io::Read;
 use std::path::{Path, PathBuf};
-
-use toml;
 
 use super::badges;
 
 /// Try to get manifest info from Cargo.toml
 pub fn get_manifest(project_root: &Path) -> Result<Manifest, String> {
-    let mut cargo_toml = File::open(project_root.join("Cargo.toml"))
-        .map_err(|e| format!("Could not read Cargo.toml: {}", e))?;
-
-    let buf = {
-        let mut buf = String::new();
-        cargo_toml
-            .read_to_string(&mut buf)
-            .map_err(|e| format!("{}", e))?;
-        buf
-    };
-
-    Manifest::try_new(toml::from_str::<cargo_toml::Manifest>(&buf).map_err(|e| format!("{}", e))?)
+    Manifest::try_new(
+        cargo_toml::Manifest::from_path(project_root.join("Cargo.toml"))
+            .map_err(|e| format!("{}", e))?,
+    )
 }
 
 #[derive(Debug)]

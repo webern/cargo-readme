@@ -120,7 +120,6 @@ dependencies = [
  "percent-encoding",
  "regex",
  "serde",
- "toml",
 ]
 
 [[package]]
