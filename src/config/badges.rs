@@ -1,25 +1,15 @@
-use std::collections::BTreeMap;
-
 // https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata
 
 use percent_encoding as pe;
 
-const BADGE_BRANCH_DEFAULT: &str = "master";
 const BADGE_SERVICE_DEFAULT: &str = "github";
-const BADGE_WORKFLOW_DEFAULT: &str = "main";
 
-type Attrs = BTreeMap<String, String>;
-
-pub fn appveyor(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
-    let branch = attrs
-        .get("branch")
-        .map(|i| i.as_ref())
-        .unwrap_or(BADGE_BRANCH_DEFAULT);
-    let service = attrs
-        .get("service")
-        .map(|i| i.as_ref())
-        .unwrap_or(BADGE_SERVICE_DEFAULT);
+pub fn appveyor(badge: cargo_toml::Badge) -> String {
+    let repo = badge.repository;
+    let branch = badge.branch;
+    let service = badge
+        .service
+        .unwrap_or_else(|| BADGE_SERVICE_DEFAULT.to_owned());
 
     format!(
         "[![Build Status](https://ci.appveyor.com/api/projects/status/{service}/{repo}?branch={branch}&svg=true)]\
@@ -28,17 +18,13 @@ pub fn appveyor(attrs: Attrs) -> String {
     )
 }
 
-pub fn circle_ci(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
-    let branch = attrs
-        .get("branch")
-        .map(|i| i.as_ref())
-        .unwrap_or(BADGE_BRANCH_DEFAULT);
+pub fn circle_ci(badge: cargo_toml::Badge) -> String {
+    let repo = badge.repository;
+    let branch = badge.branch;
     let service = badge_service_short_name(
-        attrs
-            .get("service")
-            .map(|i| i.as_ref())
-            .unwrap_or(BADGE_SERVICE_DEFAULT),
+        &badge
+            .service
+            .unwrap_or_else(|| BADGE_SERVICE_DEFAULT.to_owned()),
     );
 
     format!(
@@ -46,46 +32,39 @@ pub fn circle_ci(attrs: Attrs) -> String {
          (https://circleci.com/{service}/{repo}/tree/{branch})",
         repo = repo,
         service = service,
-        branch = percent_encode(branch)
+        branch = percent_encode(&branch)
     )
 }
 
-pub fn gitlab(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
-    let branch = attrs
-        .get("branch")
-        .map(|i| i.as_ref())
-        .unwrap_or(BADGE_BRANCH_DEFAULT);
+pub fn gitlab(badge: cargo_toml::Badge) -> String {
+    let repo = badge.repository;
+    let branch = badge.branch;
 
     format!(
         "[![Build Status](https://gitlab.com/{repo}/badges/{branch}/pipeline.svg)]\
          (https://gitlab.com/{repo}/commits/master)",
         repo = repo,
-        branch = percent_encode(branch)
+        branch = percent_encode(&branch)
     )
 }
 
-pub fn travis_ci(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
-    let branch = attrs
-        .get("branch")
-        .map(|i| i.as_ref())
-        .unwrap_or(BADGE_BRANCH_DEFAULT);
+pub fn travis_ci(badge: cargo_toml::Badge) -> String {
+    let repo = badge.repository;
+    let branch = badge.branch;
 
     format!(
         "[![Build Status](https://travis-ci.org/{repo}.svg?branch={branch})]\
          (https://travis-ci.org/{repo})",
         repo = repo,
-        branch = percent_encode(branch)
+        branch = percent_encode(&branch)
     )
 }
 
-pub fn github(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
-    let workflow = attrs
-        .get("workflow")
-        .map(|i| i.as_ref())
-        .unwrap_or(BADGE_WORKFLOW_DEFAULT);
+#[allow(unused)]
+pub fn github(badge: cargo_toml::Badge) -> String {
+    let repo = badge.repository;
+    // TODO: support workflow option.
+    let workflow = "main"; // BADGE_WORKFLOW_DEFAULT
 
     format!(
         "[![Workflow Status](https://github.com/{repo}/workflows/{workflow}/badge.svg)]\
@@ -96,50 +75,42 @@ pub fn github(attrs: Attrs) -> String {
     )
 }
 
-pub fn codecov(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
-    let branch = attrs
-        .get("branch")
-        .map(|i| i.as_ref())
-        .unwrap_or(BADGE_BRANCH_DEFAULT);
+pub fn codecov(badge: cargo_toml::Badge) -> String {
+    let repo = badge.repository;
+    let branch = badge.branch;
     let service = badge_service_short_name(
-        attrs
-            .get("service")
-            .map(|i| i.as_ref())
-            .unwrap_or(BADGE_SERVICE_DEFAULT),
+        &badge
+            .service
+            .unwrap_or_else(|| BADGE_SERVICE_DEFAULT.to_owned()),
     );
 
     format!(
         "[![Coverage Status](https://codecov.io/{service}/{repo}/branch/{branch}/graph/badge.svg)]\
          (https://codecov.io/{service}/{repo})",
         repo = repo,
-        branch = percent_encode(branch),
+        branch = percent_encode(&branch),
         service = service
     )
 }
 
-pub fn coveralls(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
-    let branch = attrs
-        .get("branch")
-        .map(|i| i.as_ref())
-        .unwrap_or(BADGE_BRANCH_DEFAULT);
-    let service = attrs
-        .get("service")
-        .map(|i| i.as_ref())
-        .unwrap_or(BADGE_SERVICE_DEFAULT);
+pub fn coveralls(badge: cargo_toml::Badge) -> String {
+    let repo = badge.repository;
+    let branch = badge.branch;
+    let service = badge
+        .service
+        .unwrap_or_else(|| BADGE_SERVICE_DEFAULT.to_owned());
 
     format!(
         "[![Coverage Status](https://coveralls.io/repos/{service}/{repo}/badge.svg?branch=branch)]\
          (https://coveralls.io/{service}/{repo}?branch={branch})",
         repo = repo,
-        branch = percent_encode(branch),
+        branch = percent_encode(&branch),
         service = service
     )
 }
 
-pub fn is_it_maintained_issue_resolution(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
+pub fn is_it_maintained_issue_resolution(badge: cargo_toml::Badge) -> String {
+    let repo = badge.repository;
     format!(
         "[![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/{repo}.svg)]\
         (https://isitmaintained.com/project/{repo} \"Average time to resolve an issue\")",
@@ -147,8 +118,8 @@ pub fn is_it_maintained_issue_resolution(attrs: Attrs) -> String {
     )
 }
 
-pub fn is_it_maintained_open_issues(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
+pub fn is_it_maintained_open_issues(badge: cargo_toml::Badge) -> String {
+    let repo = badge.repository;
     format!(
         "[![Percentage of issues still open](https://isitmaintained.com/badge/open/{repo}.svg)]\
          (https://isitmaintained.com/project/{repo} \"Percentage of issues still open\")",
@@ -156,26 +127,25 @@ pub fn is_it_maintained_open_issues(attrs: Attrs) -> String {
     )
 }
 
-pub fn maintenance(attrs: Attrs) -> String {
-    let status = &attrs["status"];
+#[allow(unused)]
+pub fn maintenance(maintenance: cargo_toml::Maintenance) -> Option<String> {
+    let status = maintenance.status;
 
     // https://github.com/rust-lang/crates.io/blob/5a08887d4b531e034d01386d3e5997514f3c8ee5/src/models/badge.rs#L82
-    let status_with_color = match status.as_ref() {
-        "actively-developed" => "activly--developed-brightgreen",
-        "passively-maintained" => "passively--maintained-yellowgreen",
-        "as-is" => "as--is-yellow",
-        "none" => "maintenance-none-lightgrey", // color is a guess
-        "experimental" => "experimental-blue",
-        "looking-for-maintainer" => "looking--for--maintainer-darkblue", // color is a guess
-        "deprecated" => "deprecated-red",
-        _ => "unknow-black",
-    };
-
-    //example https://img.shields.io/badge/maintenance-experimental-blue.svg
-    format!(
-        "![Maintenance](https://img.shields.io/badge/maintenance-{status}.svg)",
-        status = status_with_color
-    )
+    match status {
+        cargo_toml::MaintenanceStatus::ActivelyDeveloped => Some("activly--developed-brightgreen"),
+        cargo_toml::MaintenanceStatus::PassivelyMaintained => {
+            Some("passively--maintained-yellowgreen")
+        }
+        cargo_toml::MaintenanceStatus::AsIs => Some("as--is-yellow"),
+        cargo_toml::MaintenanceStatus::Experimental => Some("experimental-blue"),
+        cargo_toml::MaintenanceStatus::LookingForMaintainer => {
+            Some("looking--for--maintainer-darkblue")
+        } // color is a guess
+        cargo_toml::MaintenanceStatus::Deprecated => Some("deprecated-red"),
+        cargo_toml::MaintenanceStatus::None => None,
+    }
+    .map(|status| format!("![Maintenance](https://img.shields.io/badge/maintenance-{status}.svg)",))
 }
 
 fn percent_encode(input: &str) -> pe::PercentEncode {
