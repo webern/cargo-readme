@@ -17,6 +17,7 @@ regex = "1"
 serde = { version = "1", features = ["derive"] }
 percent-encoding = "2"
 lazy_static = "1"
+cargo_toml = "0.17.2"
 
 [dev-dependencies]
 assert_cli = "0.6"
