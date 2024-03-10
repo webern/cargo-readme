@@ -145,6 +145,31 @@ License: MY_LICENSE
 By default, `README.tpl` will be used as the template, but you can override it using the
 `--template` to choose a different template or `--no-template` to disable it.
 
+## Usage with [pre-commit](https://pre-commit.com)
+
+```yaml
+repos:
+  - repo: https://github.com/webern/cargo-readme
+    rev: vX.Y.Z
+    hooks:
+      - id: cargo-readme
+```
+
+If your package resides in a subdirectory:
+
+```yaml
+repos:
+  - repo: https://github.com/webern/cargo-readme
+    rev: vX.Y.Z
+    hooks:
+      - id: cargo-readme
+        args: [
+          --project-root=my-subdirectory,
+          --output=../README.md,
+          --template=../README.tpl,
+        ]
+```
+
 ## License
 
 Licensed under either of

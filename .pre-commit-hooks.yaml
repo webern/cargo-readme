@@ -1,0 +1,8 @@
+- id: cargo-readme
+  name: cargo-readme
+  description: Generate README.md from docstrings
+  entry: cargo-readme readme
+  language: rust
+  files: (README\.tpl)|(\.(md)|(rs))$
+  args: [--output=README.md]
+  pass_filenames: false
