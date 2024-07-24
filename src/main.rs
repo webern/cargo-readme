@@ -67,6 +67,12 @@ struct ReadmeArgs {
     #[clap(long)]
     no_title: bool,
 
+    /// Do not extract docs from comment. Instead, just process the input file
+    /// as it is.
+    /// By default, this flag is `false`.
+    #[clap(long)]
+    no_comment_extraction: bool,
+
     /// File to read from.
     /// If not provided, will try to use `src/lib.rs`, then `src/main.rs`. If neither file
     /// could be found, will look into `Cargo.toml` for a `[lib]`, then for a single `[[bin]]`.
@@ -111,6 +117,7 @@ fn execute(args: &ReadmeArgs) -> Result<(), String> {
     let add_badges = !args.no_badges;
     let add_license = !args.no_license;
     let indent_headings = !args.no_indent_headings;
+    let extract_from_comment = !args.no_comment_extraction;
 
     // generate output
     let readme = cargo_readme::generate_readme(
@@ -121,6 +128,7 @@ fn execute(args: &ReadmeArgs) -> Result<(), String> {
         add_badges,
         add_license,
         indent_headings,
+        extract_from_comment,
     )?;
 
     helper::write_output(&mut dest, readme)
