@@ -1,4 +1,4 @@
-use std::io::Read;
+use std::io::{BufRead, BufReader, Read};
 use std::path::Path;
 
 mod extract;
@@ -18,8 +18,16 @@ pub fn generate_readme<T: Read>(
     add_badges: bool,
     add_license: bool,
     indent_headings: bool,
+    extract_from_comment: bool,
 ) -> Result<String, String> {
-    let lines = extract::extract_docs(source).map_err(|e| format!("{}", e))?;
+    let lines = if extract_from_comment {
+        extract::extract_docs(source).map_err(|e| format!("{}", e))?
+    } else {
+        BufReader::new(source)
+            .lines()
+            .collect::<Result<Vec<_>, _>>()
+            .map_err(|e| format!("{}", e))?
+    };
 
     let readme = process::process_docs(lines, indent_headings).join("\n");
 
