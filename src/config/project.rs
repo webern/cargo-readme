@@ -66,7 +66,7 @@ pub fn find_entrypoint(current_dir: &Path, manifest: &Manifest) -> Result<PathBu
         let mut bin_list: Vec<_> = manifest
             .bin
             .iter()
-            .filter(|b| b.doc == true)
+            .filter(|b| b.doc)
             .map(|b| b.path.clone())
             .collect();
 
