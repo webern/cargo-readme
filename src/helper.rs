@@ -24,7 +24,7 @@ pub fn get_source(project_root: &Path, input: Option<&str>) -> Result<File, Stri
             File::open(&input)
                 .map_err(|e| format!("Could not open file '{}': {}", input.to_string_lossy(), e))
         }
-        None => find_entrypoint(&project_root),
+        None => find_entrypoint(project_root),
     }
 }
 
