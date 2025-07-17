@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 use cargo_readme::get_manifest;
 use cargo_readme::project;
 
-const DEFAULT_TEMPLATE: &'static str = "README.tpl";
+const DEFAULT_TEMPLATE: &str = "README.tpl";
 
 /// Get the project root from given path or defaults to current directory
 ///
