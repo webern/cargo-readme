@@ -6,8 +6,6 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use toml;
-
 use super::badges;
 
 /// Try to get manifest info from Cargo.toml
