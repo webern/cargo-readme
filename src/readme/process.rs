@@ -38,7 +38,7 @@ impl Processor {
     pub fn new(indent_headings: bool) -> Self {
         Processor {
             section: Section::None,
-            indent_headings: indent_headings,
+            indent_headings,
             delimiter: None,
         }
     }
