@@ -116,7 +116,7 @@ fn process_string(
 
 /// Prepend badges to output string
 fn prepend_badges(readme: String, badges: &[&str]) -> String {
-    if badges.len() > 0 {
+    if !badges.is_empty() {
         let badges = badges.join("\n");
         if !readme.is_empty() {
             format!("{badges}\n\n{readme}")
