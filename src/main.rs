@@ -14,7 +14,7 @@ fn main() {
     match result {
         Err(e) => {
             io::stderr()
-                .write_fmt(format_args!("Error: {}\n", e))
+                .write_fmt(format_args!("Error: {e}\n"))
                 .expect("An error occurred while trying to show an error message");
             std::process::exit(1);
         }

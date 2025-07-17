@@ -9,7 +9,7 @@ use crate::config::manifest::{Manifest, ManifestLib};
 /// as is. If no path is given, the current directory is used.
 /// A `Cargo.toml` file must be present is the root directory.
 pub fn get_root(given_root: Option<&str>) -> Result<PathBuf, String> {
-    let current_dir = env::current_dir().map_err(|e| format!("{}", e))?;
+    let current_dir = env::current_dir().map_err(|e| format!("{e}"))?;
     let root = match given_root {
         Some(root) => {
             let root = Path::new(root);
@@ -24,8 +24,7 @@ pub fn get_root(given_root: Option<&str>) -> Result<PathBuf, String> {
 
     if !root.join("Cargo.toml").is_file() {
         return Err(format!(
-            "`{:?}` does not look like a Rust/Cargo project",
-            root
+            "`{root:?}` does not look like a Rust/Cargo project"
         ));
     }
 
@@ -77,7 +76,7 @@ pub fn find_entrypoint(current_dir: &Path, manifest: &Manifest) -> Result<PathBu
                 .map(|p| p.to_string_lossy())
                 .collect::<Vec<_>>()
                 .join(", ");
-            return Err(format!("Multiple binaries found, choose one: [{}]", paths));
+            return Err(format!("Multiple binaries found, choose one: [{paths}]"));
         }
 
         if let Some(bin) = bin_list.pop() {

@@ -23,8 +23,7 @@ pub fn appveyor(attrs: Attrs) -> String {
 
     format!(
         "[![Build Status](https://ci.appveyor.com/api/projects/status/{service}/{repo}?branch={branch}&svg=true)]\
-        (https://ci.appveyor.com/project/{repo}/branch/{branch})",
-        repo=repo, branch=branch, service=service
+        (https://ci.appveyor.com/project/{repo}/branch/{branch})"
     )
 }
 
@@ -142,8 +141,7 @@ pub fn is_it_maintained_issue_resolution(attrs: Attrs) -> String {
     let repo = &attrs["repository"];
     format!(
         "[![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/{repo}.svg)]\
-        (https://isitmaintained.com/project/{repo} \"Average time to resolve an issue\")",
-        repo=repo
+        (https://isitmaintained.com/project/{repo} \"Average time to resolve an issue\")"
     )
 }
 
@@ -151,8 +149,7 @@ pub fn is_it_maintained_open_issues(attrs: Attrs) -> String {
     let repo = &attrs["repository"];
     format!(
         "[![Percentage of issues still open](https://isitmaintained.com/badge/open/{repo}.svg)]\
-         (https://isitmaintained.com/project/{repo} \"Percentage of issues still open\")",
-        repo = repo
+         (https://isitmaintained.com/project/{repo} \"Percentage of issues still open\")"
     )
 }
 
@@ -172,10 +169,7 @@ pub fn maintenance(attrs: Attrs) -> String {
     };
 
     //example https://img.shields.io/badge/maintenance-experimental-blue.svg
-    format!(
-        "![Maintenance](https://img.shields.io/badge/maintenance-{status}.svg)",
-        status = status_with_color
-    )
+    format!("![Maintenance](https://img.shields.io/badge/maintenance-{status_with_color}.svg)")
 }
 
 fn percent_encode(input: &str) -> pe::PercentEncode {

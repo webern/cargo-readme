@@ -19,7 +19,7 @@ pub fn generate_readme<T: Read>(
     add_license: bool,
     indent_headings: bool,
 ) -> Result<String, String> {
-    let lines = extract::extract_docs(source).map_err(|e| format!("{}", e))?;
+    let lines = extract::extract_docs(source).map_err(|e| format!("{e}"))?;
 
     let readme = process::process_docs(lines, indent_headings).join("\n");
 
@@ -40,7 +40,7 @@ pub fn generate_readme<T: Read>(
 fn get_template_string<T: Read>(template: &mut T) -> Result<String, String> {
     let mut template_string = String::new();
     match template.read_to_string(&mut template_string) {
-        Err(e) => return Err(format!("Error: {}", e)),
+        Err(e) => return Err(format!("Error: {e}")),
         _ => {}
     }
 

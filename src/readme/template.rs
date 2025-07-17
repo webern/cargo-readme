@@ -119,7 +119,7 @@ fn prepend_badges(readme: String, badges: &[&str]) -> String {
     if badges.len() > 0 {
         let badges = badges.join("\n");
         if !readme.is_empty() {
-            format!("{}\n\n{}", badges, readme)
+            format!("{badges}\n\n{readme}")
         } else {
             badges
         }
@@ -130,9 +130,9 @@ fn prepend_badges(readme: String, badges: &[&str]) -> String {
 
 /// Prepend title (crate name) to output string
 fn prepend_title(readme: String, crate_name: &str) -> String {
-    let title = format!("# {}", crate_name);
+    let title = format!("# {crate_name}");
     if !readme.trim().is_empty() {
-        format!("{}\n\n{}", title, readme)
+        format!("{title}\n\n{readme}")
     } else {
         title
     }
@@ -140,9 +140,9 @@ fn prepend_title(readme: String, crate_name: &str) -> String {
 
 /// Append license to output string
 fn append_license(readme: String, license: &str) -> String {
-    let license = format!("License: {}", license);
+    let license = format!("License: {license}");
     if !readme.trim().is_empty() {
-        format!("{}\n\n{}", readme, license)
+        format!("{readme}\n\n{license}")
     } else {
         license
     }

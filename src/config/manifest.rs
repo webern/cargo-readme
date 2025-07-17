@@ -11,17 +11,17 @@ use super::badges;
 /// Try to get manifest info from Cargo.toml
 pub fn get_manifest(project_root: &Path) -> Result<Manifest, String> {
     let mut cargo_toml = File::open(project_root.join("Cargo.toml"))
-        .map_err(|e| format!("Could not read Cargo.toml: {}", e))?;
+        .map_err(|e| format!("Could not read Cargo.toml: {e}"))?;
 
     let buf = {
         let mut buf = String::new();
         cargo_toml
             .read_to_string(&mut buf)
-            .map_err(|e| format!("{}", e))?;
+            .map_err(|e| format!("{e}"))?;
         buf
     };
 
-    let cargo_toml: CargoToml = toml::from_str(&buf).map_err(|e| format!("{}", e))?;
+    let cargo_toml: CargoToml = toml::from_str(&buf).map_err(|e| format!("{e}"))?;
 
     let manifest = Manifest::new(cargo_toml);
 

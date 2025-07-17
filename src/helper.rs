@@ -70,8 +70,7 @@ pub fn get_template_file(
                 // do not generate an error on file not found
                 Err(ref e) if e.kind() != ErrorKind::NotFound => {
                     return Err(format!(
-                        "Could not open template file '{}': {}",
-                        DEFAULT_TEMPLATE, e
+                        "Could not open template file '{DEFAULT_TEMPLATE}': {e}"
                     ))
                 }
                 // default template not found, return `None`
@@ -91,9 +90,9 @@ pub fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), Strin
 
             dest.write_all(&mut bytes)
                 .map(|_| ())
-                .map_err(|e| format!("Could not write to output file: {}", e))?;
+                .map_err(|e| format!("Could not write to output file: {e}"))?;
         }
-        None => println!("{}", readme),
+        None => println!("{readme}"),
     }
 
     Ok(())
@@ -111,5 +110,5 @@ pub fn find_entrypoint(current_dir: &Path) -> Result<File, String> {
     let manifest = get_manifest(current_dir)?;
     let entrypoint = project::find_entrypoint(current_dir, &manifest)?;
 
-    File::open(current_dir.join(entrypoint)).map_err(|e| format!("{}", e))
+    File::open(current_dir.join(entrypoint)).map_err(|e| format!("{e}"))
 }
