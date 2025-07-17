@@ -33,7 +33,7 @@ pub fn get_dest(project_root: &Path, output: Option<&str>) -> Result<Option<File
     match output {
         Some(filename) => {
             let output = project_root.join(filename);
-            File::create(&output).map(|f| Some(f)).map_err(|e| {
+            File::create(&output).map(Some).map_err(|e| {
                 format!(
                     "Could not create output file '{}': {}",
                     output.to_string_lossy(),
@@ -54,7 +54,7 @@ pub fn get_template_file(
         // template path was given, try to read it
         Some(template) => {
             let template = project_root.join(template);
-            File::open(&template).map(|f| Some(f)).map_err(|e| {
+            File::open(&template).map(Some).map_err(|e| {
                 format!(
                     "Could not open template file '{}': {}",
                     template.to_string_lossy(),

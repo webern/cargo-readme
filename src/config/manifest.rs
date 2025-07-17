@@ -43,20 +43,17 @@ impl Manifest {
         Manifest {
             name: cargo_toml.package.name,
             license: cargo_toml.package.license,
-            lib: cargo_toml.lib.map(|lib| ManifestLib::from_cargo_toml(lib)),
+            lib: cargo_toml.lib.map(ManifestLib::from_cargo_toml),
             bin: cargo_toml
                 .bin
                 .map(|bin_vec| {
                     bin_vec
                         .into_iter()
-                        .map(|bin| ManifestLib::from_cargo_toml(bin))
+                        .map(ManifestLib::from_cargo_toml)
                         .collect()
                 })
                 .unwrap_or_default(),
-            badges: cargo_toml
-                .badges
-                .map(|b| process_badges(b))
-                .unwrap_or_default(),
+            badges: cargo_toml.badges.map(process_badges).unwrap_or_default(),
             version: cargo_toml.package.version,
         }
     }
