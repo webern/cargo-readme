@@ -39,9 +39,8 @@ pub fn generate_readme<T: Read>(
 /// Load a template String from a file
 fn get_template_string<T: Read>(template: &mut T) -> Result<String, String> {
     let mut template_string = String::new();
-    match template.read_to_string(&mut template_string) {
-        Err(e) => return Err(format!("Error: {e}")),
-        _ => {}
+    if let Err(e) = template.read_to_string(&mut template_string) {
+        return Err(format!("Error: {e}"));
     }
 
     Ok(template_string)

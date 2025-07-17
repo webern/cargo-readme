@@ -11,14 +11,11 @@ fn main() {
     let result = match &args.command {
         Command::Readme(readme_args) => execute(readme_args),
     };
-    match result {
-        Err(e) => {
-            io::stderr()
-                .write_fmt(format_args!("Error: {e}\n"))
-                .expect("An error occurred while trying to show an error message");
-            std::process::exit(1);
-        }
-        _ => {}
+    if let Err(e) = result {
+        io::stderr()
+            .write_fmt(format_args!("Error: {e}\n"))
+            .expect("An error occurred while trying to show an error message");
+        std::process::exit(1);
     }
 }
 /// The command line interface for setting up a Bottlerocket TestSys cluster and running tests.
