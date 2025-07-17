@@ -4,18 +4,26 @@
 //! - "```", "```no_run", "```ignore" and "```should_panic" are converted to "```rust"
 //! - markdown heading are indentend to be one level lower, so the crate name is at the top level
 
-use lazy_static::lazy_static;
 use regex::Regex;
-use std::iter::{IntoIterator, Iterator};
+use std::{
+    iter::{IntoIterator, Iterator},
+    sync::LazyLock,
+};
 
-lazy_static! {
-    // Is this code block rust?
-    static ref RE_CODE_RUST: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic)))?$").unwrap();
-    // Is this code block just text?
-    static ref RE_CODE_TEXT: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})text$").unwrap();
-    // Is this code block a language other than rust?
-    static ref RE_CODE_OTHER: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})\w[\w,\+]*$").unwrap();
-}
+// Is this code block rust?
+static RE_CODE_RUST: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic)))?$",
+    )
+    .unwrap()
+});
+// Is this code block just text?
+static RE_CODE_TEXT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})text$").unwrap());
+
+// Is this code block a language other than rust?
+static RE_CODE_OTHER: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})\w[\w,\+]*$").unwrap());
 
 /// Process and concatenate the doc lines into a single String
 ///

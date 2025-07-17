@@ -111,7 +111,6 @@ version = "3.3.1"
 dependencies = [
  "assert_cli",
  "clap",
- "lazy_static",
  "percent-encoding",
  "regex",
  "serde",
