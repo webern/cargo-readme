@@ -68,11 +68,9 @@ pub fn get_template_file(
             match File::open(&template) {
                 Ok(file) => Ok(Some(file)),
                 // do not generate an error on file not found
-                Err(ref e) if e.kind() != ErrorKind::NotFound => {
-                    return Err(format!(
-                        "Could not open template file '{DEFAULT_TEMPLATE}': {e}"
-                    ))
-                }
+                Err(ref e) if e.kind() != ErrorKind::NotFound => Err(format!(
+                    "Could not open template file '{DEFAULT_TEMPLATE}': {e}"
+                )),
                 // default template not found, return `None`
                 _ => Ok(None),
             }
