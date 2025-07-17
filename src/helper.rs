@@ -86,7 +86,7 @@ pub fn write_output(dest: &mut Option<File>, readme: String) -> Result<(), Strin
             // Append new line at end of file to match behavior of `cargo readme > README.md`
             bytes.push(b'\n');
 
-            dest.write_all(&mut bytes)
+            dest.write_all(&bytes)
                 .map(|_| ())
                 .map_err(|e| format!("Could not write to output file: {e}"))?;
         }
