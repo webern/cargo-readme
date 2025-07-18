@@ -1,4 +1,5 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
+use predicates::prelude::*;
 
 const EXPECTED: &str = r#"
 # readme-test
@@ -54,13 +55,12 @@ fn append_license() {
 
     let expected = format!("{}\n\n{}", EXPECTED.trim(), "License: MIT");
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(&*expected)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(predicate::str::diff(expected).from_utf8());
 }
 
 #[test]
@@ -74,11 +74,10 @@ fn no_append_license() {
         "--no-license",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }

@@ -1,4 +1,4 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
 
 const EXPECTED: &str = "# project-with-version
 
@@ -16,11 +16,10 @@ fn template_with_version() {
         "README.tpl",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }

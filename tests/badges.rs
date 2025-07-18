@@ -1,4 +1,4 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
 
 const EXPECTED: &str = r#"
 [![Build Status](https://ci.appveyor.com/api/projects/status/github/cargo-readme/test?branch=master&svg=true)](https://ci.appveyor.com/project/cargo-readme/test/branch/master)
@@ -21,11 +21,10 @@ License: MIT
 fn badges() {
     let args = ["readme", "--project-root", "tests/badges"];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }
