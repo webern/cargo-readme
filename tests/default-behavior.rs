@@ -1,4 +1,4 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
 
 const EXPECTED: &str = r#"
 [![Build Status](https://travis-ci.org/livioribeiro/cargo-readme.svg?branch=master)](https://travis-ci.org/livioribeiro/cargo-readme)
@@ -50,11 +50,10 @@ if condition {
 fn default_behavior() {
     let args = ["readme", "--project-root", "tests/test-project"];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }
