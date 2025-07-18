@@ -6,24 +6,22 @@ use std::fs::File;
 use std::io::Read;
 use std::path::{Path, PathBuf};
 
-use toml;
-
 use super::badges;
 
 /// Try to get manifest info from Cargo.toml
 pub fn get_manifest(project_root: &Path) -> Result<Manifest, String> {
     let mut cargo_toml = File::open(project_root.join("Cargo.toml"))
-        .map_err(|e| format!("Could not read Cargo.toml: {}", e))?;
+        .map_err(|e| format!("Could not read Cargo.toml: {e}"))?;
 
     let buf = {
         let mut buf = String::new();
         cargo_toml
             .read_to_string(&mut buf)
-            .map_err(|e| format!("{}", e))?;
+            .map_err(|e| format!("{e}"))?;
         buf
     };
 
-    let cargo_toml: CargoToml = toml::from_str(&buf).map_err(|e| format!("{}", e))?;
+    let cargo_toml: CargoToml = toml::from_str(&buf).map_err(|e| format!("{e}"))?;
 
     let manifest = Manifest::new(cargo_toml);
 
@@ -45,20 +43,17 @@ impl Manifest {
         Manifest {
             name: cargo_toml.package.name,
             license: cargo_toml.package.license,
-            lib: cargo_toml.lib.map(|lib| ManifestLib::from_cargo_toml(lib)),
+            lib: cargo_toml.lib.map(ManifestLib::from_cargo_toml),
             bin: cargo_toml
                 .bin
                 .map(|bin_vec| {
                     bin_vec
                         .into_iter()
-                        .map(|bin| ManifestLib::from_cargo_toml(bin))
+                        .map(ManifestLib::from_cargo_toml)
                         .collect()
                 })
                 .unwrap_or_default(),
-            badges: cargo_toml
-                .badges
-                .map(|b| process_badges(b))
-                .unwrap_or_default(),
+            badges: cargo_toml.badges.map(process_badges).unwrap_or_default(),
             version: cargo_toml.package.version,
         }
     }
@@ -97,7 +92,7 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
                 Some((8, badges::is_it_maintained_open_issues(attrs)))
             }
             "maintenance" => Some((9, badges::maintenance(attrs))),
-            _ => return None,
+            _ => None,
         })
         .collect();
 
