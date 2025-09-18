@@ -1,4 +1,4 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
 
 #[test]
 fn entrypoint_resolution_main() {
@@ -10,13 +10,12 @@ fn entrypoint_resolution_main() {
         "--no-license",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is("main")
-        .unwrap();
+    Command::cargo_bin("cargo-readme")
+        .unwrap()
+        .args(&args)
+        .assert()
+        .success()
+        .stdout("main\n");
 }
 
 #[test]
@@ -29,13 +28,12 @@ fn entrypoint_resolution_lib() {
         "--no-license",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is("lib")
-        .unwrap();
+    Command::cargo_bin("cargo-readme")
+        .unwrap()
+        .args(&args)
+        .assert()
+        .success()
+        .stdout("lib\n");
 }
 
 #[test]
@@ -48,13 +46,12 @@ fn entrypoint_resolution_cargo_lib() {
         "--no-license",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is("cargo lib")
-        .unwrap();
+    Command::cargo_bin("cargo-readme")
+        .unwrap()
+        .args(&args)
+        .assert()
+        .success()
+        .stdout("cargo lib\n");
 }
 
 #[test]
@@ -67,11 +64,10 @@ fn entrypoint_resolution_cargo_bin() {
         "--no-license",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is("cargo bin")
-        .unwrap();
+    Command::cargo_bin("cargo-readme")
+        .unwrap()
+        .args(&args)
+        .assert()
+        .success()
+        .stdout("cargo bin\n");
 }

@@ -1,10 +1,11 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
 
 const EXPECTED: &str = "# project-with-version
 
 Current version: 0.1.0
 
-A test project with a version provided.";
+A test project with a version provided.
+";
 
 #[test]
 fn template_with_version() {
@@ -16,11 +17,10 @@ fn template_with_version() {
         "README.tpl",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin("cargo-readme")
+        .unwrap()
+        .args(&args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }

@@ -1,7 +1,6 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
 
-const EXPECTED: &str = r#"
-[![Build Status](https://travis-ci.org/livioribeiro/cargo-readme.svg?branch=master)](https://travis-ci.org/livioribeiro/cargo-readme)
+const EXPECTED: &str = r#"[![Build Status](https://travis-ci.org/livioribeiro/cargo-readme.svg?branch=master)](https://travis-ci.org/livioribeiro/cargo-readme)
 
 # readme-test
 
@@ -56,11 +55,10 @@ fn multiline_doc() {
         "src/multiline.rs",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin("cargo-readme")
+        .unwrap()
+        .args(&args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }

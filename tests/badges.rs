@@ -1,7 +1,6 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
 
-const EXPECTED: &str = r#"
-[![Build Status](https://ci.appveyor.com/api/projects/status/github/cargo-readme/test?branch=master&svg=true)](https://ci.appveyor.com/project/cargo-readme/test/branch/master)
+const EXPECTED: &str = r#"[![Build Status](https://ci.appveyor.com/api/projects/status/github/cargo-readme/test?branch=master&svg=true)](https://ci.appveyor.com/project/cargo-readme/test/branch/master)
 [![Build Status](https://circleci.com/gh/cargo-readme/test/tree/master.svg?style=shield)](https://circleci.com/gh/cargo-readme/test/tree/master)
 [![Build Status](https://gitlab.com/cargo-readme/test/badges/master/pipeline.svg)](https://gitlab.com/cargo-readme/test/commits/master)
 [![Build Status](https://travis-ci.org/cargo-readme/test.svg?branch=master)](https://travis-ci.org/cargo-readme/test)
@@ -21,11 +20,10 @@ License: MIT
 fn badges() {
     let args = ["readme", "--project-root", "tests/badges"];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin("cargo-readme")
+        .unwrap()
+        .args(&args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }

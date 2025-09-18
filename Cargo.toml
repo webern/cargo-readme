@@ -19,7 +19,7 @@ percent-encoding = "2"
 lazy_static = "1"
 
 [dev-dependencies]
-assert_cli = "0.6"
+assert_cmd = "2.0.17"
 
 [badges]
 github = { repository = "webern/cargo-readme" }

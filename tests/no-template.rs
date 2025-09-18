@@ -1,7 +1,6 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
 
-const EXPECTED: &str = r#"
-# readme-test
+const EXPECTED: &str = r#"# readme-test
 
 Test crate for cargo-readme
 
@@ -54,11 +53,10 @@ fn no_template() {
         "--no-badges",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin("cargo-readme")
+        .unwrap()
+        .args(&args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }
