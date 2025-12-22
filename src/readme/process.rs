@@ -1,7 +1,7 @@
 //! Transform code blocks from rustdoc into markdown
 //!
 //! Rewrite code block start tags, changing rustdoc into equivalent in markdown:
-//! - "```", "```no_run", "```ignore" and "```should_panic" are converted to "```rust"
+//! - "```", "```no_run", "```ignore", "```should_panic", and "```compile_fail" are converted to "```rust"
 //! - markdown heading are indentend to be one level lower, so the crate name is at the top level
 
 use lazy_static::lazy_static;
@@ -10,7 +10,7 @@ use std::iter::{IntoIterator, Iterator};
 
 lazy_static! {
     // Is this code block rust?
-    static ref RE_CODE_RUST: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic)))?$").unwrap();
+    static ref RE_CODE_RUST: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic|compile_fail)))?$").unwrap();
     // Is this code block just text?
     static ref RE_CODE_TEXT: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})text$").unwrap();
     // Is this code block a language other than rust?
@@ -163,6 +163,10 @@ mod tests {
         "panic!(\"at the disco\");",
         "```",
         "",
+        "```compile_fail",
+        "x y z",
+        "```",
+        "",
         "```C",
         "int i = 0; // no rust code",
         "```",
@@ -183,6 +187,10 @@ mod tests {
         "",
         "```rust",
         "panic!(\"at the disco\");",
+        "```",
+        "",
+        "```rust",
+        "x y z",
         "```",
         "",
         "```C",
@@ -211,6 +219,10 @@ mod tests {
         "",
         "```rust,should_panic",
         "panic!(\"at the disco\");",
+        "```",
+        "",
+        "```rust,compile_fail",
+        "x y z",
         "```",
         "",
         "```C",
