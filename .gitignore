@@ -1,3 +1,7 @@
 *.swp
 target
 *.t.err
+
+# claude code local settings
+.claude/settings.local.json
+.claude/worktrees
