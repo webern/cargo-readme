@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [3.3.2] - 2026-04-09
+
+### Changed
+
+- Update dependencies including a major version change (toml v0.8 to v1). [#124]
+- Update GitHub Actions workflow to use main branch and checkout v3. [#122]
+
+### Fixed
+
+- Fix explicit lifetime elision warning in percent_encode function. [#122]
+
+[#124]: https://github.com/webern/cargo-readme/pull/124
+[#122]: https://github.com/webern/cargo-readme/pull/122
+
 ## [3.3.1] - 2023-11-06
 
 ### Changed
@@ -31,6 +45,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [#84]: https://github.com/webern/cargo-readme/pull/84
 
-[unreleased]: https://github.com/webern/cargo-readme/compare/v3.3.0...HEAD
-[3.3.1]: https://github.com/webern/cargo-readme/compare/v3.3.0...v1.3.1
+[unreleased]: https://github.com/webern/cargo-readme/compare/v3.3.2...HEAD
+[3.3.2]: https://github.com/webern/cargo-readme/compare/v3.3.1...v3.3.2
+[3.3.1]: https://github.com/webern/cargo-readme/compare/v3.3.0...v3.3.1
 [3.3.0]: https://github.com/webern/cargo-readme/compare/v3.2.0...v3.3.0
