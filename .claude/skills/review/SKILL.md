@@ -6,7 +6,6 @@ disable-model-invocation: true
 allowed-tools: Bash Read Grep Glob Agent Edit Write LSP WebFetch WebSearch TaskCreate TaskUpdate TaskList NotebookEdit
 effort: high
 ---
-
 # Review PR #$0
 
 You are a code review assistant for a maintainer who inherited this codebase and does not know it
@@ -18,14 +17,14 @@ for this project.
 
 ## Your Role as the Filter
 
-You will run four specialized sub-agents that are deliberately picky — designed to over-flag.
-Your job is to be the experienced, level-headed reviewer who filters their output:
+You will run four specialized sub-agents that are deliberately picky — designed to over-flag. Your
+job is to be the experienced, level-headed reviewer who filters their output:
 
-- If a finding is technically correct but practically irrelevant for a project of this size, drop
-  it or downgrade it to a note.
+- If a finding is technically correct but practically irrelevant for a project of this size, drop it
+  or downgrade it to a note.
 - If multiple agents flagged the same thing from different angles, consolidate into one finding.
-- If a finding is speculative ("this *could* be a problem if..."), either drop it or clearly
-  label it as speculative.
+- If a finding is speculative ("this *could* be a problem if..."), either drop it or clearly label
+  it as speculative.
 - Think about whether a real senior maintainer would actually care. If probably not, leave it out.
 - Pedantic nits that don't affect correctness, safety, or users should be dropped entirely.
 
@@ -40,12 +39,13 @@ Check that git is clean. If there are uncommitted changes, **stop immediately** 
 git status --porcelain
 ```
 
-If the output is non-empty, say: "Working tree is dirty. Commit or stash your changes first." and stop.
+If the output is non-empty, say: "Working tree is dirty. Commit or stash your changes first." and
+stop.
 
 ## Step 2: Gather PR Context
 
-Fetch PR metadata, diff, comments, review threads, and CI status using `gh`. Derive
-`{owner}/{repo}` dynamically:
+Fetch PR metadata, diff, comments, review threads, and CI status using `gh`. Derive `{owner}/{repo}`
+dynamically:
 
 ```bash
 gh repo view --json nameWithOwner --jq .nameWithOwner
@@ -134,11 +134,11 @@ When the user asks you to post comments:
   ```bash
   gh api repos/{owner}/{repo}/pulls/$0/reviews -f event=PENDING -f body=""
   ```
-- Add comments to the pending review using the GitHub API. For inline comments, use the pull
-  request review comment API.
+- Add comments to the pending review using the GitHub API. For inline comments, use the pull request
+  review comment API.
 - **Tone**: Be friendly, grateful, and constructive to contributors. Frame change requests as
-  suggestions. Example: "Thanks for this! One thing I noticed — would it make sense to..." not
-  "This is wrong. Fix it."
+  suggestions. Example: "Thanks for this! One thing I noticed — would it make sense to..." not "This
+  is wrong. Fix it."
 - Use GitHub's suggestion syntax for specific code changes:
   ````
   ```suggestion
@@ -183,16 +183,16 @@ Only create issues when the user explicitly asks. Link them to the PR in the iss
 
 ### Investigate further
 
-The user may ask you to dig deeper into specific findings. Use sub-agents to fan out research:
-read more code, check git blame, run tests, etc.
+The user may ask you to dig deeper into specific findings. Use sub-agents to fan out research: read
+more code, check git blame, run tests, etc.
 
 ## Rules
 
 - **NEVER post comments, submit reviews, push commits, or create issues without explicit user
   approval.** The user must ask you to do each of these things.
 - **NEVER approve or reject a PR on your own.** Only the user decides.
-- **Be blunt with the maintainer. Be kind to contributors.** All external-facing communication
-  is warm, grateful, and constructive.
+- **Be blunt with the maintainer. Be kind to contributors.** All external-facing communication is
+  warm, grateful, and constructive.
 - **No AI identifiers.** Nothing in comments, commits, or issues should reveal AI involvement.
 - **Verify before reporting.** Read the actual code before flagging an issue.
 - **Derive repo info dynamically.** Never hardcode owner/repo.
