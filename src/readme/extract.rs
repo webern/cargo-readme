@@ -33,7 +33,7 @@ fn extract_docs_singleline_style<R: Read>(
 
         if line.starts_with("//!") {
             result.push(normalize_line(line));
-        } else if line.trim().len() > 0 {
+        } else if !line.trim().is_empty() {
             // doc ends, code starts
             break;
         }

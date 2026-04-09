@@ -18,6 +18,9 @@ fmt-check:
 clippy:
 	cargo clippy --all-features --tests -- -D warnings
 
+clippy-fix:
+	cargo clippy --all-features --tests --fix --allow-dirty --allow-staged
+
 install:
 	$(eval TMPDIR := $(shell mktemp -d))
 	cargo install --path . --root $(TMPDIR)

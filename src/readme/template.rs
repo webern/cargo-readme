@@ -58,7 +58,7 @@ fn process_template(
     }
 
     if template.contains("{{crate}}") {
-        template = template.replace("{{crate}}", &title);
+        template = template.replace("{{crate}}", title);
     }
 
     if template.contains("{{badges}}") {
@@ -73,7 +73,7 @@ fn process_template(
 
     if template.contains("{{license}}") {
         if let Some(license) = license {
-            template = template.replace("{{license}}", &license);
+            template = template.replace("{{license}}", license);
         } else {
             return Err(
                 "`{{license}}` was found in template but no license was provided".to_owned(),
@@ -116,7 +116,7 @@ fn process_string(
 
 /// Prepend badges to output string
 fn prepend_badges(readme: String, badges: &[&str]) -> String {
-    if badges.len() > 0 {
+    if !badges.is_empty() {
         let badges = badges.join("\n");
         if !readme.is_empty() {
             format!("{}\n\n{}", badges, readme)
