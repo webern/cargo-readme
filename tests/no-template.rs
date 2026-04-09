@@ -37,6 +37,10 @@ if condition {
 // And also this should output as ```rust
 ```
 
+```rust
+// This should also output as ```rust
+```
+
 ```python
 # This should be on the output
 ```
