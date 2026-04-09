@@ -178,7 +178,7 @@ pub fn maintenance(attrs: Attrs) -> String {
     )
 }
 
-fn percent_encode(input: &str) -> pe::PercentEncode {
+fn percent_encode(input: &str) -> pe::PercentEncode<'_> {
     pe::utf8_percent_encode(input, pe::NON_ALPHANUMERIC)
 }
 
