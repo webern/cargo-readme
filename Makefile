@@ -1,4 +1,4 @@
-.PHONY: check build test fmt fmt-check clippy install ci
+.PHONY: check build test fmt fmt-check clippy clippy-fix install ci publish-dry-run
 
 check:
 	cargo check
@@ -24,3 +24,6 @@ install:
 	rm -rf $(TMPDIR)
 
 ci: check fmt-check clippy test build install
+
+publish-dry-run: ci
+	cargo publish --dry-run
