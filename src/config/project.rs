@@ -63,11 +63,11 @@ pub fn find_entrypoint(current_dir: &Path, manifest: &Manifest) -> Result<PathBu
     }
 
     // try bin defined in `Cargo.toml`
-    if manifest.bin.len() > 0 {
+    if !manifest.bin.is_empty() {
         let mut bin_list: Vec<_> = manifest
             .bin
             .iter()
-            .filter(|b| b.doc == true)
+            .filter(|b| b.doc)
             .map(|b| b.path.clone())
             .collect();
 
