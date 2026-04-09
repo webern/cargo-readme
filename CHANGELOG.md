@@ -31,6 +31,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [#84]: https://github.com/webern/cargo-readme/pull/84
 
-[unreleased]: https://github.com/webern/cargo-readme/compare/v3.3.1...HEAD
+[unreleased]: https://github.com/webern/cargo-readme/compare/v3.3.0...HEAD
 [3.3.1]: https://github.com/webern/cargo-readme/compare/v3.3.0...v1.3.1
 [3.3.0]: https://github.com/webern/cargo-readme/compare/v3.2.0...v3.3.0
