@@ -31,16 +31,18 @@ job is to be the experienced, level-headed reviewer who filters their output:
 The goal is a tight, useful review — not a laundry list. Fewer high-quality findings are far more
 valuable than many marginal ones.
 
-## Step 1: Pre-flight Checks
+## Step 1: Clone into a Temp Directory
 
-Check that git is clean. If there are uncommitted changes, **stop immediately** and tell the user.
+Clone the repo into a temporary directory so the review is fully isolated from the user's working
+tree. This allows reviews to run in parallel with other work.
 
 ```bash
-git status --porcelain
+REVIEW_DIR=$(mktemp -d)
+gh repo clone . "$REVIEW_DIR" -- --quiet
+cd "$REVIEW_DIR"
 ```
 
-If the output is non-empty, say: "Working tree is dirty. Commit or stash your changes first." and
-stop.
+All subsequent steps run inside `$REVIEW_DIR`. The user's working tree is never touched.
 
 ## Step 2: Gather PR Context
 
@@ -57,12 +59,6 @@ Check if the user has a pending review:
 gh api repos/{owner}/{repo}/pulls/$0/reviews --jq '.[] | select(.state == "PENDING")'
 ```
 
-### Rebase check
-
-If the PR has merge conflicts or the `mergeable` field is not `MERGEABLE`, **stop** and tell the
-user: "This PR needs a rebase. Ask the contributor to rebase before reviewing." Do not attempt to
-fix merge conflicts yourself.
-
 ### CI failure diagnosis
 
 If any CI checks have failed, dig into the logs:
@@ -74,11 +70,31 @@ gh run view <run-id> --log-failed
 
 Read the failed logs and diagnose the root cause. Report this to the user as part of your review.
 
-## Step 3: Check Out the PR
+## Step 3: Check Out the PR and Rebase
 
 ```bash
 gh pr checkout $0
 ```
+
+After checkout, check if the branch is behind `main` or has merge conflicts:
+
+```bash
+git merge-base --is-ancestor main HEAD || echo "Branch is behind main"
+git merge --no-commit --no-ff main 2>&1 | head -5; git merge --abort 2>/dev/null
+```
+
+If the branch needs a rebase, tell the user and offer to rebase onto `main`. Explain that conflicts
+will be resolved favoring our more recent `main` edits (`-X ours`). Wait for the user to agree
+before proceeding.
+
+If the user agrees:
+
+```bash
+git rebase main -X ours
+```
+
+If the rebase produces results the user should see, show them. If the user declines, continue the
+review on the branch as-is.
 
 ## Step 4: Run Sub-agent Reviews
 
