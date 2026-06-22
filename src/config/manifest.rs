@@ -96,7 +96,7 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
         })
         .collect();
 
-    b.sort_unstable_by(|a, b| a.0.cmp(&b.0));
+    b.sort_unstable_by_key(|a| a.0);
     b.into_iter().map(|(_, badge)| badge).collect()
 }
 
