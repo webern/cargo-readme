@@ -9,6 +9,7 @@
 //! # This should NOT be on the output
 //! let condition = true;
 //! if condition {
+//!     # This should also NOT be on the output
 //!     // Some conditional code here
 //!     if condition {
 //!         // Some nested conditional code here
