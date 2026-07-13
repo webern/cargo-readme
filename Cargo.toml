@@ -12,6 +12,7 @@ license = "MIT OR Apache-2.0"
 rust-version = "1.80"
 
 [dependencies]
+cargo_toml = "1"
 clap = { version = "4", features = [ "derive" ] }
 toml = "1"
 regex = "1"

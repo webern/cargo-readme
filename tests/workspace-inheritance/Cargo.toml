@@ -1,0 +1,10 @@
+[workspace]
+members = ["member"]
+
+[workspace.package]
+version = "1.2.3"
+license = "MIT"
+edition = "2021"
+
+[workspace.dependencies]
+serde = "1"

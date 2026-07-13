@@ -2,30 +2,31 @@
 
 use serde::Deserialize;
 use std::collections::BTreeMap;
-use std::fs::File;
-use std::io::Read;
 use std::path::{Path, PathBuf};
 
 use super::badges;
 
 /// Try to get manifest info from Cargo.toml
 pub fn get_manifest(project_root: &Path) -> Result<Manifest, String> {
-    let mut cargo_toml = File::open(project_root.join("Cargo.toml"))
+    let cargo_toml_path = project_root.join("Cargo.toml");
+
+    let manifest = cargo_toml::Manifest::<toml::Value>::from_path(&cargo_toml_path)
         .map_err(|e| format!("Could not read Cargo.toml: {}", e))?;
 
-    let buf = {
-        let mut buf = String::new();
-        cargo_toml
-            .read_to_string(&mut buf)
-            .map_err(|e| format!("{}", e))?;
-        buf
-    };
+    let raw_toml_text = std::fs::read_to_string(&cargo_toml_path)
+        .map_err(|e| format!("Could not read Cargo.toml: {}", e))?;
+    let raw_toml: RawBadges = toml::from_str(&raw_toml_text).map_err(|e| format!("{}", e))?;
 
-    let cargo_toml: CargoToml = toml::from_str(&buf).map_err(|e| format!("{}", e))?;
+    Manifest::try_new(manifest, raw_toml.badges)
+}
 
-    let manifest = Manifest::new(cargo_toml);
-
-    Ok(manifest)
+/// Error message for a field that could not be resolved through workspace inheritance
+fn workspace_inherit_err(field: &str) -> String {
+    format!(
+        "Could not resolve `{field}`: the crate sets `{field}.workspace = true`, but no \
+         workspace root defines `{field}` under `[workspace.package]` (or the workspace \
+         root could not be found)"
+    )
 }
 
 #[derive(Debug)]
@@ -39,23 +40,52 @@ pub struct Manifest {
 }
 
 impl Manifest {
-    fn new(cargo_toml: CargoToml) -> Manifest {
-        Manifest {
-            name: cargo_toml.package.name,
-            license: cargo_toml.package.license,
-            lib: cargo_toml.lib.map(ManifestLib::from_cargo_toml),
-            bin: cargo_toml
-                .bin
-                .map(|bin_vec| {
-                    bin_vec
-                        .into_iter()
-                        .map(ManifestLib::from_cargo_toml)
-                        .collect()
-                })
-                .unwrap_or_default(),
-            badges: cargo_toml.badges.map(process_badges).unwrap_or_default(),
-            version: cargo_toml.package.version,
-        }
+    fn try_new(
+        manifest: cargo_toml::Manifest<toml::Value>,
+        badges_raw: Option<BTreeMap<String, BTreeMap<String, String>>>,
+    ) -> Result<Manifest, String> {
+        let package = manifest
+            .package
+            .as_ref()
+            .ok_or_else(|| "Missing [package] section in Cargo.toml".to_string())?;
+
+        let name = package.name.clone();
+
+        let license = package
+            .license
+            .as_ref()
+            .map(|l| l.get().map(|s| s.to_owned()))
+            .transpose()
+            .map_err(|_| workspace_inherit_err("license"))?;
+
+        let lib = manifest
+            .lib
+            .as_ref()
+            .map(ManifestLib::from_product)
+            .transpose()?;
+
+        let bin = manifest
+            .bin
+            .iter()
+            .map(ManifestLib::from_product)
+            .collect::<Result<Vec<_>, _>>()?;
+
+        let badges = badges_raw.map(process_badges).unwrap_or_default();
+
+        let version = package
+            .version
+            .get()
+            .map_err(|_| workspace_inherit_err("version"))?
+            .to_string();
+
+        Ok(Manifest {
+            name,
+            license,
+            lib,
+            bin,
+            badges,
+            version,
+        })
     }
 }
 
@@ -66,11 +96,16 @@ pub struct ManifestLib {
 }
 
 impl ManifestLib {
-    fn from_cargo_toml(lib: CargoTomlLib) -> Self {
-        ManifestLib {
-            path: PathBuf::from(lib.path),
-            doc: lib.doc.unwrap_or(true),
-        }
+    fn from_product(product: &cargo_toml::Product) -> Result<Self, String> {
+        let path = product
+            .path
+            .as_ref()
+            .ok_or_else(|| "Missing path for product".to_string())?;
+
+        Ok(ManifestLib {
+            path: PathBuf::from(path),
+            doc: product.doc,
+        })
     }
 }
 
@@ -100,26 +135,8 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
     b.into_iter().map(|(_, badge)| badge).collect()
 }
 
-/// Cargo.toml crate information
+/// Raw badges extraction from TOML
 #[derive(Clone, Deserialize)]
-struct CargoToml {
-    pub package: CargoTomlPackage,
-    pub lib: Option<CargoTomlLib>,
-    pub bin: Option<Vec<CargoTomlLib>>,
+struct RawBadges {
     pub badges: Option<BTreeMap<String, BTreeMap<String, String>>>,
-}
-
-/// Cargo.toml crate package information
-#[derive(Clone, Deserialize)]
-struct CargoTomlPackage {
-    pub name: String,
-    pub license: Option<String>,
-    pub version: String,
-}
-
-/// Cargo.toml crate lib information
-#[derive(Clone, Deserialize)]
-struct CargoTomlLib {
-    pub path: String,
-    pub doc: Option<bool>,
 }
