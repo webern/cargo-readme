@@ -1,7 +1,6 @@
-use assert_cli::Assert;
+use assert_cmd::Command;
 
-const EXPECTED: &str = r#"
-# readme-test
+const EXPECTED: &str = r#"# readme-test
 
 Other readme template.
 
@@ -58,11 +57,10 @@ fn alternate_template() {
         "NOTITLE.tpl",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }

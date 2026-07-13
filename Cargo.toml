@@ -9,6 +9,7 @@ readme = "README.md"
 keywords = ["readme", "documentation", "cargo", "subcommand"]
 categories = ["development-tools::cargo-plugins"]
 license = "MIT OR Apache-2.0"
+rust-version = "1.80"
 
 [dependencies]
 clap = { version = "4", features = [ "derive" ] }
@@ -16,10 +17,10 @@ toml = "1"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
 percent-encoding = "2"
-lazy_static = "1"
 
 [dev-dependencies]
-assert_cli = "0.6"
+assert_cmd = "2.0"
+predicates = { version = "3.1", default-features = false }
 
 [badges]
 github = { repository = "webern/cargo-readme" }
