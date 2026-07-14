@@ -1,0 +1,83 @@
+name: release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to release (must match Cargo.toml, e.g. 3.3.3)"
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Restrict to authorized actor
+        if: github.actor != 'webern'
+        run: |
+          echo "::error::Only webern may run this workflow (actor was '${{ github.actor }}')."
+          exit 1
+
+      - name: Restrict to main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::This workflow must be run from main (ref was '${{ github.ref }}')."
+          exit 1
+
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Install Rust
+        run: rustup update stable && rustup default stable
+
+      - name: Validate version matches Cargo.toml
+        run: |
+          manifest_version=$(cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version')
+          if [ "$manifest_version" != "${{ inputs.version }}" ]; then
+            echo "::error::Input version '${{ inputs.version }}' does not match Cargo.toml version '$manifest_version'."
+            exit 1
+          fi
+
+      - name: Validate tag does not already exist
+        run: |
+          if git ls-remote --tags origin | grep -q "refs/tags/v${{ inputs.version }}$"; then
+            echo "::error::Tag v${{ inputs.version }} already exists."
+            exit 1
+          fi
+
+      - name: Validate version not already published
+        run: |
+          if curl -sf "https://crates.io/api/v1/crates/cargo-readme/${{ inputs.version }}" > /dev/null; then
+            echo "::error::cargo-readme ${{ inputs.version }} is already published on crates.io."
+            exit 1
+          fi
+
+      - name: Run CI checks
+        run: make ci
+
+      - name: Authenticate with crates.io
+        id: auth
+        uses: rust-lang/crates-io-auth-action@v1
+
+      - name: Publish to crates.io
+        run: cargo publish
+        env:
+          CARGO_REGISTRY_TOKEN: ${{ steps.auth.outputs.token }}
+
+      - name: Tag release
+        run: |
+          git tag -a "v${{ inputs.version }}" -m "v${{ inputs.version }}"
+          git push origin "v${{ inputs.version }}"
+
+      - name: Create GitHub release
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "v${{ inputs.version }}" \
+            --title "v${{ inputs.version }}" \
+            --generate-notes
