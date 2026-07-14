@@ -7,7 +7,6 @@ user-invocable: true
 allowed-tools: Bash Read Grep Glob Edit Write Agent AskUserQuestion TaskCreate TaskUpdate TaskList WebSearch WebFetch LSP NotebookEdit
 effort: high
 ---
-
 # Publish v$0
 
 You are a release assistant. Your job is to walk the user through publishing version `$0` of this
@@ -62,8 +61,8 @@ This is the most important phase. Follow these instructions precisely.
 
 1. Read `CHANGELOG.md` in full.
 2. Derive the repo URL: `gh repo view --json url --jq .url`
-3. Identify the **previous version** from the CHANGELOG — this is the first `## [x.y.z]` entry
-   after `## [Unreleased]`.
+3. Identify the **previous version** from the CHANGELOG — this is the first `## [x.y.z]` entry after
+   `## [Unreleased]`.
 4. Find the date of the previous version's tag:
    ```bash
    git log -1 --format=%ai v{previous_version}
@@ -188,6 +187,13 @@ Once approved, update `CHANGELOG.md`:
    ```
 6. Report CI status to the user. If CI fails, help diagnose and fix.
 
+## Phase 7: Wait for PR Merge
+
+The user will merge the PR on GitHub or authorize you to do so. After that you need to switch to
+main, pull from the correct remote, confirm that you are looking at the same repo state that you
+were previously. Rerun the cargo publish dry-run and tell the user that we are ready for publishing
+and tagging.
+
 ## Phase 7: Publish to crates.io
 
 1. **Ask the user**: "CI is green. Ready to publish v$0 to crates.io?"
@@ -215,8 +221,8 @@ Once approved, update `CHANGELOG.md`:
    gh pr merge release/v$0 --merge
    ```
 3. Extract the CHANGELOG entry for this version (everything between `## [$0]` and the next `## [`)
-   to use as the release body. Include the category headers and items but NOT the PR reference
-   links at the bottom of the section (GitHub will auto-link `#nn` references).
+   to use as the release body. Include the category headers and items but NOT the PR reference links
+   at the bottom of the section (GitHub will auto-link `#nn` references).
 4. **Ask the user** before creating the release.
 5. Create the GitHub release:
    ```bash

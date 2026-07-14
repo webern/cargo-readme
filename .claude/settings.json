@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "printf '{\"hookSpecificOutput\":{\"hookEventName\":\"SessionStart\",\"additionalContext\":\"Before doing any work in this session, read AGENTS.md.\"}}'",
+            "statusMessage": "Reading AGENTS.md..."
+          }
+        ]
+      }
+    ]
+  }
+}
