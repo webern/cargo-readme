@@ -10,20 +10,19 @@ on:
         description: "Commit SHA to release (must be on main)"
         required: true
 
+concurrency:
+  group: release
+  cancel-in-progress: false
+
 jobs:
   release:
     runs-on: ubuntu-latest
+    environment: release
     permissions:
       contents: write
       id-token: write
 
     steps:
-      - name: Restrict to authorized actor
-        if: github.actor != 'webern'
-        run: |
-          echo "::error::Only webern may run this workflow (actor was '${{ github.actor }}')."
-          exit 1
-
       - name: Restrict to main branch
         if: github.ref != 'refs/heads/main'
         run: |
@@ -31,7 +30,7 @@ jobs:
           exit 1
 
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0
           ref: ${{ inputs.sha }}
