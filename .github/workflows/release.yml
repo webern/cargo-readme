@@ -4,10 +4,10 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version to release (must match Cargo.toml, e.g. 3.3.3)"
+        description: "Version WITHOUT a leading v, e.g. 3.3.3 (must match Cargo.toml)"
         required: true
       sha:
-        description: "Commit SHA to release (must be on main)"
+        description: "Full commit SHA to release (must be on main)"
         required: true
 
 concurrency:
@@ -23,6 +23,13 @@ jobs:
       id-token: write
 
     steps:
+      - name: Validate version input format
+        run: |
+          if ! echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::version must be bare semver like 3.3.3 (no leading 'v')."
+            exit 1
+          fi
+
       - name: Restrict to main branch
         if: github.ref != 'refs/heads/main'
         run: |
