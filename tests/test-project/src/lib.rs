@@ -9,6 +9,7 @@
 //! # This should NOT be on the output
 //! let condition = true;
 //! if condition {
+//!     # This should also NOT be on the output
 //!     // Some conditional code here
 //!     if condition {
 //!         // Some nested conditional code here
@@ -33,6 +34,10 @@
 //!
 //! ```should_panic
 //! // And also this should output as ```rust
+//! ```
+//!
+//! ```compile_fail
+//! // This should also output as ```rust
 //! ```
 //!
 //! ```python

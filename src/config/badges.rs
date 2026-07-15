@@ -1,5 +1,7 @@
 use std::collections::BTreeMap;
 
+// https://doc.rust-lang.org/cargo/reference/manifest.html#package-metadata
+
 use percent_encoding as pe;
 
 const BADGE_BRANCH_DEFAULT: &str = "master";
@@ -41,7 +43,7 @@ pub fn circle_ci(attrs: Attrs) -> String {
 
     format!(
         "[![Build Status](https://circleci.com/{service}/{repo}/tree/{branch}.svg?style=shield)]\
-         (https://circleci.com/{service}/{repo}/cargo-readme/tree/{branch})",
+         (https://circleci.com/{service}/{repo}/tree/{branch})",
         repo = repo,
         service = service,
         branch = percent_encode(branch)
@@ -154,8 +156,30 @@ pub fn is_it_maintained_open_issues(attrs: Attrs) -> String {
     )
 }
 
-fn percent_encode(input: &str) -> pe::PercentEncode<pe::PATH_SEGMENT_ENCODE_SET> {
-    pe::utf8_percent_encode(input, pe::PATH_SEGMENT_ENCODE_SET)
+pub fn maintenance(attrs: Attrs) -> String {
+    let status = &attrs["status"];
+
+    // https://github.com/rust-lang/crates.io/blob/5a08887d4b531e034d01386d3e5997514f3c8ee5/src/models/badge.rs#L82
+    let status_with_color = match status.as_ref() {
+        "actively-developed" => "activly--developed-brightgreen",
+        "passively-maintained" => "passively--maintained-yellowgreen",
+        "as-is" => "as--is-yellow",
+        "none" => "maintenance-none-lightgrey", // color is a guess
+        "experimental" => "experimental-blue",
+        "looking-for-maintainer" => "looking--for--maintainer-darkblue", // color is a guess
+        "deprecated" => "deprecated-red",
+        _ => "unknow-black",
+    };
+
+    //example https://img.shields.io/badge/maintenance-experimental-blue.svg
+    format!(
+        "![Maintenance](https://img.shields.io/badge/maintenance-{status}.svg)",
+        status = status_with_color
+    )
+}
+
+fn percent_encode(input: &str) -> pe::PercentEncode<'_> {
+    pe::utf8_percent_encode(input, pe::NON_ALPHANUMERIC)
 }
 
 fn badge_service_short_name(service: &str) -> &'static str {

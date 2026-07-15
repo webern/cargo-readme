@@ -1,6 +1,4 @@
-extern crate assert_cli;
-
-use assert_cli::Assert;
+use assert_cmd::Command;
 
 #[test]
 fn alternate_input_empty_docs() {
@@ -14,13 +12,12 @@ fn alternate_input_empty_docs() {
         "src/no_docs.rs",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is("# readme-test\n\nLicense: MIT")
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout("# readme-test\n\nLicense: MIT\n");
 }
 
 #[test]
@@ -35,21 +32,19 @@ fn alternate_input_single_line() {
         "src/single_line.rs",
     ];
 
-    let expected = r#"
-# readme-test
+    let expected = r#"# readme-test
 
 Test crate for cargo-readme
 
 License: MIT
 "#;
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(expected)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(expected);
 }
 
 #[test]
@@ -64,8 +59,7 @@ fn alternate_input_a_little_bit_longer() {
         "src/other.rs",
     ];
 
-    let expected = r#"
-# readme-test
+    let expected = r#"# readme-test
 
 Test crate for cargo-readme
 
@@ -74,11 +68,10 @@ Test crate for cargo-readme
 License: MIT
 "#;
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(expected)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(expected);
 }

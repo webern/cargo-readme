@@ -1,9 +1,7 @@
-extern crate assert_cli;
+use assert_cmd::Command;
+use predicates::prelude::*;
 
-use assert_cli::Assert;
-
-const EXPECTED: &str = r#"
-# readme-test
+const EXPECTED: &str = r#"# readme-test
 
 Test crate for cargo-readme
 
@@ -39,6 +37,10 @@ if condition {
 // And also this should output as ```rust
 ```
 
+```rust
+// This should also output as ```rust
+```
+
 ```python
 # This should be on the output
 ```
@@ -54,15 +56,14 @@ fn append_license() {
         "--no-badges",
     ];
 
-    let expected = format!("{}\n\n{}", EXPECTED.trim(), "License: MIT");
+    let expected = format!("{}\n\n{}\n", EXPECTED.trim(), "License: MIT");
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(&*expected)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(predicate::str::diff(expected).from_utf8());
 }
 
 #[test]
@@ -76,11 +77,10 @@ fn no_append_license() {
         "--no-license",
     ];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .succeeds()
-        .and()
-        .stdout()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .success()
+        .stdout(EXPECTED);
 }

@@ -1,21 +1,29 @@
 //! Transform code blocks from rustdoc into markdown
 //!
 //! Rewrite code block start tags, changing rustdoc into equivalent in markdown:
-//! - "```", "```no_run", "```ignore" and "```should_panic" are converted to "```rust"
+//! - "```", "```no_run", "```ignore", "```should_panic", and "```compile_fail" are converted to "```rust"
 //! - markdown heading are indentend to be one level lower, so the crate name is at the top level
 
-use std::iter::{IntoIterator, Iterator};
-
 use regex::Regex;
+use std::{
+    iter::{IntoIterator, Iterator},
+    sync::LazyLock,
+};
 
-lazy_static!{
-    // Is this code block rust?
-    static ref RE_CODE_RUST: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic)))?$").unwrap();
-    // Is this code block just text?
-    static ref RE_CODE_TEXT: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})text$").unwrap();
-    // Is this code block a language other than rust?
-    static ref RE_CODE_OTHER: Regex = Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})\w[\w,\+]*$").unwrap();
-}
+// Is this code block rust?
+static RE_CODE_RUST: LazyLock<Regex> = LazyLock::new(|| {
+    Regex::new(
+        r"^(?P<delimiter>`{3,4}|~{3,4})(?:rust|(?:(?:rust,)?(?:no_run|ignore|should_panic|compile_fail)))?$",
+    )
+    .unwrap()
+});
+// Is this code block just text?
+static RE_CODE_TEXT: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})text$").unwrap());
+
+// Is this code block a language other than rust?
+static RE_CODE_OTHER: LazyLock<Regex> =
+    LazyLock::new(|| Regex::new(r"^(?P<delimiter>`{3,4}|~{3,4})\w[\w,\+]*$").unwrap());
 
 /// Process and concatenate the doc lines into a single String
 ///
@@ -38,14 +46,14 @@ impl Processor {
     pub fn new(indent_headings: bool) -> Self {
         Processor {
             section: Section::None,
-            indent_headings: indent_headings,
+            indent_headings,
             delimiter: None,
         }
     }
 
     pub fn process_line(&mut self, mut line: String) -> Option<String> {
         // Skip lines that should be hidden in docs
-        if self.section == Section::CodeRust && line.starts_with("# ") {
+        if self.section == Section::CodeRust && line.trim_ascii_start().starts_with("# ") {
             return None;
         }
 
@@ -163,6 +171,10 @@ mod tests {
         "panic!(\"at the disco\");",
         "```",
         "",
+        "```compile_fail",
+        "x y z",
+        "```",
+        "",
         "```C",
         "int i = 0; // no rust code",
         "```",
@@ -183,6 +195,10 @@ mod tests {
         "",
         "```rust",
         "panic!(\"at the disco\");",
+        "```",
+        "",
+        "```rust",
+        "x y z",
         "```",
         "",
         "```C",
@@ -211,6 +227,10 @@ mod tests {
         "",
         "```rust,should_panic",
         "panic!(\"at the disco\");",
+        "```",
+        "",
+        "```rust,compile_fail",
+        "x y z",
         "```",
         "",
         "```C",

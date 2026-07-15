@@ -33,7 +33,7 @@ fn extract_docs_singleline_style<R: Read>(
 
         if line.starts_with("//!") {
             result.push(normalize_line(line));
-        } else if line.trim().len() > 0 {
+        } else if !line.trim().is_empty() {
             // doc ends, code starts
             break;
         }
@@ -61,7 +61,7 @@ fn extract_docs_multiline_style<R: Read>(
             nesting -= line.matches("*/").count() as isize;
             if nesting < 0 {
                 let mut line = line;
-                line.split_off(pos);
+                let _ = line.split_off(pos);
                 if !line.trim().is_empty() {
                     result.push(line);
                 }

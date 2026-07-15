@@ -1,18 +1,15 @@
-extern crate assert_cli;
+use assert_cmd::Command;
 
-use assert_cli::Assert;
-
-const EXPECTED: &str = "Error: No entrypoint found";
+const EXPECTED: &str = "Error: No entrypoint found\n";
 
 #[test]
 fn no_entrypoint_fail() {
     let args = ["readme", "--project-root", "tests/no-entrypoint-fail"];
 
-    Assert::main_binary()
-        .with_args(&args)
-        .fails()
-        .and()
-        .stderr()
-        .is(EXPECTED)
-        .unwrap();
+    Command::cargo_bin(env!("CARGO_PKG_NAME"))
+        .unwrap()
+        .args(args)
+        .assert()
+        .failure()
+        .stderr(EXPECTED);
 }
