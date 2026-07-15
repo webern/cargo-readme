@@ -134,6 +134,8 @@ jobs:
         env:
           VERSION: ${{ inputs.version }}
         run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "v$VERSION" -m "v$VERSION"
           git push origin "v$VERSION"
 
