@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Version WITHOUT a leading v, e.g. 3.3.3 (must match Cargo.toml)"
+        description: "Version WITHOUT a leading v, e.g. 3.3.3 or 3.3.3-rc1 (must match Cargo.toml)"
         required: true
       sha:
         description: "Full commit SHA to release (must be on main)"
@@ -25,8 +25,8 @@ jobs:
     steps:
       - name: Validate version input format
         run: |
-          if ! echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
-            echo "::error::version must be bare semver like 3.3.3 (no leading 'v')."
+          if ! echo "${{ inputs.version }}" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::version must be semver like 3.3.3 or 3.3.3-rc1 (no leading 'v')."
             exit 1
           fi
 
@@ -97,6 +97,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          prerelease_flag=""
+          case "${{ inputs.version }}" in
+            *-*) prerelease_flag="--prerelease" ;;
+          esac
           gh release create "v${{ inputs.version }}" \
             --title "v${{ inputs.version }}" \
+            $prerelease_flag \
             --generate-notes
