@@ -63,22 +63,19 @@ fn process_template(
 
     if template.contains("{{badges}}") {
         if badges.is_empty() {
-            return Err(
-                "`{{badges}}` was found in template but no badges were provided".to_owned(),
-            );
+            let msg = "`{{badges}}` was found in template but no badges were provided";
+            eprintln!("Warn: {msg}");
         }
         let badges = badges.join("\n");
         template = template.replace("{{badges}}", &badges);
     }
 
     if template.contains("{{license}}") {
-        if let Some(license) = license {
-            template = template.replace("{{license}}", license);
-        } else {
-            return Err(
-                "`{{license}}` was found in template but no license was provided".to_owned(),
-            );
+        if license.is_none() {
+            let msg = "`{{license}}` was found in template but no license was provided";
+            eprintln!("Warn: {msg}");
         }
+        template = template.replace("{{license}}", license.unwrap_or(""));
     }
 
     template = template.replace("{{version}}", version);
@@ -167,37 +164,31 @@ mod tests {
     }
 
     #[test]
-    fn template_with_badge_tag_but_missing_badges_should_fail() {
+    fn template_with_badge_tag_but_missing_badges_should_warn() {
         let result = super::process_template(
             TEMPLATE_WITH_BADGES.to_owned(),
-            String::new(),
+            "readme".to_owned(),
             "",
             &[],
             None,
             "",
         );
-        assert!(result.is_err());
-        assert_eq!(
-            "`{{badges}}` was found in template but no badges were provided",
-            result.unwrap_err()
-        );
+        assert!(result.is_ok());
+        assert_eq!("\n\nreadme", result.unwrap());
     }
 
     #[test]
-    fn template_with_license_tag_but_missing_license_should_fail() {
+    fn template_with_license_tag_but_missing_license_should_warn() {
         let result = super::process_template(
             TEMPLATE_WITH_LICENSE.to_owned(),
-            String::new(),
+            "readme".to_owned(),
             "",
             &[],
             None,
             "",
         );
-        assert!(result.is_err());
-        assert_eq!(
-            "`{{license}}` was found in template but no license was provided",
-            result.unwrap_err()
-        );
+        assert!(result.is_ok());
+        assert_eq!("readme\n\n", result.unwrap());
     }
 
     #[test]
