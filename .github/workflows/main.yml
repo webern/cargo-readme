@@ -2,16 +2,17 @@ name: main
 
 on:
   push:
-    branches: [ main ]
+    branches: [main]
   pull_request:
-    branches: [ main ]
+    branches: [main]
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
-    - uses: actions/checkout@v3
-    - name: CI
-      run: make ci
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0, 2026-06-18
+      - name: CI
+        run: make ci
+      - name: Spell Check Repo
+        uses: crate-ci/typos@v1.48.0
