@@ -145,6 +145,19 @@ License: MY_LICENSE
 By default, `README.tpl` will be used as the template, but you can override it using the
 `--template` to choose a different template or `--no-template` to disable it.
 
+## Reusing a Markdown file as documentation
+
+Rustdoc can pull a crate's documentation straight from a Markdown file:
+
+```rust
+#![doc = include_str!("README.rustdoc.md")]
+```
+
+Point `cargo readme` at that same file with `--no-comment-extraction` and it will process the
+Markdown as-is instead of scanning for doc comments, so a single source produces both the
+rendered crate docs and the repository `README.md`. Hidden doctest lines (starting with `# `)
+are still stripped, so examples stay runnable in `cargo test` yet read cleanly on GitHub.
+
 ## License
 
 Licensed under either of
