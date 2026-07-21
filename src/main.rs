@@ -95,7 +95,7 @@ fn execute(args: &ReadmeArgs) -> Result<(), String> {
     let mut source = helper::get_source(&project_root, args.input.as_deref())?;
 
     // get destination file
-    let mut dest = helper::get_dest(&project_root, args.output.as_deref())?;
+    let mut dest = helper::get_dest(args.output.as_deref())?;
 
     // get template file
     let mut template_file = if args.no_template {
