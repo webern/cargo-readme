@@ -29,18 +29,11 @@ pub fn get_source(project_root: &Path, input: Option<&str>) -> Result<File, Stri
 }
 
 /// Get the destination file where the result will be output to
-pub fn get_dest(project_root: &Path, output: Option<&str>) -> Result<Option<File>, String> {
+pub fn get_dest(output: Option<&str>) -> Result<Option<File>, String> {
     match output {
-        Some(filename) => {
-            let output = project_root.join(filename);
-            File::create(&output).map(Some).map_err(|e| {
-                format!(
-                    "Could not create output file '{}': {}",
-                    output.to_string_lossy(),
-                    e
-                )
-            })
-        }
+        Some(filename) => File::create(filename)
+            .map(Some)
+            .map_err(|e| format!("Could not create output file '{}': {}", filename, e)),
         None => Ok(None),
     }
 }
