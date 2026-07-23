@@ -70,6 +70,11 @@ struct ReadmeArgs {
     #[clap(long)]
     no_comment_extraction: bool,
 
+    /// List the badges that can be rendered from the `[badges]` section of `Cargo.toml`,
+    /// along with the attributes each one reads, then exit.
+    #[clap(long)]
+    list_badges: bool,
+
     /// File to read from.
     /// If not provided, will try to use `src/lib.rs`, then `src/main.rs`. If neither file
     /// could be found, will look into `Cargo.toml` for a `[lib]`, then for a single `[[bin]]`.
@@ -94,6 +99,10 @@ struct ReadmeArgs {
 
 // Takes the arguments matches from clap and outputs the result, either to stdout of a file
 fn execute(args: &ReadmeArgs) -> Result<(), String> {
+    if args.list_badges {
+        return list_badges();
+    }
+
     // get project root
     let project_root = helper::get_project_root(args.root.as_deref())?;
 
@@ -129,4 +138,26 @@ fn execute(args: &ReadmeArgs) -> Result<(), String> {
     )?;
 
     helper::write_output(&mut dest, readme)
+}
+
+// Print the supported badges and the attributes each one reads. Format mirrors the
+// `[badges]` table so the output can be copied into a Cargo.toml.
+fn list_badges() -> Result<(), String> {
+    let mut out = String::from("Supported badges (add under [badges] in Cargo.toml):\n\n");
+    for badge in cargo_readme::supported_badges() {
+        out.push_str("  ");
+        out.push_str(badge.key);
+        if !badge.official {
+            out.push_str("  (cargo-readme extension)");
+        }
+        out.push('\n');
+        if !badge.required.is_empty() {
+            out.push_str(&format!("    required: {}\n", badge.required.join(", ")));
+        }
+        if !badge.optional.is_empty() {
+            out.push_str(&format!("    optional: {}\n", badge.optional.join(", ")));
+        }
+    }
+    print!("{}", out);
+    Ok(())
 }

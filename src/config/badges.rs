@@ -10,6 +10,92 @@ const BADGE_WORKFLOW_DEFAULT: &str = "main";
 
 type Attrs = BTreeMap<String, String>;
 
+/// A badge key cargo-readme understands, plus which attributes it reads.
+///
+/// This is the single source of truth behind `cargo readme --list-badges`. The
+/// `key`s here must stay in sync with the match arms in [`super::manifest::process_badges`];
+/// a unit test in that module enforces it.
+pub struct BadgeInfo {
+    /// The `[badges]` table key, e.g. `"coveralls"`.
+    pub key: &'static str,
+    /// Whether crates.io documents this badge in the manifest reference.
+    pub official: bool,
+    /// Attributes that must be present, or badge rendering fails.
+    pub required: &'static [&'static str],
+    /// Attributes that are read when present, otherwise defaulted.
+    pub optional: &'static [&'static str],
+}
+
+/// Every badge cargo-readme can render, in the order they appear in the output.
+pub const SUPPORTED_BADGES: &[BadgeInfo] = &[
+    BadgeInfo {
+        key: "crates-io",
+        official: false,
+        required: &[],
+        optional: &["crate"],
+    },
+    BadgeInfo {
+        key: "appveyor",
+        official: true,
+        required: &["repository"],
+        optional: &["branch", "service"],
+    },
+    BadgeInfo {
+        key: "circle-ci",
+        official: true,
+        required: &["repository"],
+        optional: &["branch", "service"],
+    },
+    BadgeInfo {
+        key: "gitlab",
+        official: true,
+        required: &["repository"],
+        optional: &["branch"],
+    },
+    BadgeInfo {
+        key: "travis-ci",
+        official: true,
+        required: &["repository"],
+        optional: &["branch"],
+    },
+    BadgeInfo {
+        key: "github",
+        official: false,
+        required: &["repository"],
+        optional: &["workflow"],
+    },
+    BadgeInfo {
+        key: "codecov",
+        official: true,
+        required: &["repository"],
+        optional: &["branch", "service"],
+    },
+    BadgeInfo {
+        key: "coveralls",
+        official: true,
+        required: &["repository"],
+        optional: &["branch", "service"],
+    },
+    BadgeInfo {
+        key: "is-it-maintained-issue-resolution",
+        official: true,
+        required: &["repository"],
+        optional: &[],
+    },
+    BadgeInfo {
+        key: "is-it-maintained-open-issues",
+        official: true,
+        required: &["repository"],
+        optional: &[],
+    },
+    BadgeInfo {
+        key: "maintenance",
+        official: true,
+        required: &["status"],
+        optional: &[],
+    },
+];
+
 pub fn appveyor(attrs: Attrs) -> Result<String, String> {
     let repo = required(&attrs, "appveyor", "repository")?;
     let branch = attrs

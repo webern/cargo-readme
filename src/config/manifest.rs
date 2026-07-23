@@ -112,6 +112,8 @@ impl ManifestLib {
     }
 }
 
+// The keys matched here are the source of truth for which badges exist; they must stay
+// in sync with `badges::SUPPORTED_BADGES` (asserted by `supported_badges_in_sync`).
 fn process_badges(
     badges: BTreeMap<String, BTreeMap<String, String>>,
     crate_name: &str,
@@ -147,4 +149,48 @@ fn process_badges(
 #[derive(Clone, Deserialize)]
 struct RawBadges {
     pub badges: Option<BTreeMap<String, BTreeMap<String, String>>>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    // Guards against `SUPPORTED_BADGES` (used by --list-badges) drifting from the badge
+    // keys `process_badges` actually renders.
+    #[test]
+    fn supported_badges_in_sync() {
+        let documented: Vec<&str> = badges::SUPPORTED_BADGES.iter().map(|b| b.key).collect();
+        for key in [
+            "crates-io",
+            "appveyor",
+            "circle-ci",
+            "gitlab",
+            "travis-ci",
+            "github",
+            "codecov",
+            "coveralls",
+            "is-it-maintained-issue-resolution",
+            "is-it-maintained-open-issues",
+            "maintenance",
+        ] {
+            let mut attrs = BTreeMap::new();
+            attrs.insert("repository".to_string(), "owner/repo".to_string());
+            attrs.insert("status".to_string(), "actively-developed".to_string());
+            let mut input = BTreeMap::new();
+            input.insert(key.to_string(), attrs);
+
+            let rendered = process_badges(input, "some-crate").unwrap();
+            assert_eq!(rendered.len(), 1, "`{key}` should render a badge");
+            assert!(
+                documented.contains(&key),
+                "`{key}` missing from SUPPORTED_BADGES"
+            );
+        }
+
+        assert_eq!(
+            documented.len(),
+            11,
+            "SUPPORTED_BADGES has an unexpected count"
+        );
+    }
 }

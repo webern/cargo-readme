@@ -10,7 +10,9 @@ appveyor = { repository = "cargo-readme/test" }
 circle-ci = { repository = "cargo-readme/test" }
 gitlab = { repository = "cargo-readme/test" }
 travis-ci = { repository = "cargo-readme/test" }
+github = { repository = "cargo-readme/test" }
 codecov = { repository = "cargo-readme/test" }
 coveralls = { repository = "cargo-readme/test", branch = "main" }
 is-it-maintained-issue-resolution = { repository = "cargo-readme/test" }
 is-it-maintained-open-issues = { repository = "cargo-readme/test" }
+maintenance = { status = "actively-developed" }
