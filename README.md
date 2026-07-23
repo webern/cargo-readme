@@ -145,6 +145,34 @@ License: MY_LICENSE
 By default, `README.tpl` will be used as the template, but you can override it using the
 `--template` to choose a different template or `--no-template` to disable it.
 
+## Badges
+
+`crates.io` no longer renders the `[badges]` section of `Cargo.toml` on the crate page, but it
+does render your `README.md`. `cargo-readme` bridges the two: it turns each entry in `[badges]`
+into a markdown badge prepended to the output (unless you pass `--no-badges`). The supported
+keys and the attributes each one reads are:
+
+| Badge key | Required | Optional |
+|---|---|---|
+| `crates-io` *(extension)* | | `crate` (defaults to the package name) |
+| `appveyor` | `repository` | `branch`, `service` |
+| `circle-ci` | `repository` | `branch`, `service` |
+| `gitlab` | `repository` | `branch` |
+| `travis-ci` | `repository` | `branch` |
+| `github` *(extension)* | `repository` | `workflow` |
+| `codecov` | `repository` | `branch`, `service` |
+| `coveralls` | `repository` | `branch`, `service` |
+| `is-it-maintained-issue-resolution` | `repository` | |
+| `is-it-maintained-open-issues` | `repository` | |
+| `maintenance` | `status` | |
+
+`maintenance` is the only badge the [Cargo manifest reference][manifest] still documents; its
+`status` accepts `actively-developed`, `passively-maintained`, `as-is`, `experimental`,
+`looking-for-maintainer`, `deprecated`, and `none`. `github` and `crates-io` are `cargo-readme`
+extensions. Run `cargo readme --list-badges` to print this list from your terminal.
+
+[manifest]: https://doc.rust-lang.org/cargo/reference/manifest.html#the-badges-section
+
 ## Reusing a Markdown file as documentation
 
 Rustdoc can pull a crate's documentation straight from a Markdown file:
