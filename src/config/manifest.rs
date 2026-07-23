@@ -70,7 +70,7 @@ impl Manifest {
             .map(ManifestLib::from_product)
             .collect::<Result<Vec<_>, _>>()?;
 
-        let badges = badges_raw.map(process_badges).unwrap_or_default();
+        let badges = badges_raw.map(process_badges).transpose()?.unwrap_or_default();
 
         let version = package
             .version
@@ -109,8 +109,8 @@ impl ManifestLib {
     }
 }
 
-fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<String> {
-    let mut b: Vec<(u16, _)> = badges
+fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Result<Vec<String>, String> {
+    let mut b: Vec<(u16, String)> = badges
         .into_iter()
         .filter_map(|(name, attrs)| match name.as_ref() {
             "appveyor" => Some((0, badges::appveyor(attrs))),
@@ -129,10 +129,11 @@ fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Vec<Str
             "maintenance" => Some((9, badges::maintenance(attrs))),
             _ => None,
         })
-        .collect();
+        .map(|(order, badge)| badge.map(|b| (order, b)))
+        .collect::<Result<_, _>>()?;
 
     b.sort_unstable_by_key(|a| a.0);
-    b.into_iter().map(|(_, badge)| badge).collect()
+    Ok(b.into_iter().map(|(_, badge)| badge).collect())
 }
 
 /// Raw badges extraction from TOML

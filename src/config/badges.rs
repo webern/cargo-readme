@@ -10,8 +10,8 @@ const BADGE_WORKFLOW_DEFAULT: &str = "main";
 
 type Attrs = BTreeMap<String, String>;
 
-pub fn appveyor(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
+pub fn appveyor(attrs: Attrs) -> Result<String, String> {
+    let repo = required(&attrs, "appveyor", "repository")?;
     let branch = attrs
         .get("branch")
         .map(|i| i.as_ref())
@@ -21,15 +21,15 @@ pub fn appveyor(attrs: Attrs) -> String {
         .map(|i| i.as_ref())
         .unwrap_or(BADGE_SERVICE_DEFAULT);
 
-    format!(
+    Ok(format!(
         "[![Build Status](https://ci.appveyor.com/api/projects/status/{service}/{repo}?branch={branch}&svg=true)]\
         (https://ci.appveyor.com/project/{repo}/branch/{branch})",
         repo=repo, branch=branch, service=service
-    )
+    ))
 }
 
-pub fn circle_ci(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
+pub fn circle_ci(attrs: Attrs) -> Result<String, String> {
+    let repo = required(&attrs, "circle-ci", "repository")?;
     let branch = attrs
         .get("branch")
         .map(|i| i.as_ref())
@@ -41,63 +41,63 @@ pub fn circle_ci(attrs: Attrs) -> String {
             .unwrap_or(BADGE_SERVICE_DEFAULT),
     );
 
-    format!(
+    Ok(format!(
         "[![Build Status](https://circleci.com/{service}/{repo}/tree/{branch}.svg?style=shield)]\
          (https://circleci.com/{service}/{repo}/tree/{branch})",
         repo = repo,
         service = service,
         branch = percent_encode(branch)
-    )
+    ))
 }
 
-pub fn gitlab(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
+pub fn gitlab(attrs: Attrs) -> Result<String, String> {
+    let repo = required(&attrs, "gitlab", "repository")?;
     let branch = attrs
         .get("branch")
         .map(|i| i.as_ref())
         .unwrap_or(BADGE_BRANCH_DEFAULT);
 
-    format!(
+    Ok(format!(
         "[![Build Status](https://gitlab.com/{repo}/badges/{branch}/pipeline.svg)]\
          (https://gitlab.com/{repo}/commits/master)",
         repo = repo,
         branch = percent_encode(branch)
-    )
+    ))
 }
 
-pub fn travis_ci(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
+pub fn travis_ci(attrs: Attrs) -> Result<String, String> {
+    let repo = required(&attrs, "travis-ci", "repository")?;
     let branch = attrs
         .get("branch")
         .map(|i| i.as_ref())
         .unwrap_or(BADGE_BRANCH_DEFAULT);
 
-    format!(
+    Ok(format!(
         "[![Build Status](https://travis-ci.org/{repo}.svg?branch={branch})]\
          (https://travis-ci.org/{repo})",
         repo = repo,
         branch = percent_encode(branch)
-    )
+    ))
 }
 
-pub fn github(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
+pub fn github(attrs: Attrs) -> Result<String, String> {
+    let repo = required(&attrs, "github", "repository")?;
     let workflow = attrs
         .get("workflow")
         .map(|i| i.as_ref())
         .unwrap_or(BADGE_WORKFLOW_DEFAULT);
 
-    format!(
+    Ok(format!(
         "[![Workflow Status](https://github.com/{repo}/workflows/{workflow}/badge.svg)]\
          (https://github.com/{repo}/actions?query=workflow%3A%22{workflow_plus}%22)",
         repo = repo,
         workflow = percent_encode(workflow),
         workflow_plus = percent_encode(&str::replace(workflow, " ", "+"))
-    )
+    ))
 }
 
-pub fn codecov(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
+pub fn codecov(attrs: Attrs) -> Result<String, String> {
+    let repo = required(&attrs, "codecov", "repository")?;
     let branch = attrs
         .get("branch")
         .map(|i| i.as_ref())
@@ -109,17 +109,17 @@ pub fn codecov(attrs: Attrs) -> String {
             .unwrap_or(BADGE_SERVICE_DEFAULT),
     );
 
-    format!(
+    Ok(format!(
         "[![Coverage Status](https://codecov.io/{service}/{repo}/branch/{branch}/graph/badge.svg)]\
          (https://codecov.io/{service}/{repo})",
         repo = repo,
         branch = percent_encode(branch),
         service = service
-    )
+    ))
 }
 
-pub fn coveralls(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
+pub fn coveralls(attrs: Attrs) -> Result<String, String> {
+    let repo = required(&attrs, "coveralls", "repository")?;
     let branch = attrs
         .get("branch")
         .map(|i| i.as_ref())
@@ -129,38 +129,38 @@ pub fn coveralls(attrs: Attrs) -> String {
         .map(|i| i.as_ref())
         .unwrap_or(BADGE_SERVICE_DEFAULT);
 
-    format!(
+    Ok(format!(
         "[![Coverage Status](https://coveralls.io/repos/{service}/{repo}/badge.svg?branch=branch)]\
          (https://coveralls.io/{service}/{repo}?branch={branch})",
         repo = repo,
         branch = percent_encode(branch),
         service = service
-    )
+    ))
 }
 
-pub fn is_it_maintained_issue_resolution(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
-    format!(
+pub fn is_it_maintained_issue_resolution(attrs: Attrs) -> Result<String, String> {
+    let repo = required(&attrs, "is-it-maintained-issue-resolution", "repository")?;
+    Ok(format!(
         "[![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/{repo}.svg)]\
         (https://isitmaintained.com/project/{repo} \"Average time to resolve an issue\")",
         repo=repo
-    )
+    ))
 }
 
-pub fn is_it_maintained_open_issues(attrs: Attrs) -> String {
-    let repo = &attrs["repository"];
-    format!(
+pub fn is_it_maintained_open_issues(attrs: Attrs) -> Result<String, String> {
+    let repo = required(&attrs, "is-it-maintained-open-issues", "repository")?;
+    Ok(format!(
         "[![Percentage of issues still open](https://isitmaintained.com/badge/open/{repo}.svg)]\
          (https://isitmaintained.com/project/{repo} \"Percentage of issues still open\")",
         repo = repo
-    )
+    ))
 }
 
-pub fn maintenance(attrs: Attrs) -> String {
-    let status = &attrs["status"];
+pub fn maintenance(attrs: Attrs) -> Result<String, String> {
+    let status = required(&attrs, "maintenance", "status")?;
 
     // https://github.com/rust-lang/crates.io/blob/5a08887d4b531e034d01386d3e5997514f3c8ee5/src/models/badge.rs#L82
-    let status_with_color = match status.as_ref() {
+    let status_with_color = match status {
         "actively-developed" => "actively--developed-brightgreen",
         "passively-maintained" => "passively--maintained-yellowgreen",
         "as-is" => "as--is-yellow",
@@ -172,10 +172,18 @@ pub fn maintenance(attrs: Attrs) -> String {
     };
 
     //example https://img.shields.io/badge/maintenance-experimental-blue.svg
-    format!(
+    Ok(format!(
         "![Maintenance](https://img.shields.io/badge/maintenance-{status}.svg)",
         status = status_with_color
-    )
+    ))
+}
+
+/// Look up an attribute that a badge cannot render without.
+fn required<'a>(attrs: &'a Attrs, badge: &str, key: &str) -> Result<&'a str, String> {
+    attrs
+        .get(key)
+        .map(String::as_str)
+        .ok_or_else(|| format!("badge `{badge}` is missing required attribute `{key}`"))
 }
 
 fn percent_encode(input: &str) -> pe::PercentEncode<'_> {
