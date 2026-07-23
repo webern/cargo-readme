@@ -70,7 +70,10 @@ impl Manifest {
             .map(ManifestLib::from_product)
             .collect::<Result<Vec<_>, _>>()?;
 
-        let badges = badges_raw.map(process_badges).transpose()?.unwrap_or_default();
+        let badges = badges_raw
+            .map(|b| process_badges(b, &name))
+            .transpose()?
+            .unwrap_or_default();
 
         let version = package
             .version
@@ -109,24 +112,28 @@ impl ManifestLib {
     }
 }
 
-fn process_badges(badges: BTreeMap<String, BTreeMap<String, String>>) -> Result<Vec<String>, String> {
+fn process_badges(
+    badges: BTreeMap<String, BTreeMap<String, String>>,
+    crate_name: &str,
+) -> Result<Vec<String>, String> {
     let mut b: Vec<(u16, String)> = badges
         .into_iter()
         .filter_map(|(name, attrs)| match name.as_ref() {
-            "appveyor" => Some((0, badges::appveyor(attrs))),
-            "circle-ci" => Some((1, badges::circle_ci(attrs))),
-            "gitlab" => Some((2, badges::gitlab(attrs))),
-            "travis-ci" => Some((3, badges::travis_ci(attrs))),
-            "github" => Some((4, badges::github(attrs))),
-            "codecov" => Some((5, badges::codecov(attrs))),
-            "coveralls" => Some((6, badges::coveralls(attrs))),
+            "crates-io" => Some((0, badges::crates_io(attrs, crate_name))),
+            "appveyor" => Some((1, badges::appveyor(attrs))),
+            "circle-ci" => Some((2, badges::circle_ci(attrs))),
+            "gitlab" => Some((3, badges::gitlab(attrs))),
+            "travis-ci" => Some((4, badges::travis_ci(attrs))),
+            "github" => Some((5, badges::github(attrs))),
+            "codecov" => Some((6, badges::codecov(attrs))),
+            "coveralls" => Some((7, badges::coveralls(attrs))),
             "is-it-maintained-issue-resolution" => {
-                Some((7, badges::is_it_maintained_issue_resolution(attrs)))
+                Some((8, badges::is_it_maintained_issue_resolution(attrs)))
             }
             "is-it-maintained-open-issues" => {
-                Some((8, badges::is_it_maintained_open_issues(attrs)))
+                Some((9, badges::is_it_maintained_open_issues(attrs)))
             }
-            "maintenance" => Some((9, badges::maintenance(attrs))),
+            "maintenance" => Some((10, badges::maintenance(attrs))),
             _ => None,
         })
         .map(|(order, badge)| badge.map(|b| (order, b)))

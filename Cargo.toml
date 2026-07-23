@@ -24,4 +24,5 @@ assert_cmd = "2.0"
 predicates = { version = "3.1", default-features = false }
 
 [badges]
+crates-io = { crate = "cargo-readme" }
 github = { repository = "webern/cargo-readme" }

@@ -5,6 +5,7 @@ authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
 license = "MIT"
 
 [badges]
+crates-io = {}
 appveyor = { repository = "cargo-readme/test" }
 circle-ci = { repository = "cargo-readme/test" }
 gitlab = { repository = "cargo-readme/test" }

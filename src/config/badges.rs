@@ -178,6 +178,16 @@ pub fn maintenance(attrs: Attrs) -> Result<String, String> {
     ))
 }
 
+pub fn crates_io(attrs: Attrs, crate_name: &str) -> Result<String, String> {
+    // Not part of the official `[badges]` set, but the crate name is already in
+    // `Cargo.toml`, so `crate` defaults to the package name when omitted.
+    let name = attrs.get("crate").map(|s| s.as_ref()).unwrap_or(crate_name);
+    Ok(format!(
+        "[![Crates.io](https://img.shields.io/crates/v/{name}.svg)](https://crates.io/crates/{name})",
+        name = name
+    ))
+}
+
 /// Look up an attribute that a badge cannot render without.
 fn required<'a>(attrs: &'a Attrs, badge: &str, key: &str) -> Result<&'a str, String> {
     attrs
