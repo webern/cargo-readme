@@ -130,7 +130,7 @@ pub fn coveralls(attrs: Attrs) -> Result<String, String> {
         .unwrap_or(BADGE_SERVICE_DEFAULT);
 
     Ok(format!(
-        "[![Coverage Status](https://coveralls.io/repos/{service}/{repo}/badge.svg?branch=branch)]\
+        "[![Coverage Status](https://coveralls.io/repos/{service}/{repo}/badge.svg?branch={branch})]\
          (https://coveralls.io/{service}/{repo}?branch={branch})",
         repo = repo,
         branch = percent_encode(branch),

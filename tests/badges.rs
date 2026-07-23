@@ -5,7 +5,7 @@ const EXPECTED: &str = r#"[![Build Status](https://ci.appveyor.com/api/projects/
 [![Build Status](https://gitlab.com/cargo-readme/test/badges/master/pipeline.svg)](https://gitlab.com/cargo-readme/test/commits/master)
 [![Build Status](https://travis-ci.org/cargo-readme/test.svg?branch=master)](https://travis-ci.org/cargo-readme/test)
 [![Coverage Status](https://codecov.io/gh/cargo-readme/test/branch/master/graph/badge.svg)](https://codecov.io/gh/cargo-readme/test)
-[![Coverage Status](https://coveralls.io/repos/github/cargo-readme/test/badge.svg?branch=branch)](https://coveralls.io/github/cargo-readme/test?branch=master)
+[![Coverage Status](https://coveralls.io/repos/github/cargo-readme/test/badge.svg?branch=main)](https://coveralls.io/github/cargo-readme/test?branch=main)
 [![Average time to resolve an issue](https://isitmaintained.com/badge/resolution/cargo-readme/test.svg)](https://isitmaintained.com/project/cargo-readme/test "Average time to resolve an issue")
 [![Percentage of issues still open](https://isitmaintained.com/badge/open/cargo-readme/test.svg)](https://isitmaintained.com/project/cargo-readme/test "Percentage of issues still open")
 
