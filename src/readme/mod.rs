@@ -7,21 +7,46 @@ mod template;
 
 use crate::config;
 
+/// Toggles controlling how the README is generated.
+///
+/// Bundling these flags keeps `generate_readme` free of a long run of same-typed `bool`
+/// arguments, which are easy to transpose at the call site.
+#[derive(Debug, Clone, Copy)]
+pub struct ReadmeOptions {
+    /// Prepend the crate name as a title. Ignored when using a template.
+    pub add_title: bool,
+    /// Prepend the badges defined in `Cargo.toml`. Ignored when using a template.
+    pub add_badges: bool,
+    /// Append the license defined in `Cargo.toml`. Ignored when using a template.
+    pub add_license: bool,
+    /// Add an extra level to headings so the crate name can be the top heading.
+    pub indent_headings: bool,
+    /// Extract docs from comments rather than processing the input file as-is.
+    pub extract_from_comment: bool,
+}
+
+impl Default for ReadmeOptions {
+    fn default() -> Self {
+        ReadmeOptions {
+            add_title: true,
+            add_badges: true,
+            add_license: true,
+            indent_headings: true,
+            extract_from_comment: true,
+        }
+    }
+}
+
 /// Generates readme data from `source` file
 ///
 /// Optionally, a template can be used to render the output
-#[allow(clippy::too_many_arguments)]
 pub fn generate_readme<T: Read>(
     project_root: &Path,
     source: &mut T,
     template: Option<&mut T>,
-    add_title: bool,
-    add_badges: bool,
-    add_license: bool,
-    indent_headings: bool,
-    extract_from_comment: bool,
+    options: ReadmeOptions,
 ) -> Result<String, String> {
-    let lines = if extract_from_comment {
+    let lines = if options.extract_from_comment {
         extract::extract_docs(source).map_err(|e| format!("{}", e))?
     } else {
         BufReader::new(source)
@@ -30,7 +55,7 @@ pub fn generate_readme<T: Read>(
             .map_err(|e| format!("{}", e))?
     };
 
-    let readme = process::process_docs(lines, indent_headings).join("\n");
+    let readme = process::process_docs(lines, options.indent_headings).join("\n");
 
     // get template from file
     let template = if let Some(template) = template {
@@ -42,7 +67,7 @@ pub fn generate_readme<T: Read>(
     // get manifest from Cargo.toml
     let cargo = config::get_manifest(project_root)?;
 
-    template::render(template, readme, &cargo, add_title, add_badges, add_license)
+    template::render(template, readme, &cargo, options)
 }
 
 /// Load a template String from a file

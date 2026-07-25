@@ -190,3 +190,4 @@ pub use config::get_manifest;
 pub use config::project;
 pub use config::{supported_badges, BadgeInfo};
 pub use readme::generate_readme;
+pub use readme::ReadmeOptions;

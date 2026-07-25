@@ -1,4 +1,5 @@
 use crate::config::Manifest;
+use crate::readme::ReadmeOptions;
 
 /// Renders the template
 ///
@@ -7,9 +8,7 @@ pub fn render(
     template: Option<String>,
     readme: String,
     cargo: &Manifest,
-    add_title: bool,
-    add_badges: bool,
-    add_license: bool,
+    options: ReadmeOptions,
 ) -> Result<String, String> {
     let title: &str = &cargo.name;
 
@@ -28,9 +27,9 @@ pub fn render(
             title,
             badges,
             license,
-            add_title,
-            add_badges,
-            add_license,
+            options.add_title,
+            options.add_badges,
+            options.add_license,
         )
     }
 }
