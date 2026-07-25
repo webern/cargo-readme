@@ -1,3 +1,9 @@
+' STALE — kept for historical reasons, not accuracy.
+'
+' This diagram predates the current code and describes an aspirational design that was never
+' implemented (e.g. ConfigHelper, Renderer, a ReadmeConfig struct). The source code is the
+' specification: see src/readme/ and src/config/. Do not treat this file as authoritative.
+
 @startuml
 
 package std::iter {
