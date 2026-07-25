@@ -119,23 +119,17 @@ fn execute(args: &ReadmeArgs) -> Result<(), String> {
         helper::get_template_file(&project_root, args.template.as_deref())?
     };
 
-    let add_title = !args.no_title;
-    let add_badges = !args.no_badges;
-    let add_license = !args.no_license;
-    let indent_headings = !args.no_indent_headings;
-    let extract_from_comment = !args.no_comment_extraction;
+    let options = cargo_readme::ReadmeOptions {
+        add_title: !args.no_title,
+        add_badges: !args.no_badges,
+        add_license: !args.no_license,
+        indent_headings: !args.no_indent_headings,
+        extract_from_comment: !args.no_comment_extraction,
+    };
 
     // generate output
-    let readme = cargo_readme::generate_readme(
-        &project_root,
-        &mut source,
-        template_file.as_mut(),
-        add_title,
-        add_badges,
-        add_license,
-        indent_headings,
-        extract_from_comment,
-    )?;
+    let readme =
+        cargo_readme::generate_readme(&project_root, &mut source, template_file.as_mut(), options)?;
 
     helper::write_output(&mut dest, readme)
 }
