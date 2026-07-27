@@ -89,7 +89,7 @@ dependencies = [
 
 [[package]]
 name = "cargo-readme"
-version = "3.3.3"
+version = "3.4.0"
 dependencies = [
  "assert_cmd",
  "cargo_toml",
