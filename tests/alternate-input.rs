@@ -9,7 +9,7 @@ fn alternate_input_empty_docs() {
         "--no-template",
         "--no-badges",
         "--input",
-        "src/no_docs.rs",
+        "tests/test-project/src/no_docs.rs",
     ];
 
     Command::cargo_bin(env!("CARGO_PKG_NAME"))
@@ -29,7 +29,7 @@ fn alternate_input_single_line() {
         "--no-template",
         "--no-badges",
         "--input",
-        "src/single_line.rs",
+        "tests/test-project/src/single_line.rs",
     ];
 
     let expected = r#"# readme-test
@@ -56,7 +56,7 @@ fn alternate_input_a_little_bit_longer() {
         "--no-template",
         "--no-badges",
         "--input",
-        "src/other.rs",
+        "tests/test-project/src/other.rs",
     ];
 
     let expected = r#"# readme-test
