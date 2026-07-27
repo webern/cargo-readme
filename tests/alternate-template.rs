@@ -54,7 +54,7 @@ fn alternate_template() {
         "--project-root",
         "tests/test-project",
         "--template",
-        "NOTITLE.tpl",
+        "tests/test-project/NOTITLE.tpl",
     ];
 
     Command::cargo_bin(env!("CARGO_PKG_NAME"))

@@ -11,7 +11,7 @@ fn markdown_input_without_flag_is_empty() {
         "--no-template",
         "--no-badges",
         "--input",
-        "README.rustdoc.md",
+        "tests/test-project/README.rustdoc.md",
     ];
 
     Command::cargo_bin(env!("CARGO_PKG_NAME"))
@@ -34,7 +34,7 @@ fn markdown_input_with_flag_is_processed() {
         "--no-badges",
         "--no-comment-extraction",
         "--input",
-        "README.rustdoc.md",
+        "tests/test-project/README.rustdoc.md",
     ];
 
     let expected = r#"# readme-test

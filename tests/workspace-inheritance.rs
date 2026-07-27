@@ -27,7 +27,7 @@ fn workspace_inheritance_with_template() {
         "--project-root",
         "tests/workspace-inheritance/member",
         "--template",
-        "README.tpl",
+        "tests/workspace-inheritance/member/README.tpl",
     ];
 
     Command::cargo_bin(env!("CARGO_PKG_NAME"))

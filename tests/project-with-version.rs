@@ -13,7 +13,7 @@ fn template_with_version() {
         "--project-root",
         "tests/project-with-version",
         "--template",
-        "README.tpl",
+        "tests/project-with-version/README.tpl",
     ];
 
     Command::cargo_bin(env!("CARGO_PKG_NAME"))
