@@ -6,6 +6,7 @@ authors = ["Livio Ribeiro <livioribeiro@outlook.com>"]
 description = "A cargo subcommand to generate README.md content from doc comments"
 repository = "https://github.com/webern/cargo-readme"
 readme = "README.md"
+exclude = [ ".claude/", ".github/", "docs/", "tests/", "AGENTS.md", "deafult.nix", "Makefile", "READEME.tpl" ]
 keywords = ["readme", "documentation", "cargo", "subcommand"]
 categories = ["development-tools::cargo-plugins"]
 license = "MIT OR Apache-2.0"
