@@ -14,6 +14,7 @@ rust-version = "1.80"
 [dependencies]
 cargo_toml = "1"
 clap = { version = "4", features = [ "derive" ] }
+glob = "0.3"
 toml = "1"
 regex = "1"
 serde = { version = "1", features = ["derive"] }
