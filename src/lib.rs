@@ -182,6 +182,19 @@
 //! Markdown as-is instead of scanning for doc comments, so a single source produces both the
 //! rendered crate docs and the repository `README.md`. Hidden doctest lines (starting with `# `)
 //! are still stripped, so examples stay runnable in `cargo test` yet read cleanly on GitHub.
+//!
+//! # Workspaces
+//!
+//! A README is generated for one package, so a workspace root with no `[package]` section has to
+//! be narrowed down to a member. If `[workspace]` names exactly one package, `cargo readme` uses
+//! it; otherwise it lists the members so you can pick one:
+//!
+//! ```sh
+//! cargo readme --project-root crates/my-crate -o crates/my-crate/README.md
+//! ```
+//!
+//! `default-members` takes precedence over `members` when both are set, matching how Cargo picks
+//! packages at a workspace root.
 
 mod config;
 mod readme;

@@ -29,7 +29,72 @@ pub fn get_root(given_root: Option<&str>) -> Result<PathBuf, String> {
         ));
     }
 
-    Ok(root)
+    resolve_virtual_manifest(root)
+}
+
+/// Point a virtual manifest at the package it unambiguously stands for
+///
+/// A workspace root without a `[package]` section documents nothing itself, so a README has to be
+/// generated for one of its members. Only a workspace naming exactly one package resolves without
+/// asking; anything else is a choice the caller has to make with `--project-root`.
+fn resolve_virtual_manifest(root: PathBuf) -> Result<PathBuf, String> {
+    let manifest = cargo_toml::Manifest::<toml::Value>::from_path(root.join("Cargo.toml"))
+        .map_err(|e| format!("Could not read Cargo.toml: {}", e))?;
+
+    if manifest.package.is_some() {
+        return Ok(root);
+    }
+
+    // Not a workspace either: leave the manifest to report its own missing `[package]`.
+    let Some(workspace) = manifest.workspace else {
+        return Ok(root);
+    };
+
+    let patterns = if workspace.default_members.is_empty() {
+        &workspace.members
+    } else {
+        &workspace.default_members
+    };
+
+    let mut members = Vec::new();
+    for pattern in patterns {
+        for member in expand_member(&root, pattern)? {
+            if !workspace.exclude.contains(&member) && !members.contains(&member) {
+                members.push(member);
+            }
+        }
+    }
+    members.sort();
+
+    match members.len() {
+        1 => Ok(root.join(&members[0])),
+        0 => Err("Cargo.toml is a virtual manifest with no workspace members".to_owned()),
+        _ => Err(format!(
+            "Multiple workspace members found, choose one with --project-root: [{}]",
+            members.join(", ")
+        )),
+    }
+}
+
+/// Expand one `[workspace] members` entry, which may be a glob, into the packages it names
+fn expand_member(root: &Path, pattern: &str) -> Result<Vec<String>, String> {
+    if !pattern.contains(['*', '?', '[']) {
+        return Ok(vec![pattern.to_owned()]);
+    }
+
+    let absolute = root.join(pattern);
+    let paths = glob::glob(&absolute.to_string_lossy())
+        .map_err(|e| format!("Invalid workspace member pattern '{}': {}", pattern, e))?;
+
+    Ok(paths
+        .filter_map(Result::ok)
+        .filter(|path| path.join("Cargo.toml").is_file())
+        .filter_map(|path| {
+            path.strip_prefix(root)
+                .ok()
+                .map(|rel| rel.to_string_lossy().replace('\\', "/"))
+        })
+        .collect())
 }
 
 /// Find the default entrypoiny to read the doc comments from
