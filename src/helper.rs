@@ -17,12 +17,13 @@ pub fn get_project_root(given_root: Option<&str>) -> Result<PathBuf, String> {
 }
 
 /// Get the source file from which the doc comments will be extracted
+///
+/// A given path is resolved from the current directory, like every other path on the command
+/// line; only the entrypoint fallback is looked up inside the project root.
 pub fn get_source(project_root: &Path, input: Option<&str>) -> Result<File, String> {
     match input {
         Some(input) => {
-            let input = project_root.join(input);
-            File::open(&input)
-                .map_err(|e| format!("Could not open file '{}': {}", input.to_string_lossy(), e))
+            File::open(input).map_err(|e| format!("Could not open file '{}': {}", input, e))
         }
         None => find_entrypoint(project_root),
     }
@@ -39,22 +40,18 @@ pub fn get_dest(output: Option<&str>) -> Result<Option<File>, String> {
 }
 
 /// Get the template file that will be used to render the output
+///
+/// A given path is resolved from the current directory; the default `README.tpl` is a project
+/// file, so it keeps being looked up next to `Cargo.toml`.
 pub fn get_template_file(
     project_root: &Path,
     template: Option<&str>,
 ) -> Result<Option<File>, String> {
     match template {
         // template path was given, try to read it
-        Some(template) => {
-            let template = project_root.join(template);
-            File::open(&template).map(Some).map_err(|e| {
-                format!(
-                    "Could not open template file '{}': {}",
-                    template.to_string_lossy(),
-                    e
-                )
-            })
-        }
+        Some(template) => File::open(template)
+            .map(Some)
+            .map_err(|e| format!("Could not open template file '{}': {}", template, e)),
         // try to read the default template file
         None => {
             let template = project_root.join(DEFAULT_TEMPLATE);

@@ -75,14 +75,15 @@ struct ReadmeArgs {
     #[clap(long)]
     list_badges: bool,
 
-    /// File to read from.
+    /// File to read from, relative to the current directory.
     /// If not provided, will try to use `src/lib.rs`, then `src/main.rs`. If neither file
     /// could be found, will look into `Cargo.toml` for a `[lib]`, then for a single `[[bin]]`.
     /// If multiple binaries are found, an error will be returned.
     #[clap(long, short = 'i')]
     input: Option<String>,
 
-    /// File to write to. If not provided, will output to stdout.
+    /// File to write to, relative to the current directory.
+    /// If not provided, will output to stdout.
     #[clap(long, short = 'o')]
     output: Option<String>,
 
@@ -91,8 +92,8 @@ struct ReadmeArgs {
     #[clap(long = "project-root", short = 'r')]
     root: Option<String>,
 
-    /// Template used to render the output.
-    /// Default behavior is to use `README.tpl` if it exists.
+    /// Template used to render the output, relative to the current directory.
+    /// Default behavior is to use `README.tpl` from the project root if it exists.
     #[clap(long, short = 't')]
     template: Option<String>,
 }
