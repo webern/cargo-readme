@@ -1,0 +1,215 @@
+name: bump-version
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "New version WITHOUT a leading v, e.g. 3.4.1 (the current version updates crates only)"
+        required: true
+      update_crates:
+        description: "Run `cargo update` after bumping the version"
+        required: false
+        type: boolean
+        default: false
+
+# Serialize version bumps so two concurrent runs cannot collide.
+concurrency:
+  group: bump-version
+  cancel-in-progress: false
+
+# Read-only by default; only the open-pr job is granted write access.
+permissions:
+  contents: read
+
+jobs:
+  # Has no write access. Makes and validates the change, then hands it to open-pr as a patch.
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    permissions:
+      contents: read
+    outputs:
+      changed: ${{ steps.diff.outputs.changed }}
+      bumped: ${{ steps.bounds.outputs.bumped }}
+
+    steps:
+      # Reject malformed versions before touching the repository.
+      - name: Validate version input format
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # Match the same version forms the release workflow accepts.
+          if ! echo "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.-]+)?$'; then
+            echo "::error::version must be semver like 3.4.1 or 3.4.1-rc1 (no leading 'v')."
+            exit 1
+          fi
+
+      # Ensure bumps are initiated from main so the PR merges cleanly.
+      - name: Restrict to main branch
+        # Compare the full ref because branch names alone are ambiguous.
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::This workflow must be run from main (ref was '${{ github.ref }}')."
+          exit 1
+
+      # Check out the dispatch commit; open-pr applies the patch to this same commit.
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0, 2026-06-18
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Install Rust
+        uses: actions-rust-lang/setup-rust-toolchain@166cdcfd11aee3cb47222f9ddb555ce30ddb9659 # v1.17.0
+
+      # Refuse to move the version backwards. An equal version is allowed so that update_crates
+      # can refresh dependencies without a version bump.
+      - name: Validate version is not lower than Cargo.toml
+        id: bounds
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          current=$(cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version')
+          # Compare by semver precedence; sort -V wrongly ranks 3.4.1-rc1 above 3.4.1.
+          order=$(python3 - "$current" "$VERSION" <<'EOF'
+          import sys
+
+          def key(version):
+              core, _, pre = version.split("+")[0].partition("-")
+              core = tuple(int(part) for part in core.split("."))
+              if not pre:
+                  return (core, 1, ())
+              # Numeric identifiers rank below alphanumeric ones and compare as numbers.
+              ids = tuple((0, int(i), "") if i.isdigit() else (1, 0, i) for i in pre.split("."))
+              return (core, 0, ids)
+
+          current, new = (key(v) for v in sys.argv[1:])
+          print((new > current) - (new < current))
+          EOF
+          )
+          if [ "$order" -lt 0 ]; then
+            echo "::error::version '$VERSION' is lower than the current version '$current'."
+            exit 1
+          fi
+          if [ "$order" -eq 0 ]; then
+            echo "bumped=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "bumped=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Bump the package version in Cargo.toml and Cargo.lock.
+      - name: Update version
+        env:
+          VERSION: ${{ inputs.version }}
+        run: |
+          # The [package] version is the first `^version = ` line; stop there in case a later
+          # table has one too.
+          sed -i -E '0,/^version = "[^"]*"/s//version = "'"$VERSION"'"/' Cargo.toml
+          # Confirm Cargo itself sees the new version before going further.
+          manifest_version=$(cargo metadata --no-deps --format-version=1 | jq -r '.packages[0].version')
+          if [ "$manifest_version" != "$VERSION" ]; then
+            echo "::error::Cargo.toml now shows '$manifest_version', expected '$VERSION'."
+            exit 1
+          fi
+          # Record the new version in Cargo.lock without touching dependencies.
+          cargo update --workspace
+
+      # Optionally refresh the lockfile's dependency versions.
+      - name: Run cargo update
+        if: inputs.update_crates
+        run: cargo update
+
+      # Skip the slow checks and the PR when there is nothing to change.
+      - name: Check for changes
+        id: diff
+        run: |
+          if git diff --quiet -- Cargo.toml Cargo.lock; then
+            echo "::notice::Cargo.toml and Cargo.lock are already up to date; no PR to open."
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Run the project's complete CI suite against the change.
+      - name: Run CI checks
+        if: steps.diff.outputs.changed == 'true'
+        run: make ci
+
+      - name: Create patch
+        if: steps.diff.outputs.changed == 'true'
+        run: git diff --binary -- Cargo.toml Cargo.lock > bump.patch
+
+      - name: Upload patch
+        if: steps.diff.outputs.changed == 'true'
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2, 2026-10-07
+        with:
+          name: bump-patch
+          path: bump.patch
+          retention-days: 1
+
+  # Privileged job: only runs after verify passes with a change to publish.
+  open-pr:
+    needs: verify
+    if: needs.verify.outputs.changed == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      # Push the version-bump branch.
+      contents: write
+      # Open the pull request.
+      pull-requests: write
+
+    steps:
+      # Check out the same commit verify patched.
+      - name: Checkout
+        uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0, 2026-06-18
+        with:
+          ref: ${{ github.sha }}
+
+      - name: Download patch
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2, 2026-10-07
+        with:
+          name: bump-patch
+          path: ${{ runner.temp }}
+
+      # Name the branch and PR by what changed: a version bump, or dependencies only.
+      - name: Describe change
+        id: describe
+        env:
+          VERSION: ${{ inputs.version }}
+          BUMPED: ${{ needs.verify.outputs.bumped }}
+        run: |
+          if [ "$BUMPED" = "true" ]; then
+            echo "branch=chore/bump-version-v$VERSION" >> "$GITHUB_OUTPUT"
+            echo "title=chore: bump version to v$VERSION" >> "$GITHUB_OUTPUT"
+          else
+            echo "branch=chore/update-crates-${{ github.run_id }}" >> "$GITHUB_OUTPUT"
+            echo "title=chore: update crates" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Push branch
+        env:
+          BRANCH: ${{ steps.describe.outputs.branch }}
+          TITLE: ${{ steps.describe.outputs.title }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git checkout -b "$BRANCH"
+          git apply "$RUNNER_TEMP/bump.patch"
+          git add Cargo.toml Cargo.lock
+          git commit -m "$TITLE"
+          git push origin "$BRANCH"
+
+      - name: Open pull request
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          BRANCH: ${{ steps.describe.outputs.branch }}
+          TITLE: ${{ steps.describe.outputs.title }}
+          VERSION: ${{ inputs.version }}
+        run: |
+          # GITHUB_TOKEN-created PRs do not trigger other workflows, so CI
+          # must be dispatched manually; the verify job is the verification.
+          gh pr create \
+            --base main \
+            --head "$BRANCH" \
+            --title "$TITLE" \
+            --body "Set the crate version to v$VERSION (update_crates: ${{ inputs.update_crates }}). Validated with \`make ci\`; note that CI on this PR will not run automatically because it was created with GITHUB_TOKEN."
